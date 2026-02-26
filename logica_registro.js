@@ -106,7 +106,6 @@ async function cargarSubfamilias() {
 }
 
 // 5. Cargar detalles del inmueble (Automáticos)
-// 5. Cargar detalles del inmueble (Automáticos)
 async function cargarDatosInmueble() {
     const idInmueble = document.getElementById('id_inmueble').value;
     if (!idInmueble) return;
@@ -119,33 +118,24 @@ async function cargarDatosInmueble() {
         document.getElementById('val-modelo').value = datos.modelo || '';
         document.getElementById('val-orientacion').value = datos.orientacion || '';
         
-        // 1. Manejo de la Fecha
         const inputFecha = document.getElementById('val-fecha');
-        if (datos.fecha_entrega) {
-            inputFecha.value = datos.fecha_entrega.split('T')[0];
-        } else {
-            inputFecha.value = ''; // Se deja en blanco si no tiene fecha
-        }
-        
-        // 2. 🚀 NUEVA LÓGICA DE NEGOCIO: Estado automático según Fecha
         const selectEstado = document.getElementById('estado_inmueble');
-        const estadoBD = datos.estado_inmueble || datos.estado;
-        
+
+        // Si la fecha es null o undefined, ponemos "En Stock"
         if (!datos.fecha_entrega) {
-            // REGLA 1: Si NO hay fecha de entrega, forzar SIEMPRE a "En Stock"
-            selectEstado.value = "En Stock";
-        } else if (estadoBD) {
-            // REGLA 2: Si HAY fecha, respetamos el estado que traiga la BD (Preparación o Entregada)
-            selectEstado.value = estadoBD; 
+            inputFecha.value = ''; 
+            selectEstado.value = "En Stock"; // 🚀 Esto selecciona la opción automáticamente
         } else {
-            // REGLA 3: Por si la BD viene vacía pero tiene fecha, vuelve a "Seleccione..."
-            selectEstado.selectedIndex = 0; 
+            inputFecha.value = datos.fecha_entrega.split('T')[0];
+            // Si hay fecha, usamos el estado de la BD o por defecto "Entregada"
+            selectEstado.value = datos.estado_inmueble || "Entregada";
         }
         
     } catch (error) {
         console.error("Error al cargar detalles del inmueble:", error);
     }
 }
+
 function agregarFamiliaATabla() {
     alert("Función lista para procesar los registros.");
 }

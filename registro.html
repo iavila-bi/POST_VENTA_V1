@@ -31,6 +31,7 @@
                 <div class="grupo-input"><label>Orientación</label><input type="text" id="val-orientacion" readonly placeholder="Automático"></div>
                 <div class="grupo-input"><label>Fecha de Entrega</label><input type="date" id="val-fecha" readonly></div>
                 <div class="grupo-input field-full">
+   <div class="grupo-input field-full">
     <label>Estado del Inmueble *</label>
     <select id="estado_inmueble">
         <option value="" disabled selected>Seleccione estado...</option>
@@ -42,20 +43,25 @@
             </div>
         </div>
 
-        <div class="tarjeta-modulo">
-            <h3 class="titulo-seccion"><i class="fas fa-address-book"></i> 2. Datos de la Postventa</h3>
-            <div class="grid-campos-doble">
-                <div class="grupo-input"><label>Estado del Ticket *</label><select><option>Abierta</option></select></div>
-                <div class="grupo-input"><label>Nombre del Cliente *</label><input type="text" placeholder="Nombre completo"></div>
-                <div class="grupo-input field-full">
-                    <label>Contacto *</label>
-                    <div class="telefono-container">
-                        <span class="telefono-prefix">+56</span>
-                        <input type="text" class="telefono-input" placeholder="912345678">
-                    </div>
-                </div>
-            </div>
+<div class="tarjeta-modulo">
+    <h3 class="titulo-seccion"><i class="fas fa-address-book"></i> 2. Datos de la Postventa</h3>
+    <div class="grid-campos-doble">
+        <div class="grupo-input">
+            <label>Estado del Ticket *</label>
+            <select id="estado_ticket" disabled> <option value="Abierta">Abierta</option>
+            </select>
         </div>
+        <div class="grupo-input">
+            <label>Nombre del Cliente *</label>
+            <input type="text" id="nombre_cliente" placeholder="Nombre completo"> </div>
+        <div class="grupo-input field-full">
+            <label>Contacto *</label>
+            <div class="telefono-container">
+                <span class="telefono-prefix">+56</span>
+                <input type="text" id="telefono_cliente" class="telefono-input" placeholder="912345678"> </div>
+        </div>
+    </div>
+</div>
 
         <div class="tarjeta-modulo bg-suave">
             <h3 class="titulo-seccion"><i class="fas fa-tools"></i> 3. Añadir Registro por Familia</h3>

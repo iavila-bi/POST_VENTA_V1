@@ -361,3 +361,114 @@ select {
     color: #2563eb !important;
     border-color: #94a3b8;
 }
+
+/* Espaciado entre las secciones principales */
+.tarjeta-modulo {
+    margin-bottom: 25px; /* Crea el espacio entre la sección 1, 2 y 3 */
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+/* Arreglo del contenedor de teléfono */
+.telefono-container {
+    display: flex;
+    align-items: center;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    overflow: hidden;
+    height: 42px; /* Forzamos la misma altura que los otros inputs */
+}
+
+.telefono-prefix {
+    background: #f1f5f9;
+    padding: 0 12px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    border-right: 1px solid #d1d5db;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.telefono-input {
+    border: none !important; /* Quitamos el borde para que use el del container */
+    padding: 10px !important;
+    width: 100%;
+}
+
+/* Asegurar que el grid de la sección 2 respete las dos columnas */
+.grid-campos-doble {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.field-full {
+    grid-column: 1 / -1; /* El teléfono ocupará todo el ancho si así lo deseas */
+}
+
+/* Esto separará la Sección 1, 2 y 3 una de otra */
+.tarjeta-modulo {
+    background: var(--blanco);
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 30px; /* 🚀 Este es el "aire" que falta entre secciones */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+    display: block; /* Para que no intente ser flex como las tarjetas del dashboard */
+}
+
+/* Títulos de sección para que no queden pegados arriba */
+.titulo-seccion {
+    font-size: 20px;
+    margin-bottom: 25px;
+    color: var(--texto-oscuro);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 10px;
+}
+
+.grid-campos-doble {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Divide en dos columnas iguales */
+    gap: 25px; /* Espacio entre los inputs */
+}
+
+/* El campo de contacto se ve mejor ocupando todo el ancho abajo */
+.field-full {
+    grid-column: span 2; 
+    margin-top: 10px;
+}
+
+/* Forzar separación entre secciones del formulario */
+div.tarjeta-modulo {
+    display: block !important; /* Asegura que se comporte como bloque */
+    margin-top: 40px !important; /* Aumentamos a 40px para que se note el aire */
+    margin-bottom: 20px !important;
+    clear: both; /* Evita que elementos de arriba se le peguen */
+}
+
+/* Ajuste específico para la Sección 2 si sigue pegada */
+.tarjeta-modulo:nth-of-type(2) {
+    border-top: 1px solid #e2e8f0; /* Una línea sutil para marcar límite */
+    padding-top: 30px !important;
+}
+
+
+/* Esto obligará a que cada tarjeta tenga su propio espacio */
+.tarjeta-modulo {
+    display: block !important;
+    margin-top: 50px !important; /* Espacio de sobra para que respire */
+    margin-bottom: 20px !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
+    clear: both !important;
+}
+
+/* Para que la Sección 2 se identifique bien */
+.tarjeta-modulo:nth-of-type(2) {
+    border-top: 3px solid var(--azul-claro) !important;
+}
