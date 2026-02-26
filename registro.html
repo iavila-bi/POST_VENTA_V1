@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Registro - Patagual</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="estilo.css"> 
+</head>
+<body class="bg-dashboard">
+
+    <div class="contenedor-registro animate-fade-in">
+        <div class="header-registro">
+            <a href="index.html" class="btn-volver">
+                <i class="fas fa-arrow-left"></i> Volver al Dashboard
+            </a>
+            <div class="encabezado-textos">
+                <h2>Apertura de Postventa</h2>
+            </div>
+        </div>
+
+        <div class="tarjeta-modulo">
+            <h3 class="titulo-seccion"><i class="fas fa-building"></i> 1. Identificación del Proyecto e Inmueble</h3>
+            <div class="grid-campos-doble">
+                <div class="grupo-input"><label>Proyecto *</label><select id="id_proyecto" onchange="cargarIdentificadores()"><option>Cargando...</option></select></div>
+                <div class="grupo-input"><label>Identificador *</label><select id="id_inmueble" onchange="cargarDatosInmueble()"><option>Seleccione proyecto primero...</option></select></div>
+                
+                <div class="grupo-input"><label>Casa/Depto</label><input type="text" id="val-tipo" readonly placeholder="Automático"></div>
+                <div class="grupo-input"><label>Modelo</label><input type="text" id="val-modelo" readonly placeholder="Automático"></div>
+                <div class="grupo-input"><label>Orientación</label><input type="text" id="val-orientacion" readonly placeholder="Automático"></div>
+                <div class="grupo-input"><label>Fecha de Entrega</label><input type="date" id="val-fecha" readonly></div>
+                <div class="grupo-input field-full">
+    <label>Estado del Inmueble *</label>
+    <select id="estado_inmueble">
+        <option value="" disabled selected>Seleccione estado...</option>
+        <option value="En Stock">En Stock</option>
+        <option value="En preparación">En preparación</option>
+        <option value="Entregada">Entregada</option>
+    </select>
+</div>
+            </div>
+        </div>
+
+        <div class="tarjeta-modulo">
+            <h3 class="titulo-seccion"><i class="fas fa-address-book"></i> 2. Datos de la Postventa</h3>
+            <div class="grid-campos-doble">
+                <div class="grupo-input"><label>Estado del Ticket *</label><select><option>Abierta</option></select></div>
+                <div class="grupo-input"><label>Nombre del Cliente *</label><input type="text" placeholder="Nombre completo"></div>
+                <div class="grupo-input field-full">
+                    <label>Contacto *</label>
+                    <div class="telefono-container">
+                        <span class="telefono-prefix">+56</span>
+                        <input type="text" class="telefono-input" placeholder="912345678">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tarjeta-modulo bg-suave">
+            <h3 class="titulo-seccion"><i class="fas fa-tools"></i> 3. Añadir Registro por Familia</h3>
+            <div class="grid-campos-triple">
+                <div class="grupo-input"><label>Estado Tarea</label><select><option>Pendiente</option></select></div>
+                <div class="grupo-input"><label>Etiqueta</label><select><option>Seleccione...</option></select></div>
+                <div class="grupo-input"><label>Origen</label><select><option>Seleccione...</option></select></div>
+                <div class="grupo-input"><label>Familia</label><select id="id_familia" onchange="cargarSubfamilias()"><option>Cargando...</option></select></div>
+                <div class="grupo-input"><label>Subfamilia</label><select id="id_subfamilia" disabled><option>...</option></select></div>
+                <div class="grupo-input"><label>Recinto</label><input type="text" placeholder="Ej: Baño"></div>
+                <div class="grupo-input field-full"><label>Comentarios</label><textarea rows="2"></textarea></div>
+                <div class="grupo-input"><label>Fecha Lev.</label><input type="date"></div>
+                <div class="grupo-input"><label>Fecha Visita</label><input type="date"></div>
+                <div class="grupo-input"><label>Responsable</label><select><option>Cargando...</option></select></div>
+            </div>
+            <button class="btn-agregar mt-20"><i class="fas fa-plus"></i> Agregar registro</button>
+        </div>
+
+        <div class="tarjeta-modulo">
+            <h3 class="titulo-seccion"><i class="fas fa-list"></i> Últimos Registros</h3>
+            <div class="tabla-responsive">
+                <table class="tabla-registros">
+                    <thead><tr><th>Familia</th><th>Subfamilia</th><th>Recinto</th><th>Levantamiento</th><th>Responsable</th></tr></thead>
+                    <tbody id="tbody-registros"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="logica_registro.js"></script>
+</body>
+</html>
