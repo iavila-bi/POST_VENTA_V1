@@ -60,6 +60,10 @@
             <div class="telefono-container">
                 <span class="telefono-prefix">+56</span>
                 <input type="tel" id="telefono_cliente" class="telefono-input" placeholder="912345678" maxlength="9" oninput = "this.value = this.value.replace(/[^0-9]/g, '');"> </div>
+            <div class="form-actions-postventa">
+    <button type="button" id="btn_generar_postventa" class="btn-primario">Generar Postventa</button>
+    <button type="button" id="btn_nueva_postventa" class="btn-secundario">Nueva Postventa</button>
+</div>
         </div>
     </div>
 </div>
@@ -126,10 +130,43 @@
             <textarea id="reg_observaciones_internas" rows="2" placeholder="Notas técnicas o acciones tomadas..."></textarea>
         </div>
     </div>
+<div class="planificacion-container">
+    <label class="label-seccion">Ejecutantes y planificación *</label>
+    
+    <div class="tabla-dinamica-wrapper">
+        <table id="tabla_ejecutantes_plan" class="tabla-dinamica">
+            <thead>
+                <tr>
+                    <th>Ejecutante</th>
+                    <th>Inicio</th>
+                    <th>Término</th>
+                    <th>Tarea</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="body_ejecutantes">
+                </tbody>
+        </table>
+    </div>
 
+    <div class="acciones-tabla-ejecutante">
+        <button type="button" id="btn_add_ejecutante_row" class="btn-sub-accion">
+            <i class="fas fa-plus"></i> + Agregar ejecutante
+        </button>
+    </div>
+</div>
+
+<button type="button" id="btn_finalizar_familia" class="btn-primary-vibrante">
+    Agregar familia a la Postventa
+</button>
+
+<div id="contenedor_ultimas_familias" class="ultimas-familias-list">
+    <h4>Últimas 5 familias agregadas</h4>
+    <ul id="lista_recientes"></ul>
+</div>
     <div class="contenedor-boton">
         <button type="button" class="btn-agregar" id="btn_agregar_tabla">
-            <i class="fas fa-plus"></i> Agregar registro
+            <i class="fas fa-plus"></i> Agregar familia
         </button>
     </div>
 </div>

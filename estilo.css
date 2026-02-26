@@ -472,3 +472,86 @@ div.tarjeta-modulo {
 .tarjeta-modulo:nth-of-type(2) {
     border-top: 3px solid var(--azul-claro) !important;
 }
+
+/* Contenedor de los botones en Datos de la Postventa */
+.form-actions-postventa {
+    display: flex;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+/* Botón Generar Postventa (Acción Principal) */
+#btn_generar_postventa {
+    background-color: #28a745; /* Verde éxito */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#btn_generar_postventa:hover {
+    background-color: #218838;
+}
+
+/* Botón Nueva Postventa (Acción Secundaria/Reset) */
+#btn_nueva_postventa {
+    background-color: #6c757d; /* Gris neutral */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#btn_nueva_postventa:hover {
+    background-color: #dc3545; /* Cambia a rojo al pasar el mouse como advertencia */
+}
+
+/* Estado Desactivado para el botón de la Sección 3 */
+#btn_agregar_tabla:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.tabla-dinamica-wrapper {
+    overflow-x: auto; /* Permite el desplazamiento horizontal */
+    background: #fff9f0; /* Color crema suave del ejemplo */
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+}
+
+.tabla-dinamica {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.btn-primary-vibrante {
+    background-color: #2563eb; /* Azul vibrante */
+    color: white;
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    margin-top: 20px;
+}
+
+/* Burbuja de Alerta (Toast) */
+.toast-exito {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #28a745;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 50px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    display: none;
+    z-index: 1000;
+}

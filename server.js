@@ -1,4 +1,4 @@
-require('dotenv').config(); // <-- 1. Esto lee tu archivo .env automáticamente
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -10,9 +10,8 @@ const app = express();
 // =======================================================================
 app.use(cors());
 app.use(express.json()); 
-app.use(express.static(__dirname)); // <-- 2. ESTO HACE QUE AL ENTRAR AL LOCALHOST SE VEA TU PÁGINA
+app.use(express.static(__dirname)); 
 
-// Conexión usando directamente tu variable del .env
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
@@ -21,13 +20,12 @@ const pool = new Pool({
 });
 
 // =======================================================================
-// RUTAS PARA LAS LISTAS DESPLEGABLES EN CASCADA
+// RUTAS PARA LAS LISTAS DESPLEGABLES (IDENTIFICACIÓN)
 // =======================================================================
 
 app.get('/api/proyectos', async (req, res) => {
     try {
-        const query = 'SELECT * FROM proyectos ORDER BY nombre_proyecto ASC';
-        const result = await pool.query(query);
+        const result = await pool.query('SELECT * FROM proyectos ORDER BY nombre_proyecto ASC');
         res.json(result.rows);
     } catch (error) {
         console.error('Error al obtener proyectos:', error);
@@ -63,6 +61,10 @@ app.get('/api/inmuebles/detalle/:id_inmueble', async (req, res) => {
     }
 });
 
+// =======================================================================
+// RUTAS PARA SECCIÓN 3 (FAMILIAS, SUBFAMILIAS Y RESPONSABLES)
+// =======================================================================
+
 app.get('/api/familias', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM familias ORDER BY nombre_familia ASC');
@@ -85,41 +87,29 @@ app.get('/api/familias/:id_familia/subfamilias', async (req, res) => {
     }
 });
 
-app.get('/api/ejecutantes', async (req, res) => {
+// Usamos la tabla "responsables" para cargar a los Responsables
+// Busca esta ruta en tu server.js y reemplázala
+app.get('/api/responsables', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM ejecutante ORDER BY nombre_ejecutante ASC');
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error al obtener ejecutantes:', error);
-        res.status(500).json({ error: 'Error al obtener ejecutantes' });
+        const resultado = await pool.query('SELECT id_responsable, nombre_responsable, cargo FROM responsables ORDER BY nombre_responsable ASC');
+        // Enviamos las filas tal cual vienen de Neon
+        res.json(resultado.rows); 
+    } catch (err) {
+        console.error("Error en BD responsables:", err.message);
+        res.status(500).json([]);
     }
 });
 
 // =======================================================================
-// RUTAS PARA CREAR LOS REGISTROS
+// RUTAS PARA CREAR REGISTROS (TICKETS Y TAREAS)
 // =======================================================================
 
 app.post('/api/tickets', async (req, res) => {
-    // ... tu código de tickets sigue igual ...
+    // Aquí irá tu lógica de INSERT para el ticket global
 });
 
 app.post('/api/tickets/:id_ticket/registros', async (req, res) => {
-    // ... tu código de registros sigue igual ...
-});
-
-app.get('/api/tickets/hoy', async (req, res) => {
-    // ... tu código de hoy sigue igual ...
-});
-
-// Ruta para obtener responsables (usuarios)
-app.get('/api/responsables', async (req, res) => {
-    try {
-        const resultado = await pool.query('SELECT id_usuario, nombre FROM usuarios ORDER BY nombre ASC');
-        res.json(resultado.rows);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send("Error al obtener responsables");
-    }
+    // Aquí irá tu lógica de INSERT para las tareas de la tabla
 });
 
 // =======================================================================
@@ -127,6 +117,5 @@ app.get('/api/responsables', async (req, res) => {
 // =======================================================================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    // <-- 3. AQUÍ ESTÁ EL ENLACE CLICKEABLE AZUL QUE QUERÍAS -->
     console.log(`🚀 Servidor corriendo sin problemas en: http://localhost:${PORT}`);
 });

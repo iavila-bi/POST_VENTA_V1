@@ -1,16 +1,12 @@
 /* ==========================================
-   CARGA INICIAL DESDE LA BASE DE DATOS
+   CONFIGURACIÓN Y CARGA INICIAL
    ========================================== */
 const BASE_URL = 'http://localhost:3000'; 
 
-document.addEventListener("DOMContentLoaded", () => {
-    obtenerProyectosDesdeBD();
-    obtenerFamiliasDesdeBD();
-});
-
-// 1. Obtener Proyectos
-async function obtenerProyectosDesdeBD() {
+// 1. Obtener Proyectos (Corregido nombre para el disparador)
+async function cargarProyectos() {
     const selectProyecto = document.getElementById('id_proyecto');
+    if (!selectProyecto) return;
     try {
         const respuesta = await fetch(`${BASE_URL}/api/proyectos`);
         const proyectos = await respuesta.json();
@@ -21,91 +17,84 @@ async function obtenerProyectosDesdeBD() {
         });
     } catch (error) {
         console.error("Error al cargar proyectos:", error);
-        selectProyecto.innerHTML = '<option value="" disabled>Error de conexión a BD</option>';
     }
 }
 
-// 2. Obtener Familias
-async function obtenerFamiliasDesdeBD() {
-    const selectFamilia = document.getElementById('id_familia');
+// 2. Cargar Familias
+async function cargarFamilias() {
+    const select = document.getElementById('select_familia');
+    if (!select) return;
     try {
         const respuesta = await fetch(`${BASE_URL}/api/familias`);
         const familias = await respuesta.json();
         
-        selectFamilia.innerHTML = '<option value="" disabled selected>Seleccione...</option>';
-        familias.forEach(fam => {
-            selectFamilia.innerHTML += `<option value="${fam.id_familia}">${fam.nombre_familia}</option>`;
+        select.innerHTML = '<option value="" disabled selected>Seleccione familia...</option>';
+        familias.forEach(f => {
+            const option = document.createElement('option');
+            option.value = f.id_familia;
+            option.textContent = f.nombre_familia;
+            select.appendChild(option);
         });
     } catch (error) {
-        console.error("Error al cargar familias:", error);
-        selectFamilia.innerHTML = '<option value="" disabled>Error de conexión a BD</option>';
+        console.error("Error cargando familias:", error);
     }
 }
 
+// 3. Cargar Responsables (Unificada)
+async function cargarResponsables() {
+    const select = document.getElementById('reg_responsable');
+    if (!select) return;
+    try {
+        const respuesta = await fetch(`${BASE_URL}/api/responsables`);
+        const responsables = await respuesta.json();
+        
+        select.innerHTML = '<option value="" disabled selected>Seleccione responsable...</option>';
+        
+        if (Array.isArray(responsables)) {
+            responsables.forEach(r => {
+                const option = document.createElement('option');
+                
+                // 1. Usamos id_responsable para el VALUE
+                option.value = r.id_responsable; 
+                
+                // 2. Usamos nombre_responsable y cargo para el TEXTO
+                // El cargo lo ponemos entre paréntesis solo si existe
+                const cargoInfo = r.cargo ? ` (${r.cargo})` : "";
+                option.textContent = `${r.nombre_responsable}${cargoInfo}`;
+                
+                select.appendChild(option);
+            });
+            console.log("Responsables cargados con éxito");
+        }
+    } catch (error) {
+        console.error("Error cargando responsables:", error);
+    }
+}
 /* ==========================================
-   LÓGICA EN CASCADA CON LA BASE DE DATOS
+   LÓGICA EN CASCADA (PROYECTOS -> INMUEBLES)
    ========================================== */
 
-// 3. Cargar Identificadores (Corregido con BASE_URL)
 async function cargarIdentificadores() {
     const idProyecto = document.getElementById('id_proyecto').value;
     const selectInmueble = document.getElementById('id_inmueble');
-
     if (!idProyecto) return;
 
-    selectInmueble.innerHTML = '<option value="" disabled selected>Cargando identificadores...</option>';
-    selectInmueble.disabled = true;
-
+    selectInmueble.innerHTML = '<option value="" disabled selected>Cargando...</option>';
     try {
-        // Se añade BASE_URL para evitar errores de ruta
         const respuesta = await fetch(`${BASE_URL}/api/proyectos/${idProyecto}/inmuebles`);
         const inmuebles = await respuesta.json();
 
-        // Ordenamiento Natural de menor a mayor
-        inmuebles.sort((a, b) => 
-            a.numero_identificador.localeCompare(b.numero_identificador, undefined, { numeric: true, sensitivity: 'base' })
-        );
+        inmuebles.sort((a, b) => a.numero_identificador.localeCompare(b.numero_identificador, undefined, { numeric: true }));
 
         selectInmueble.innerHTML = '<option value="" disabled selected>Seleccione identificador...</option>';
-        
         inmuebles.forEach(inm => {
             selectInmueble.innerHTML += `<option value="${inm.id_inmueble}">${inm.numero_identificador}</option>`;
         });
-        
-        // Se habilita el campo una vez cargados los datos
-        selectInmueble.disabled = false; 
     } catch (error) {
         console.error("Error al cargar identificadores:", error);
-        selectInmueble.innerHTML = '<option value="" disabled>Error de conexión</option>';
     }
 }
 
-// 4. Cargar Subfamilias
-async function cargarSubfamilias() {
-    const idFamilia = document.getElementById('id_familia').value;
-    const selectSubfamilia = document.getElementById('id_subfamilia');
-
-    if (!idFamilia) return;
-
-    selectSubfamilia.innerHTML = '<option value="" disabled selected>Cargando subfamilias...</option>';
-    selectSubfamilia.disabled = true;
-
-    try {
-        const respuesta = await fetch(`${BASE_URL}/api/familias/${idFamilia}/subfamilias`);
-        const subfamilias = await respuesta.json();
-
-        selectSubfamilia.innerHTML = '<option value="" disabled selected>Seleccione Subfamilia...</option>';
-        subfamilias.forEach(sub => {
-            selectSubfamilia.innerHTML += `<option value="${sub.id_subfamilia}">${sub.nombre_subfamilia}</option>`;
-        });
-        selectSubfamilia.disabled = false;
-    } catch (error) {
-        console.error("Error al cargar subfamilias:", error);
-        selectSubfamilia.innerHTML = '<option value="" disabled>Error al cargar</option>';
-    }
-}
-
-// 5. Cargar detalles del inmueble (Automáticos)
 async function cargarDatosInmueble() {
     const idInmueble = document.getElementById('id_inmueble').value;
     if (!idInmueble) return;
@@ -121,93 +110,124 @@ async function cargarDatosInmueble() {
         const inputFecha = document.getElementById('val-fecha');
         const selectEstado = document.getElementById('estado_inmueble');
 
-        // Si la fecha es null o undefined, ponemos "En Stock"
         if (!datos.fecha_entrega) {
             inputFecha.value = ''; 
-            selectEstado.value = "En Stock"; // 🚀 Esto selecciona la opción automáticamente
+            selectEstado.value = "En Stock"; 
         } else {
             inputFecha.value = datos.fecha_entrega.split('T')[0];
-            // Si hay fecha, usamos el estado de la BD o por defecto "Entregada"
-            selectEstado.value = datos.estado_inmueble || "Entregada";
+            selectEstado.value = "Entregada";
         }
-        
     } catch (error) {
-        console.error("Error al cargar detalles del inmueble:", error);
+        console.error("Error al cargar detalles:", error);
     }
 }
 
-function agregarFamiliaATabla() {
-    alert("Función lista para procesar los registros.");
-}
+/* ==========================================
+   SECCIÓN 3: GESTIÓN DE LA TABLA
+   ========================================== */
 
-// ... (tu código anterior de proyectos e inmuebles)
+// Cargar Subfamilias según Familia seleccionada
+async function cargarSubfamilias() {
+    const idFamilia = document.getElementById('select_familia').value;
+    const selectSub = document.getElementById('select_subfamilia');
+    if (!idFamilia || !selectSub) return;
 
-// --- NUEVA LÓGICA SECCIÓN 3 ---
-
-// 1. Cargar Responsables desde la BD
-async function cargarResponsables() {
     try {
-        const respuesta = await fetch(`${BASE_URL}/api/responsables`);
-        const responsables = await respuesta.json();
-        const select = document.getElementById('reg_responsable');
-        
-        select.innerHTML = '<option value="" disabled selected>Seleccione responsable...</option>';
-        responsables.forEach(r => {
-            const option = document.createElement('option');
-            option.value = r.id_usuario;
-            option.textContent = r.nombre;
-            select.appendChild(option);
+        const respuesta = await fetch(`${BASE_URL}/api/familias/${idFamilia}/subfamilias`);
+        const subfamilias = await respuesta.json();
+
+        selectSub.innerHTML = '<option value="" disabled selected>Seleccione Subfamilia...</option>';
+        subfamilias.forEach(sub => {
+            selectSub.innerHTML += `<option value="${sub.id_subfamilia}">${sub.nombre_subfamilia}</option>`;
         });
     } catch (error) {
-        console.error("Error cargando responsables:", error);
+        console.error("Error al cargar subfamilias:", error);
     }
 }
 
-// 2. Control del teléfono (Máximo 9 dígitos)
-document.getElementById('telefono_cliente')?.addEventListener('input', function (e) {
-    this.value = this.value.replace(/[^0-9]/g, '');
-    if (this.value.length > 9) {
-        this.value = this.value.slice(0, 9);
-    }
-});
-
-// 3. Función para agregar a la tabla con validaciones
+// Botón Agregar a Tabla
 document.getElementById('btn_agregar_tabla')?.addEventListener('click', function() {
     const origen = document.getElementById('reg_origen').value;
-    const familiaText = document.getElementById('select_familia').options[document.getElementById('select_familia').selectedIndex]?.text;
-    const subfamiliaText = document.getElementById('select_subfamilia').options[document.getElementById('select_subfamilia').selectedIndex]?.text;
+    const familia = document.getElementById('select_familia').options[document.getElementById('select_familia').selectedIndex]?.text;
+    const subfamilia = document.getElementById('select_subfamilia').options[document.getElementById('select_subfamilia').selectedIndex]?.text;
     const recinto = document.getElementById('reg_recinto').value.trim();
     const comentarios = document.getElementById('reg_comentarios_cliente').value.trim();
     const fechaLev = document.getElementById('reg_fecha_lev').value;
     const responsable = document.getElementById('reg_responsable').value;
 
-    if (!origen || !familiaText || familiaText.includes("Seleccione") || !subfamiliaText || !recinto || !comentarios || !fechaLev || !responsable) {
-        alert("⚠️ Por favor, complete todos los campos obligatorios (*)");
+    if (!origen || !familia || !subfamilia || !recinto || !comentarios || !fechaLev || !responsable) {
+        alert("⚠️ Complete todos los campos obligatorios (*)");
         return;
     }
 
     const tabla = document.querySelector('.tabla-registros tbody');
     const fila = document.createElement('tr');
-
     fila.innerHTML = `
-        <td>${familiaText}</td>
-        <td>${subfamiliaText}</td>
+        <td>${familia}</td>
+        <td>${subfamilia}</td>
         <td>${recinto}</td>
         <td><span class="badge badge-planificacion">Pendiente</span></td>
-        <td>
-            <button class="btn-eliminar" onclick="this.closest('tr').remove()"><i class="fas fa-trash"></i></button>
-        </td>
+        <td><button class="btn-eliminar" onclick="this.closest('tr').remove()"><i class="fas fa-trash"></i></button></td>
     `;
     tabla.appendChild(fila);
     
-    // Limpiar campos de texto para el próximo ingreso
     document.getElementById('reg_recinto').value = '';
     document.getElementById('reg_comentarios_cliente').value = '';
 });
 
-// 4. EL DISPARADOR: Ejecutar todo al cargar la página
+// Validación Teléfono
+document.getElementById('telefono_cliente')?.addEventListener('input', function() {
+    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 9);
+});
+//// VALIDADOR DE SUBSFAMILIAS
+
+// Cuando cambie la familia, cargar sus subfamilias
+document.getElementById('select_familia')?.addEventListener('change', cargarSubfamilias);
+
+/* ==========================================
+   DISPARADOR DE INICIO
+   ========================================== */
 document.addEventListener('DOMContentLoaded', () => {
-    // Aquí llamas a todas tus funciones de carga inicial
-    cargarProyectos(); 
-    cargarResponsables(); 
+    cargarProyectos();
+    cargarFamilias();
+    cargarResponsables();
+});
+
+// --- LÓGICA DE CONTROL DE POSTVENTA ---
+
+// Al iniciar, desactivamos la Sección 3
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btn_agregar_tabla').disabled = true;
+    document.getElementById('btn_agregar_tabla').style.opacity = "0.5";
+    document.getElementById('btn_agregar_tabla').title = "Debe generar una postventa primero";
+});
+
+// Botón: Generar Postventa
+document.getElementById('btn_generar_postventa')?.addEventListener('click', function() {
+    const cliente = document.getElementById('val-nombre-cliente')?.value; // Ajusta según tu ID real
+    const contacto = document.getElementById('telefono_cliente')?.value;
+
+    if (!cliente || contacto.length < 9) {
+        alert("⚠️ Por favor, ingrese el nombre del cliente y un contacto válido (9 dígitos) antes de continuar.");
+        return;
+    }
+
+    // Bloqueamos los datos del cliente para que no cambien a mitad del proceso
+    document.getElementById('val-nombre-cliente').readOnly = true;
+    document.getElementById('telefono_cliente').readOnly = true;
+    
+    // Habilitamos la Sección 3 para añadir fallas
+    const btnAgregar = document.getElementById('btn_agregar_tabla');
+    btnAgregar.disabled = false;
+    btnAgregar.style.opacity = "1";
+    btnAgregar.title = "";
+
+    alert("✅ Postventa anclada. Ahora puede añadir las familias correspondientes.");
+});
+
+// Botón: Nueva Postventa (Reset total)
+document.getElementById('btn_nueva_postventa')?.addEventListener('click', function() {
+    if (confirm("¿Está seguro de que desea iniciar una nueva postventa? Se perderán los datos no guardados.")) {
+        location.reload(); // La forma más rápida y segura de limpiar todo
+    }
 });
