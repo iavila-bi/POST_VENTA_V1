@@ -48,8 +48,9 @@
     <div class="grid-campos-doble">
         <div class="grupo-input">
             <label>Estado del Ticket *</label>
-            <select id="estado_ticket" disabled> <option value="Abierta">Abierta</option>
-            </select>
+            <select id="estado_ticket"> <option value="Abierta" selected>Abierta</option>
+    <option value="Cerrada">Cerrada</option>
+</select>
         </div>
         <div class="grupo-input">
             <label>Nombre del Cliente *</label>
@@ -58,7 +59,7 @@
             <label>Contacto *</label>
             <div class="telefono-container">
                 <span class="telefono-prefix">+56</span>
-                <input type="text" id="telefono_cliente" class="telefono-input" placeholder="912345678"> </div>
+                <input type="tel" id="telefono_cliente" class="telefono-input" placeholder="912345678" maxlength="9" oninput = "this.value = this.value.replace(/[^0-9]/g, '');"> </div>
         </div>
     </div>
 </div>
