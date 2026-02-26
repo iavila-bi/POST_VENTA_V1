@@ -139,3 +139,75 @@ async function cargarDatosInmueble() {
 function agregarFamiliaATabla() {
     alert("Función lista para procesar los registros.");
 }
+
+// ... (tu código anterior de proyectos e inmuebles)
+
+// --- NUEVA LÓGICA SECCIÓN 3 ---
+
+// 1. Cargar Responsables desde la BD
+async function cargarResponsables() {
+    try {
+        const respuesta = await fetch(`${BASE_URL}/api/responsables`);
+        const responsables = await respuesta.json();
+        const select = document.getElementById('reg_responsable');
+        
+        select.innerHTML = '<option value="" disabled selected>Seleccione responsable...</option>';
+        responsables.forEach(r => {
+            const option = document.createElement('option');
+            option.value = r.id_usuario;
+            option.textContent = r.nombre;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error("Error cargando responsables:", error);
+    }
+}
+
+// 2. Control del teléfono (Máximo 9 dígitos)
+document.getElementById('telefono_cliente')?.addEventListener('input', function (e) {
+    this.value = this.value.replace(/[^0-9]/g, '');
+    if (this.value.length > 9) {
+        this.value = this.value.slice(0, 9);
+    }
+});
+
+// 3. Función para agregar a la tabla con validaciones
+document.getElementById('btn_agregar_tabla')?.addEventListener('click', function() {
+    const origen = document.getElementById('reg_origen').value;
+    const familiaText = document.getElementById('select_familia').options[document.getElementById('select_familia').selectedIndex]?.text;
+    const subfamiliaText = document.getElementById('select_subfamilia').options[document.getElementById('select_subfamilia').selectedIndex]?.text;
+    const recinto = document.getElementById('reg_recinto').value.trim();
+    const comentarios = document.getElementById('reg_comentarios_cliente').value.trim();
+    const fechaLev = document.getElementById('reg_fecha_lev').value;
+    const responsable = document.getElementById('reg_responsable').value;
+
+    if (!origen || !familiaText || familiaText.includes("Seleccione") || !subfamiliaText || !recinto || !comentarios || !fechaLev || !responsable) {
+        alert("⚠️ Por favor, complete todos los campos obligatorios (*)");
+        return;
+    }
+
+    const tabla = document.querySelector('.tabla-registros tbody');
+    const fila = document.createElement('tr');
+
+    fila.innerHTML = `
+        <td>${familiaText}</td>
+        <td>${subfamiliaText}</td>
+        <td>${recinto}</td>
+        <td><span class="badge badge-planificacion">Pendiente</span></td>
+        <td>
+            <button class="btn-eliminar" onclick="this.closest('tr').remove()"><i class="fas fa-trash"></i></button>
+        </td>
+    `;
+    tabla.appendChild(fila);
+    
+    // Limpiar campos de texto para el próximo ingreso
+    document.getElementById('reg_recinto').value = '';
+    document.getElementById('reg_comentarios_cliente').value = '';
+});
+
+// 4. EL DISPARADOR: Ejecutar todo al cargar la página
+document.addEventListener('DOMContentLoaded', () => {
+    // Aquí llamas a todas tus funciones de carga inicial
+    cargarProyectos(); 
+    cargarResponsables(); 
+});

@@ -111,6 +111,17 @@ app.get('/api/tickets/hoy', async (req, res) => {
     // ... tu código de hoy sigue igual ...
 });
 
+// Ruta para obtener responsables (usuarios)
+app.get('/api/responsables', async (req, res) => {
+    try {
+        const resultado = await pool.query('SELECT id_usuario, nombre FROM usuarios ORDER BY nombre ASC');
+        res.json(resultado.rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send("Error al obtener responsables");
+    }
+});
+
 // =======================================================================
 // INICIAR EL SERVIDOR
 // =======================================================================

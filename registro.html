@@ -63,22 +63,76 @@
         </div>
     </div>
 </div>
+        <div class="tarjeta-modulo">
+    <h3 class="titulo-seccion"><i class="fas fa-tools"></i> 3. Añadir Registro por Familia</h3>
+    <div class="grid-campos-doble">
+        <div class="grupo-input">
+            <label>Origen *</label>
+            <select id="reg_origen">
+                <option value="" disabled selected>Seleccione origen...</option>
+                <option value="Correo">Correo</option>
+                <option value="Entidad Patrocinante">Entidad Patrocinante</option>
+                <option value="Jocelin">Jocelin</option>
+                <option value="MDA">MDA</option>
+                <option value="Nuevas / Entrega">Nuevas / Entrega</option>
+                <option value="Serviu">Serviu</option>
+                <option value="Terreno">Terreno</option>
+            </select>
+        </div>
 
-        <div class="tarjeta-modulo bg-suave">
-            <h3 class="titulo-seccion"><i class="fas fa-tools"></i> 3. Añadir Registro por Familia</h3>
-            <div class="grid-campos-triple">
-                <div class="grupo-input"><label>Estado Tarea</label><select><option>Pendiente</option></select></div>
-                <div class="grupo-input"><label>Etiqueta</label><select><option>Seleccione...</option></select></div>
-                <div class="grupo-input"><label>Origen</label><select><option>Seleccione...</option></select></div>
-                <div class="grupo-input"><label>Familia</label><select id="id_familia" onchange="cargarSubfamilias()"><option>Cargando...</option></select></div>
-                <div class="grupo-input"><label>Subfamilia</label><select id="id_subfamilia" disabled><option>...</option></select></div>
-                <div class="grupo-input"><label>Recinto</label><input type="text" placeholder="Ej: Baño"></div>
-                <div class="grupo-input field-full"><label>Comentarios</label><textarea rows="2"></textarea></div>
-                <div class="grupo-input"><label>Fecha Lev.</label><input type="date"></div>
-                <div class="grupo-input"><label>Fecha Visita</label><input type="date"></div>
-                <div class="grupo-input"><label>Responsable</label><select><option>Cargando...</option></select></div>
-            </div>
-            <button class="btn-agregar mt-20"><i class="fas fa-plus"></i> Agregar registro</button>
+        <div class="grupo-input">
+            <label>Familia *</label>
+            <select id="select_familia">
+                <option value="">Cargando familias...</option>
+            </select>
+        </div>
+
+        <div class="grupo-input">
+            <label>Subfamilia *</label>
+            <select id="select_subfamilia">
+                <option value="">Seleccione familia primero...</option>
+            </select>
+        </div>
+
+        <div class="grupo-input">
+            <label>Recinto *</label>
+            <input type="text" id="reg_recinto" placeholder="Ej: Baño, Cocina, Dormitorio 1">
+        </div>
+
+        <div class="grupo-input field-full">
+            <label>Comentarios del Cliente *</label>
+            <textarea id="reg_comentarios_cliente" rows="2" placeholder="Información previa del cliente..."></textarea>
+        </div>
+
+        <div class="grupo-input">
+            <label>Fecha Levantamiento *</label>
+            <input type="date" id="reg_fecha_lev">
+        </div>
+
+        <div class="grupo-input">
+            <label>Fecha Visita (Opcional)</label>
+            <input type="date" id="reg_fecha_visita">
+        </div>
+
+        <div class="grupo-input">
+            <label>Responsable *</label>
+            <select id="reg_responsable">
+                <option value="">Cargando responsables...</option>
+            </select>
+        </div>
+
+        <div class="grupo-input field-full">
+            <label>Acciones realizadas / Observaciones</label>
+            <textarea id="reg_observaciones_internas" rows="2" placeholder="Notas técnicas o acciones tomadas..."></textarea>
+        </div>
+    </div>
+
+    <div class="contenedor-boton">
+        <button type="button" class="btn-agregar" id="btn_agregar_tabla">
+            <i class="fas fa-plus"></i> Agregar registro
+        </button>
+    </div>
+</div>
         </div>
 
         <div class="tarjeta-modulo">
