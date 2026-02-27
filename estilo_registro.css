@@ -66,7 +66,9 @@ body {
 
 .contenido {
     margin-left: 260px;
-    padding: 40px;
+    padding: 60px 80px;
+    max-width: 1400px;
+    margin-right: auto;
 }
 
 /* ============================= */
@@ -76,12 +78,28 @@ body {
 .tarjeta-modulo {
     background: var(--blanco);
     border-radius: 16px;
-    padding: 30px;
-    margin-bottom: 30px;
+    padding: 40px;
+    margin-bottom: 40px;
     border: 1px solid var(--gris-border);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
     transition: all 0.2s ease;
 }
+
+.tarjeta-postventa {
+    margin-top: 60px !important;    /* Espacio suficiente pero no excesivo */
+    margin-bottom: 60px !important; /* Separa de la sección 3 */
+    padding: 40px !important;       /* Aire interno para que respire el contenido */
+    border-top: 5px solid var(--azul-600) !important; /* Identificador visual azul */
+    background: var(--blanco);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05); /* Sombra suave para que flote */
+}
+
+/* Ajuste para que el selector no se vea tan gigante */
+#estado_ticket {
+    max-width: 250px; /* Evita que el dropdown de "Abierta/Cerrada" sea innecesariamente ancho */
+}
+
 
 .tarjeta-modulo:hover {
     transform: translateY(-3px);
@@ -92,15 +110,16 @@ body {
 /* ============================= */
 
 .titulo-seccion {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 700;
-    margin-bottom: 25px;
-    padding-bottom: 10px;
+    margin-bottom: 35px;
+    padding-bottom: 15px;
     border-bottom: 2px solid var(--azul-100);
     display: flex;
     align-items: center;
     gap: 10px;
     color: var(--azul-700);
+    letter-spacing: -0.01em
 }
 
 /* ============================= */
@@ -109,12 +128,12 @@ body {
 
 .grid-campos-doble {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px 30px;
 }
 
 .field-full {
-    grid-column: 1 / -1;
+    grid-column: span 3;
 }
 
 /* ============================= */
@@ -122,10 +141,10 @@ body {
 /* ============================= */
 
 .grupo-input label {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: var(--texto-claro);
-    margin-bottom: 6px;
+    color: var(--azul-700);
+    margin-bottom: 8px;
     display: block;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -133,11 +152,11 @@ body {
 
 input, select, textarea {
     width: 100%;
-    height: 44px;
-    padding: 0 14px;
-    border: 1px solid var(--gris-border);
+    height: 40px;
+    padding: 0 12px;
+    border: 1.5px solid var(--gris-border);
     border-radius: 10px;
-    background: white;
+    background: rgb(242, 251, 255);
     font-size: 0.95rem;
     transition: all 0.2s ease;
 }
@@ -266,4 +285,442 @@ button:disabled {
 @keyframes slideIn {
     from { opacity: 0; transform: translateX(20px); }
     to { opacity: 1; transform: translateX(0); }
+}
+
+.telefono-container {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid var(--gris-border);
+    border-radius: 10px;
+    overflow: visible;
+}
+
+.telefono-prefix {
+    background: var(--azul-50);
+    padding: 10px 12px;
+    color: var(--azul-700);
+    font-weight: 700;
+    border-right: 1px solid var(--gris-border);
+}
+
+.telefono-input {
+    border: none !important; /* Quitamos el borde al input interno */
+    box-shadow: none !important;
+}
+
+/* Botón Crear Postventa (Azul y llamativo) */
+.btn-apertura {
+    background: linear-gradient(135deg, var(--azul-600), var(--azul-700)) !important;
+    color: white !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 8px !important;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    text-decoration: none; /* Por si acaso es un enlace */
+}
+
+.btn-apertura:hover {
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    transform: translateY(-1px);
+}
+
+/* Botón Nueva Postventa (Gris sutil) */
+.btn-secundario {
+    background-color: #e2e8f0 !important;
+    color: var(--texto-oscuro) !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 8px !important;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* El botón de Volver al Dashboard */
+.btn-volver {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--texto-claro);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    background: white;
+    border: 1px solid var(--gris-border);
+}
+
+.btn-volver:hover {
+    background: var(--azul-50);
+    color: var(--azul-700);
+    border-color: var(--azul-100);
+    transform: translateX(-4px); /* Efecto sutil de retroceso */
+}
+
+/* Alineación a la izquierda */
+.header-left {
+    display: flex;
+    flex-direction: column; /* El botón arriba, el título abajo */
+    gap: 15px;
+    align-items: flex-start;
+}
+
+/* Título con mejor tipografía */
+.header-left h1 {
+    font-size: 2.2rem;
+    color: #1e293b;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -1px;
+}
+
+/* Botón de volver con estilo de 'pestaña' */
+.btn-volver {
+    text-decoration: none;
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-volver:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    transform: translateX(-3px);
+}
+
+/* Espaciado general del Header */
+.header-postventa {
+    padding: 80px 0 40px 0; /* 80px arriba para máxima elegancia */
+    text-align: center;
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Título imponente y centrado */
+.titulo-central h1 {
+    font-size: 2.8rem; /* Tamaño grande y legible */
+    color: #0f172a;    /* Azul casi negro muy profesional */
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    margin: 10px 0;
+    background: linear-gradient(to right, #1e293b, #334155);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent; /* Efecto de degradado sutil */
+}
+
+/* Línea decorativa bajo el título */
+.sublinea-decorativa {
+    height: 4px;
+    width: 60px;
+    background: var(--azul-600);
+    margin: 0 auto;
+    border-radius: 10px;
+}
+
+/* Botón de volver mejorado (arriba a la izquierda) */
+.btn-volver-top {
+    position: absolute;
+    top: 30px;
+    left: 0;
+    text-decoration: none;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 15px;
+    border-radius: 20px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+.btn-volver-top:hover {
+    background: #f8fafc;
+    color: var(--azul-600);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+/* Reemplaza o agrega este bloque */
+.tarjeta-postventa .grid-campos-doble {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Tres columnas iguales */
+    gap: 30px; /* Espacio uniforme entre campos */
+    align-items: start;
+    margin-bottom: 25px;
+}
+
+/* Asegura que los inputs ocupen el 100% de su columna */
+.tarjeta-postventa .grupo-input input, 
+.tarjeta-postventa .grupo-input select {
+    width: 100% !important;
+    box-sizing: border-box;
+}
+
+.grupo-input {
+    position: relative; /* Crea un contexto de capa */
+    z-index: 999;
+}
+
+#estado_ticket {
+    cursor: pointer;
+    position: relative;
+    z-index: 20; /* Más alto para que el desplegable gane siempre */
+}
+
+/* Evita que el campo de contacto se desborde */
+.telefono-container {
+    width: 100%;
+    max-width: 100%; 
+}
+
+.form-actions-postventa {
+    margin-top: 40px !important; /* Empuja los botones hacia abajo */
+    grid-column: 1 / -1; /* Ocupa toda la fila */
+    display: flex;
+    gap: 20px;
+    padding-top: 25px;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* FUERZA EL ESPACIO PARA QUE EL MENÚ NO SE CORTE */
+.tarjeta-postventa .grid-campos-doble {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important; /* Mantiene las 3 columnas */
+    gap: 40px !important; 
+    align-items: flex-end !important;
+    padding-bottom: 20px !important;
+}
+
+/* ESTO HACE QUE EL SELECT FLOTE SOBRE TODO LO DEMÁS */
+.grupo-input {
+    position: relative !important;
+    z-index: 999 !important;
+}
+
+#estado_ticket {
+    position: relative !important;
+    z-index: 100 !important; /* Capa superior máxima */
+    cursor: pointer;
+}
+
+
+#estado_ticket {
+    pointer-events: all !important;    /* Esto obliga a que el clic pase al select */
+}
+
+
+/* Fuerza el grid de 3 columnas iguales */
+.tarjeta-postventa .grid-campos-doble {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important; /* 3 columnas exactas */
+    gap: 30px !important;
+    align-items: flex-end !important; /* Alinea los inputs por la base */
+}
+
+/* Asegura que los campos ocupen todo el ancho de su columna */
+.grupo-input input, 
+.grupo-input select,
+.telefono-container {
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* El z-index para que el select no tape nada */
+#estado_ticket {
+    position: relative !important;
+    z-index: 100 !important;
+}
+
+
+/* --- ESTILOS TABLA PLANIFICACIÓN --- */
+
+.contenedor-tabla {
+    overflow-x: auto;
+    margin-top: 10px;
+}
+
+.tabla-planificacion {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px; /* Espaciado entre filas */
+}
+
+.tabla-planificacion th {
+    text-align: left;
+    font-size: 0.8rem;
+    color: var(--azul-700);
+    text-transform: uppercase;
+    padding: 0 10px 10px 10px;
+    letter-spacing: 0.5px;
+}
+
+.tabla-planificacion td {
+    padding: 5px 10px;
+    vertical-align: middle;
+}
+
+/* Estilo de los inputs dentro de la tabla */
+.tabla-planificacion select,
+.tabla-planificacion input {
+    height: 38px !important;
+    border: 1.5px solid var(--gris-border) !important;
+    background: #ffffff !important;
+    font-size: 0.9rem !important;
+    width: 100% !important;
+}
+
+/* Anchos específicos para que no se muevan */
+.select-ejecutante { width: 180px !important; }
+.input-fecha { width: 150px !important; }
+.input-tarea { min-width: 250px !important; }
+
+/* Botón de agregar (+) */
+.btn-add-row {
+    background: var(--azul-50);
+    color: var(--azul-600);
+    border: 1px solid var(--azul-100);
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-add-row:hover {
+    background: var(--azul-600);
+    color: white;
+}
+
+/* --- CORRECCIÓN DEFINITIVA TABLA PLANIFICACIÓN --- */
+
+.tabla-planificacion-final {
+    width: 100% !important;
+    border-collapse: collapse !important; /* Cambiado a collapse para evitar descuadres */
+    margin-top: 15px;
+}
+
+.tabla-planificacion-final th {
+    text-align: left;
+    font-size: 0.75rem;
+    color: var(--azul-700);
+    text-transform: uppercase;
+    padding: 12px 10px;
+    font-weight: 700;
+    border-bottom: 2px solid var(--azul-100);
+}
+
+/* Definición de anchos fijos para evitar saltos */
+.col-ejecutante { width: 25%; }
+.col-fecha { width: 15%; }
+.col-tarea { width: 40%; }
+.col-accion { width: 5%; }
+
+.tabla-planificacion-final td {
+    padding: 12px 10px;
+    vertical-align: middle;
+}
+
+/* Estilo de los inputs mejorado */
+.input-plan-azul {
+    width: 100% !important;
+    height: 38px !important;
+    border: 1.5px solid var(--gris-border) !important;
+    border-radius: 8px !important;
+    padding: 0 10px !important;
+    background-color: #ffffff !important;
+    font-size: 0.9rem !important;
+}
+
+/* Botón + centrado y alineado */
+.btn-add-row-final {
+    background: var(--azul-600) !important;
+    color: white !important;
+    border: none !important;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    transition: transform 0.2s;
+}
+
+.btn-add-row-final:hover {
+    transform: scale(1.1);
+    background: var(--azul-700) !important;
+}
+
+/* Filas del cuerpo para que no se vean pegadas */
+#body_ejecutantes tr td {
+    border-bottom: 1px solid var(--gris-border);
+}
+
+/* --- BOTÓN DE GUARDADO --- */
+.btn-guardar-familia {
+    background: #2563eb !important; /* Azul sólido */
+    color: white !important;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.btn-guardar-familia:hover {
+    background: #1d4ed8 !important;
+    transform: translateY(-2px);
+}
+
+/* --- ALERTA PERSONALIZADA (TOAST) --- */
+.alerta-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #10b981; /* Verde éxito */
+    color: white;
+    padding: 15px 25px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    transform: translateX(120%); /* Fuera de pantalla al inicio */
+    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.alerta-toast.show {
+    transform: translateX(0); /* Entra a pantalla */
+}
+
+.alerta-toast i {
+    font-size: 1.2rem;
 }
