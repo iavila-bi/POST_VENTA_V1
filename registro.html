@@ -88,7 +88,7 @@
 
         <div class="grupo-input">
             <label>Familia *</label>
-            <select id="select_familia">
+            <select id="select_familia" onchange="cargarSubfamilias()">
                 <option value="">Cargando familias...</option>
             </select>
         </div>
@@ -174,7 +174,7 @@
     </div>
 </div>
 <div class="contenedor-boton-final">
-    <button type="button" class="btn-agregar-postventa" id="btn_agregar_tabla" disabled>
+    <button type="button" class="btn-agregar-postventa" id="btn_agregar_tabla" onclick="guardarFamiliaCompleta()" disabled></button>
         <i class="fas fa-lock" id="icono_boton"></i> Agregar familia a la Postventa
     </button>
 </div>

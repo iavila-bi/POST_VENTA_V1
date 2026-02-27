@@ -1,3 +1,4 @@
+console.log("🔥 VERSION ACTUAL DEL SERVER CARGADA");
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -189,22 +190,24 @@ app.post('/api/guardar-familia-completa', async (req, res) => {
 
         // 1️⃣ Insertar registro_familias
         const resRegistro = await client.query(
-            `INSERT INTO registro_familias
-            (id_postventa, id_familia, id_subfamilia, id_responsable, recinto, comentarios, fecha_firma_acta)
-            VALUES ($1,$2,$3,$4,$5,$6,$7)
-            RETURNING id_registro_familia`,
+            `INSERT INTO registros_familias
+            (id_postventa, id_familia, id_subfamilia, id_responsable, recinto, comentarios_previos, fecha_levantamiento, fecha_visita, fecha_firma_acta)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+            RETURNING id_registro`,
             [
                 registro.id_postventa,
                 registro.id_familia,
                 registro.id_subfamilia,
                 registro.id_responsable,
                 registro.recinto,
-                registro.comentarios,
-                registro.fecha_acta
+                registro.comentarios_previos,
+                registro.fecha_levantamiento,
+                registro.fecha_visita,
+                registro.fecha_firma_acta
             ]
         );
 
-        const id_registro_familia = resRegistro.rows[0].id_registro_familia;
+        const id_registro = resRegistro.rows[0].id_registro;
 
         // 2️⃣ Insertar tareas y ejecutantes
         for (const t of tareas) {
@@ -214,7 +217,7 @@ app.post('/api/guardar-familia-completa', async (req, res) => {
                 (id_registro_familia, descripcion_tarea, fecha_inicio, fecha_termino)
                 VALUES ($1,$2,$3,$4)
                 RETURNING id_tarea`,
-                [id_registro_familia, t.descripcion, t.inicio, t.termino]
+                [id_registro, t.descripcion, t.inicio, t.termino]
             );
 
             const id_tarea = resTarea.rows[0].id_tarea;
@@ -222,13 +225,14 @@ app.post('/api/guardar-familia-completa', async (req, res) => {
             await client.query(
                 `INSERT INTO tareas_ejecutantes (id_tarea, id_ejecutante)
                  VALUES ($1,$2)`,
-                [id_tarea, t.id_ejecutante]
+                [id_tarea, 
+                t.id_ejecutante]
             );
         }
 
         await client.query('COMMIT');
 
-        res.json({ success: true, id_registro_familia });
+        res.json({ success: true, id_registro });
 
     } catch (error) {
         await client.query('ROLLBACK');
