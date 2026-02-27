@@ -1,0 +1,269 @@
+/* ============================= */
+/* 🎨 PALETA CORPORATIVA */
+/* ============================= */
+
+:root {
+    --azul-900: #0f172a;
+    --azul-700: #1d4ed8;
+    --azul-600: #2563eb;
+    --azul-500: #3b82f6;
+    --azul-100: #eff6ff;
+    --azul-50: #f0f7ff;
+
+    --verde-ok: #10b981;
+    --gris-bg: #f1f5f9;
+    --gris-border: #e2e8f0;
+    --texto-oscuro: #1e293b;
+    --texto-claro: #64748b;
+    --blanco: #ffffff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background: var(--gris-bg);
+    color: var(--texto-oscuro);
+}
+
+/* ============================= */
+/* 🧭 SIDEBAR DASHBOARD */
+/* ============================= */
+
+.sidebar {
+    width: 260px;
+    background: linear-gradient(180deg, var(--azul-700), var(--azul-900));
+    color: white;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    padding-top: 20px;
+}
+
+.menu-lateral a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 25px;
+    color: #cbd5e1;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.menu-lateral a:hover {
+    background: rgba(255,255,255,0.08);
+    color: white;
+}
+
+/* ============================= */
+/* 📦 CONTENIDO */
+/* ============================= */
+
+.contenido {
+    margin-left: 260px;
+    padding: 40px;
+}
+
+/* ============================= */
+/* 🧱 TARJETAS */
+/* ============================= */
+
+.tarjeta-modulo {
+    background: var(--blanco);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 30px;
+    border: 1px solid var(--gris-border);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+}
+
+.tarjeta-modulo:hover {
+    transform: translateY(-3px);
+}
+
+/* ============================= */
+/* 🏷 TITULOS */
+/* ============================= */
+
+.titulo-seccion {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--azul-100);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--azul-700);
+}
+
+/* ============================= */
+/* 📋 GRID FORMULARIOS */
+/* ============================= */
+
+.grid-campos-doble {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.field-full {
+    grid-column: 1 / -1;
+}
+
+/* ============================= */
+/* 📝 INPUTS */
+/* ============================= */
+
+.grupo-input label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--texto-claro);
+    margin-bottom: 6px;
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+input, select, textarea {
+    width: 100%;
+    height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--gris-border);
+    border-radius: 10px;
+    background: white;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--azul-500);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    outline: none;
+}
+
+input[readonly] {
+    background: #f8fafc;
+    color: var(--texto-claro);
+}
+
+/* ============================= */
+/* 🔵 BOTONES */
+/* ============================= */
+
+.btn-principal {
+    background: linear-gradient(135deg, var(--azul-600), var(--azul-700));
+    color: white;
+    border: none;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-principal:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(37,99,235,0.3);
+}
+
+.btn-secundario {
+    background: #e2e8f0;
+    border: none;
+    padding: 12px 22px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+button:disabled {
+    background: #d1d5db !important;
+    color: #9ca3af !important;
+    cursor: not-allowed;
+}
+
+/* ============================= */
+/* 📊 TABLA */
+/* ============================= */
+
+.tabla-dinamica {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.tabla-dinamica th {
+    text-align: left;
+    font-size: 0.85rem;
+    color: var(--azul-700);
+    padding: 12px 8px;
+    border-bottom: 2px solid var(--azul-100);
+}
+
+.tabla-dinamica td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--gris-border);
+}
+
+/* ============================= */
+/* 🟢 TOAST NOTIFICACIÓN */
+/* ============================= */
+
+.toast-exito {
+    position: fixed;
+    top: 25px;
+    right: 25px;
+    background: linear-gradient(135deg, var(--verde-ok), #059669);
+    color: white;
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.3s ease;
+    z-index: 9999;
+}
+
+.toast-exito.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ============================= */
+/* 📌 POSTVENTA ANCLADA */
+/* ============================= */
+
+#banner_anclaje {
+    position: fixed;
+    top: 90px;
+    right: 25px;
+    z-index: 1000;
+}
+
+.anclaje-card {
+    background: white;
+    border-left: 5px solid var(--azul-600);
+    padding: 15px 20px;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(37,99,235,0.2);
+    animation: slideIn 0.4s ease;
+}
+
+.anclaje-card strong {
+    color: var(--azul-700);
+}
+
+.anclaje-card small {
+    color: var(--texto-claro);
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
