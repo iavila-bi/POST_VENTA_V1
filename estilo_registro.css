@@ -612,115 +612,91 @@ button:disabled {
     color: white;
 }
 
-/* --- CORRECCIÓN DEFINITIVA TABLA PLANIFICACIÓN --- */
+/* --- ESTILOS MEJORADOS PARA LA TABLA DE PLANIFICACIÓN --- */
 
-.tabla-planificacion-final {
-    width: 100% !important;
-    border-collapse: collapse !important; /* Cambiado a collapse para evitar descuadres */
-    margin-top: 15px;
+.seccion-planificacion-azul {
+    margin-top: 30px !important;
 }
 
-.tabla-planificacion-final th {
+.tabla-planificacion {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px; /* Espaciado entre filas */
+    margin-top: 10px;
+}
+
+.tabla-planificacion th {
     text-align: left;
     font-size: 0.75rem;
     color: var(--azul-700);
     text-transform: uppercase;
-    padding: 12px 10px;
+    padding: 0 15px;
+    letter-spacing: 0.5px;
     font-weight: 700;
-    border-bottom: 2px solid var(--azul-100);
 }
 
-/* Definición de anchos fijos para evitar saltos */
-.col-ejecutante { width: 25%; }
-.col-fecha { width: 15%; }
-.col-tarea { width: 40%; }
-.col-accion { width: 5%; }
-
-.tabla-planificacion-final td {
-    padding: 12px 10px;
+/* Estilo de las celdas */
+.tabla-planificacion td {
+    padding: 0 10px;
     vertical-align: middle;
 }
 
-/* Estilo de los inputs mejorado */
+/* Inputs dentro de la tabla */
 .input-plan-azul {
     width: 100% !important;
-    height: 38px !important;
+    height: 40px !important;
     border: 1.5px solid var(--gris-border) !important;
     border-radius: 8px !important;
-    padding: 0 10px !important;
-    background-color: #ffffff !important;
+    padding: 0 12px !important;
+    background-color: #f8fafc !important; /* Gris muy claro para inputs */
     font-size: 0.9rem !important;
+    transition: all 0.2s;
 }
 
-/* Botón + centrado y alineado */
-.btn-add-row-final {
+.input-plan-azul:focus {
+    border-color: var(--azul-500) !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    outline: none;
+}
+
+/* El botón de agregar (+) */
+.btn-add-row {
     background: var(--azul-600) !important;
     color: white !important;
     border: none !important;
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto;
-    transition: transform 0.2s;
+    transition: all 0.2s;
+    font-size: 1.1rem;
 }
 
-.btn-add-row-final:hover {
-    transform: scale(1.1);
+.btn-add-row:hover {
     background: var(--azul-700) !important;
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
 }
 
-/* Filas del cuerpo para que no se vean pegadas */
+/* Estilo para las filas ya agregadas en el body */
 #body_ejecutantes tr td {
+    background: white;
+    border-top: 1px solid var(--gris-border);
     border-bottom: 1px solid var(--gris-border);
+    height: 50px;
 }
 
-/* --- BOTÓN DE GUARDADO --- */
-.btn-guardar-familia {
-    background: #2563eb !important; /* Azul sólido */
-    color: white !important;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    transition: all 0.3s;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+#body_ejecutantes tr td:first-child {
+    border-left: 1px solid var(--gris-border);
+    border-radius: 8px 0 0 8px;
 }
 
-.btn-guardar-familia:hover {
-    background: #1d4ed8 !important;
-    transform: translateY(-2px);
+#body_ejecutantes tr td:last-child {
+    border-right: 1px solid var(--gris-border);
+    border-radius: 0 8px 8px 0;
 }
 
-/* --- ALERTA PERSONALIZADA (TOAST) --- */
-.alerta-toast {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: #10b981; /* Verde éxito */
-    color: white;
-    padding: 15px 25px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    z-index: 9999;
-    transform: translateX(120%); /* Fuera de pantalla al inicio */
-    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-.alerta-toast.show {
-    transform: translateX(0); /* Entra a pantalla */
-}
-
-.alerta-toast i {
-    font-size: 1.2rem;
-}

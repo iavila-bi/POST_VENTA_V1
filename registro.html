@@ -83,17 +83,20 @@
              placeholder="912345678"
              maxlength="9"
              oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 9)"
+             
              >
             </div>
         </div>
 
         <div class="form-actions-postventa">
-            <button type="button" class="btn-apertura" onclick="crearPostventa()">
-                <i class="fas fa-plus"></i> Crear Postventa
-            </button>
+    <button type="button" id="btn_agregar_tabla" class="btn-principal" onclick="crearPostventa()">
+        <i id="icono_boton" class="fas fa-plus"></i> Crear Postventa
+    </button>
+    <button type="button" id="btn_nueva_postventa" class="btn-secundario">
+        Nueva Postventa
+    </button>
+</div>
             
-            <button type="button" id="btn_nueva_postventa" class="btn-secundario">Nueva Postventa</button>
-        </div>
     </div>
 </div>
         <div class="tarjeta-modulo">
@@ -202,10 +205,9 @@
     </div>
 </div>
 <div class="contenedor-accion-familia">
-    <button type="button" class="btn-guardar-familia" onclick="guardarFamilia()">
-        <i class="fas fa-save"></i>
-        <span>Agregar familia a la Postventa</span>
-    </button>
+    <button type="button" class="btn-guardar-familia" onclick="guardarFamiliaCompleta()">
+    <i class="fas fa-save"></i> Agregar familia a la Postventa
+</button>
 </div>
 
     </div>
@@ -230,5 +232,10 @@
         </div>
     </div>
     <script src="logica_registro.js"></script>
+
+    <div id="toast_familia" class="toast-exito-verde">
+    <i class="fas fa-check-circle"></i>
+    <span>¡Familia agregada con éxito!</span>
+</div>
 </body>
 </html>

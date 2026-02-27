@@ -159,6 +159,8 @@ function activarBotonNuevaPostventa() {
 
 
 // =====================================================
+
+// =====================================================
 // CARGAR FAMILIAS
 // =====================================================
 async function cargarFamilias() {
@@ -243,36 +245,35 @@ function confirmarNuevaFila() {
 
 // =====================================================
 // GUARDAR FAMILIA COMPLETA
-// =====================================================
 async function guardarFamiliaCompleta() {
-
+    // 1. Validar que exista una postventa activa
     if (!postventaActiva) {
         alert("Error: No hay una Postventa anclada. Genere una primero.");
         return;
     }
 
-   const registro = {
-    id_postventa: postventaActiva,
-    id_familia: document.getElementById("select_familia").value,
-    id_subfamilia: document.getElementById("select_subfamilia").value,
-    id_responsable: document.getElementById("reg_responsable").value,
-    recinto: document.getElementById("reg_recinto").value,
+    // 2. Recolectar datos (Asegurando que no vayan NULL a columnas obligatorias)
+    const registro = {
+        id_postventa: postventaActiva,
+        id_familia: document.getElementById("select_familia").value,
+        id_subfamilia: document.getElementById("select_subfamilia").value,
+        id_responsable: document.getElementById("reg_responsable").value,
+        recinto: document.getElementById("reg_recinto").value,
+        comentarios_previos: document.getElementById("reg_comentarios_cliente").value,
+        fecha_firma_acta: document.getElementById("fecha_firma_acta").value,
+        
+        // CORRECCIÓN CLAVE: Usamos la fecha del acta o la de hoy 
+        // para que 'fecha_levantamiento' nunca sea NULL y no rompa la DB
+        fecha_levantamiento: document.getElementById("fecha_firma_acta").value || new Date().toISOString().split('T')[0],
+        fecha_visita: document.getElementById("fecha_firma_acta").value || new Date().toISOString().split('T')[0]
+    };
 
-    comentarios_previos: document.getElementById("reg_comentarios_cliente").value,
-
-    fecha_levantamiento: document.getElementById("reg_fecha_lev").value,
-
-    fecha_visita: document.getElementById("reg_fecha_visita").value || null,
-
-    fecha_firma_acta: document.getElementById("fecha_firma_acta").value || null
-};
-
+    // 3. Recolectar tareas
     const tareas = [];
     const filas = document.querySelectorAll(".fila-tarea");
 
     filas.forEach(fila => {
         const celdas = fila.children;
-
         tareas.push({
             id_ejecutante: celdas[0].dataset.id,
             inicio: celdas[1].innerText,
@@ -281,18 +282,44 @@ async function guardarFamiliaCompleta() {
         });
     });
 
-    const response = await fetch("/api/guardar-familia-completa", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ registro, tareas })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        alert("Error al guardar familia");
+    if (tareas.length === 0) {
+        alert("Debe agregar al menos una tarea.");
         return;
     }
 
-    alert("Familia guardada correctamente");
+    try {
+        const response = await fetch("/api/guardar-familia-completa", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ registro, tareas })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Error en el servidor");
+        }
+
+        // --- ÉXITO ---
+        
+        // Mostrar alerta verde (Toast)
+        const toast = document.getElementById('toast_familia');
+        if (toast) {
+            toast.classList.add('visible');
+            setTimeout(() => toast.classList.remove('visible'), 3000);
+        }
+
+        // Limpiar campos de la sección familia
+        document.querySelectorAll('.input-familia').forEach(i => i.value = "");
+        
+        // Limpiar tabla de tareas
+        const tabla = document.getElementById("body_ejecutantes");
+        if (tabla) tabla.innerHTML = "";
+
+        console.log("Guardado exitoso con ID:", data.id_registro);
+
+    } catch (error) {
+        console.error("Error al guardar:", error);
+        alert("No se pudo guardar: " + error.message);
+    }
 }
