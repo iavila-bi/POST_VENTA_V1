@@ -61,7 +61,9 @@
                 <span class="telefono-prefix">+56</span>
                 <input type="tel" id="telefono_cliente" class="telefono-input" placeholder="912345678" maxlength="9" oninput = "this.value = this.value.replace(/[^0-9]/g, '');"> </div>
             <div class="form-actions-postventa">
-    <button type="button" id="btn_generar_postventa" class="btn-primario">Generar Postventa</button>
+<button type="button" class="btn-apertura" onclick="crearPostventa()">
+    <i class="fas fa-key"></i> Crear Postventa
+</button>
     <button type="button" id="btn_nueva_postventa" class="btn-secundario">Nueva Postventa</button>
 </div>
         </div>
@@ -130,48 +132,63 @@
             <textarea id="reg_observaciones_internas" rows="2" placeholder="Notas técnicas o acciones tomadas..."></textarea>
         </div>
     </div>
-<div class="planificacion-container">
-    <label class="label-seccion">Ejecutantes y planificación *</label>
-    
-    <div class="tabla-dinamica-wrapper">
-        <table id="tabla_ejecutantes_plan" class="tabla-dinamica">
+
+<div class="grupo-input" style="margin-bottom: 15px;">
+    <label class="label-azul-fuerte">Fecha Firma Acta (Cierre)</label>
+    <input type="date" id="fecha_firma_acta" class="input-plan-azul">
+</div>
+
+<div class="seccion-planificacion-azul">
+    <h3 class="titulo-seccion-azul">Ejecutantes y planificación *</h3>
+    <div class="tabla-scroll-wrapper">
+        <table id="tabla_ejecutantes_plan">
             <thead>
                 <tr>
-                    <th>Ejecutante</th>
+                    <th style="width: 35%;">Ejecutante</th>
                     <th>Inicio</th>
                     <th>Término</th>
-                    <th>Tarea</th>
+                    <th style="width: 35%;">Tarea Realizada</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody id="body_ejecutantes">
                 </tbody>
+            <tfoot>
+                <tr class="fila-input-nueva">
+                    <td>
+                        <select id="input_sel_ejecutante" class="input-plan-azul">
+                            <option value="" disabled selected>Seleccione para agregar...</option>
+                            </select>
+                    </td>
+                    <td><input type="date" id="input_f_inicio" class="input-plan-azul" value="2026-02-26"></td>
+                    <td><input type="date" id="input_f_termino" class="input-plan-azul" value="2026-02-26"></td>
+                    <td><input type="text" id="input_f_tarea" class="input-plan-azul" placeholder="Escriba la tarea..."></td>
+                    <td>
+                        <button type="button" onclick="confirmarNuevaFila()" class="btn-confirmar-azul">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </td>
+                </tr>
+            </tfoot>
         </table>
     </div>
-
-    <div class="acciones-tabla-ejecutante">
-        <button type="button" id="btn_add_ejecutante_row" class="btn-sub-accion">
-            <i class="fas fa-plus"></i> + Agregar ejecutante
-        </button>
+</div>
+<div class="contenedor-boton-final">
+    <button type="button" class="btn-agregar-postventa" id="btn_agregar_tabla" disabled>
+        <i class="fas fa-lock" id="icono_boton"></i> Agregar familia a la Postventa
+    </button>
+</div>
     </div>
 </div>
-
-<button type="button" id="btn_finalizar_familia" class="btn-primary-vibrante">
-    Agregar familia a la Postventa
-</button>
-
-<div id="contenedor_ultimas_familias" class="ultimas-familias-list">
-    <h4>Últimas 5 familias agregadas</h4>
-    <ul id="lista_recientes"></ul>
 </div>
-    <div class="contenedor-boton">
-        <button type="button" class="btn-agregar" id="btn_agregar_tabla">
-            <i class="fas fa-plus"></i> Agregar familia
-        </button>
+    </div>
+
+<div class="historial-anclaje">
+    <p class="label-ancladas">FAMILIAS ANCLADAS A ESTA POSTVENTA:</p>
+    <div id="lista_recientes_chips" class="flex-chips">
+        <span class="sin-registros">Esperando primer registro...</span>
     </div>
 </div>
-        </div>
-
         <div class="tarjeta-modulo">
             <h3 class="titulo-seccion"><i class="fas fa-list"></i> Últimos Registros</h3>
             <div class="tabla-responsive">

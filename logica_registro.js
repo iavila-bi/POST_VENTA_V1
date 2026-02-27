@@ -1,8 +1,97 @@
+let ID_POSTVENTA_ACTUAL = null; // Sin 'const', debe ser 'let' para que cambie
+// Este evento detecta cuando la página está lista y dispara las cargas
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("🚀 Página lista, cargando datos...");
+    cargarProyectos(); // Carga tus proyectos
+    cargarFamilias();  // Carga tus familias
+    cargarDatosIniciales(); // <--- ESTA ES LA QUE LLENA EL SELECTOR DE EJECUTANTES
+});
+
+
 /* ==========================================
    CONFIGURACIÓN Y CARGA INICIAL
    ========================================== */
 const BASE_URL = 'http://localhost:3000'; 
+//////CREACION PV
+async function crearPostventa() {
 
+    const idInmueble = document.getElementById('id_inmueble').value;
+    const nombreCliente = document.getElementById('nombre_cliente').value;
+    const contactoCliente = document.getElementById('telefono_cliente').value;
+    const estadoTicket = document.getElementById('estado_ticket').value;
+
+    if (!idInmueble) {
+        return alert("⚠️ Seleccione un inmueble.");
+    }
+
+    if (!nombreCliente.trim()) {
+        return alert("⚠️ Ingrese nombre del cliente.");
+    }
+
+    try {
+        const res = await fetch(`${BASE_URL}/api/postventas/crear`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                id_inmueble: parseInt(idInmueble),
+                nombre_cliente: nombreCliente,
+                numero_contacto: contactoCliente,
+                estado_ticket: estadoTicket
+            })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            return alert("❌ Error servidor: " + data.error);
+        }
+
+        ID_POSTVENTA_ACTUAL = data.id_postventa;
+
+        alert(`✅ Postventa #${ID_POSTVENTA_ACTUAL} creada correctamente.`);
+
+        document.getElementById('btn_agregar_tabla').disabled = false;
+
+    } catch (err) {
+        console.error(err);
+        alert("Error de conexión.");
+    }
+}
+
+function mostrarBannerAnclado(proy, unit, id) {
+    let banner = document.getElementById('banner_fijado');
+    if(!banner) {
+        banner = document.createElement('div');
+        banner.id = "banner_fijado";
+        document.body.appendChild(banner);
+    }
+    
+    // CSS dinámico para que flote en la esquina superior derecha
+    Object.assign(banner.style, {
+        position: 'fixed',
+        top: '20px',
+        right: '20px',
+        backgroundColor: '#1e3a8a',
+        color: 'white',
+        padding: '12px 20px',
+        borderRadius: '10px',
+        boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
+        zIndex: '10000',
+        borderLeft: '5px solid #3b82f6',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '15px'
+    });
+
+    banner.innerHTML = `
+        <i class="fas fa-anchor" style="font-size: 1.5rem; color: #93c5fd;"></i>
+        <div>
+            <div style="font-size: 0.7rem; opacity: 0.8; text-transform: uppercase;">Unidad Anclada</div>
+            <div style="font-weight: 700;">${proy} - ${unit}</div>
+            <div style="font-size: 0.8rem; color: #bfdbfe;">ID PV: #${id}</div>
+        </div>
+    `;
+}
 // 1. Obtener Proyectos (Corregido nombre para el disparador)
 async function cargarProyectos() {
     const selectProyecto = document.getElementById('id_proyecto');
@@ -203,31 +292,192 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Botón: Generar Postventa
-document.getElementById('btn_generar_postventa')?.addEventListener('click', function() {
-    const cliente = document.getElementById('val-nombre-cliente')?.value; // Ajusta según tu ID real
-    const contacto = document.getElementById('telefono_cliente')?.value;
-
-    if (!cliente || contacto.length < 9) {
-        alert("⚠️ Por favor, ingrese el nombre del cliente y un contacto válido (9 dígitos) antes de continuar.");
-        return;
-    }
-
-    // Bloqueamos los datos del cliente para que no cambien a mitad del proceso
-    document.getElementById('val-nombre-cliente').readOnly = true;
-    document.getElementById('telefono_cliente').readOnly = true;
-    
+// Busca esta parte en tu código y reemplázala:
     // Habilitamos la Sección 3 para añadir fallas
     const btnAgregar = document.getElementById('btn_agregar_tabla');
-    btnAgregar.disabled = false;
-    btnAgregar.style.opacity = "1";
-    btnAgregar.title = "";
+    const icono = document.getElementById('icono_boton'); // Necesitamos el ID del ícono
 
-    alert("✅ Postventa anclada. Ahora puede añadir las familias correspondientes.");
-});
-
+    if (btnAgregar) {
+        btnAgregar.disabled = false;
+        btnAgregar.style.opacity = "1";
+        btnAgregar.title = "";
+        
+        // Cambiamos el candado por el ícono de disco/guardar
+        if (icono) {
+            icono.className = 'fas fa-save'; 
+        }
+    }
 // Botón: Nueva Postventa (Reset total)
 document.getElementById('btn_nueva_postventa')?.addEventListener('click', function() {
     if (confirm("¿Está seguro de que desea iniciar una nueva postventa? Se perderán los datos no guardados.")) {
         location.reload(); // La forma más rápida y segura de limpiar todo
     }
 });
+
+
+// VINCULAR EL BOTÓN (Asegúrate de que esto se ejecute al cargar la página)
+document.getElementById('btn_agregar_tabla').onclick = finalizarRegistroFamilia;
+
+// Función para agregar una fila con el selector correcto
+// REEMPLAZA tu función de agregar fila por esta:
+// 1. Función para agregar filas con el look profesional
+// 1. Cargar los ejecutantes en el selector permanente al iniciar
+function cargarSelectorEjecutantes(lista) {
+    const select = document.getElementById('input_sel_ejecutante');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="" disabled selected>Seleccione para agregar...</option>';
+    lista.forEach(e => {
+        select.innerHTML += `<option value="${e.id_ejecutante}">${e.nombre_ejecutante.toUpperCase()} — ${e.especialidad.toUpperCase()}</option>`;
+    });
+}
+/* ============================================================
+   LÓGICA DE EJECUTANTES Y PLANIFICACIÓN (AZUL)
+   ============================================================ */
+
+// 1. CARGA INICIAL: Trae los nombres del servidor al selector azul
+async function cargarDatosIniciales() {
+    try {
+        const respuesta = await fetch(`${BASE_URL}/api/ejecutantes`);
+        
+        // Si el servidor responde 404, esto lanzará el error
+        if (!respuesta.ok) throw new Error("No se encontró la ruta /api/ejecutantes en el servidor");
+        
+        const ejecutantes = await respuesta.json();
+        console.log("✅ Ejecutantes cargados:", ejecutantes);
+        
+        cargarSelectorEjecutantes(ejecutantes);
+        
+    } catch (error) {
+        console.error("❌ Error al cargar ejecutantes:", error);
+    }
+}
+
+function cargarSelectorEjecutantes(lista) {
+    const select = document.getElementById('input_sel_ejecutante');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="" disabled selected>Seleccione para agregar...</option>';
+    
+    lista.forEach(e => {
+        const option = document.createElement('option');
+        option.value = e.id_ejecutante;
+        
+        // Formato Profesional: NOMBRE — ESPECIALIDAD
+        const nombre = (e.nombre_ejecutante || "Sin nombre").toUpperCase();
+        const cargo = (e.especialidad || "General").toUpperCase();
+        
+        option.textContent = `${nombre} — ${cargo}`;
+        select.appendChild(option);
+    });
+}
+
+// 3. ANCLAR FILA: Pasa los datos de la fila de entrada a la tabla de arriba
+function confirmarNuevaFila() {
+    const sel = document.getElementById('input_sel_ejecutante');
+    const ini = document.getElementById('input_f_inicio');
+    const ter = document.getElementById('input_f_termino');
+    const tar = document.getElementById('input_f_tarea');
+
+    if (!sel.value) {
+        alert("⚠️ Por favor, seleccione un ejecutante de la lista.");
+        return;
+    }
+
+    const tbody = document.getElementById('body_ejecutantes');
+    const tr = document.createElement('tr');
+
+    // Recuperamos el texto "NOMBRE — CARGO" que el usuario seleccionó
+    const textoMostrar = sel.options[sel.selectedIndex].text;
+
+    tr.innerHTML = `
+        <td style="font-weight: 600; color: #1e40af;">
+            <input type="hidden" class="select-ejecutante-custom" value="${sel.value}">
+            ${textoMostrar}
+        </td>
+        <td><input type="date" class="input-plan-azul date-inicio" value="${ini.value}"></td>
+        <td><input type="date" class="input-plan-azul date-termino" value="${ter.value}"></td>
+        <td><input type="text" class="input-plan-azul in-tarea" value="${tar.value}"></td>
+        <td style="text-align:center;">
+            <button type="button" class="btn-borrar-fila" onclick="this.closest('tr').remove()" title="Quitar">
+                <i class="fas fa-times"></i>
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(tr);
+
+    // Limpiamos selector y tarea para la siguiente carga rápida
+    sel.value = "";
+    tar.value = "";
+    sel.focus(); // Devuelve el foco al selector para velocidad
+}
+
+// 4. GUARDADO FINAL: Envía todo al servidor
+async function finalizarRegistroFamilia() {
+    // Validar anclaje de postventa
+    if (!typeof ID_POSTVENTA_ACTUAL !== 'undefined' || !ID_POSTVENTA_ACTUAL) {
+        return alert("⚠️ Error: No hay una Postventa anclada. Genere una primero.");
+    }
+
+    const filas = document.querySelectorAll('#body_ejecutantes tr');
+    if (filas.length === 0) return alert("⚠️ Agregue al menos un ejecutante a la planificación.");
+
+    // Construcción del objeto de envío (Payload)
+    const datosEnvio = {
+        registro: {
+            id_postventa: ID_POSTVENTA_ACTUAL,
+            id_familia: document.getElementById('select_familia').value,
+            id_subfamilia: document.getElementById('select_subfamilia').value,
+            id_responsable: document.getElementById('reg_responsable').value,
+            recinto: document.getElementById('reg_recinto').value,
+            comentarios: document.getElementById('reg_comentarios').value,
+            fecha_acta: document.getElementById('fecha_firma_acta').value // NUEVO CAMPO
+        },
+        tareas: Array.from(filas).map(f => ({
+            id_ejecutante: f.querySelector('.select-ejecutante-custom').value,
+            inicio: f.querySelector('.date-inicio').value,
+            termino: f.querySelector('.date-termino').value,
+            descripcion: f.querySelector('.in-tarea').value
+        }))
+    };
+
+    try {
+        const res = await fetch(`${BASE_URL}/api/guardar-familia-completa`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datosEnvio)
+        });
+
+        if (res.ok) {
+            alert("✅ Registro y Planificación guardados con éxito.");
+            
+            // Actualizar burbujas de historial
+            const selFam = document.getElementById('select_familia');
+            const nombreFam = selFam.options[selFam.selectedIndex].text;
+            actualizarBurbujasConfirmacion(nombreFam);
+
+            // LIMPIEZA POST-GUARDADO
+            document.getElementById('body_ejecutantes').innerHTML = ''; 
+            document.getElementById('fecha_firma_acta').value = '';
+            if (typeof limpiarSeccionRegistro === 'function') limpiarSeccionRegistro();
+            
+        } else {
+            const errorData = await res.json();
+            alert("❌ Error al guardar: " + (errorData.error || "Consulte al administrador"));
+        }
+    } catch (e) {
+        console.error("Error en el envío:", e);
+        alert("❌ Error de conexión con el servidor.");
+    }
+}
+
+// Vinculación del botón principal (Asegurar que el ID existe en el HTML)
+document.getElementById('btn_agregar_tabla')?.addEventListener('click', finalizarRegistroFamilia);
+
+// Ejecutar cuando cargue la página
+window.onload = function() {
+    cargarProyectos();
+    cargarFamilias();
+    cargarDatosIniciales(); // <--- Esta es la clave
+};
