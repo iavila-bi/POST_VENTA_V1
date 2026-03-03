@@ -5,6 +5,98 @@ let postventaActiva = null;
 let listaEjecutantes = [];
 let historialFamilias = [];
 
+function animarValorKpi(elemento, valorObjetivo, decimales = 0) {
+    if (!elemento) return;
+
+    const objetivo = Number(valorObjetivo || 0);
+    const inicio = Number(elemento.dataset.valorActual || 0);
+    const duracion = 700;
+    const tiempoInicio = performance.now();
+
+    function paso(tiempoActual) {
+        const progreso = Math.min((tiempoActual - tiempoInicio) / duracion, 1);
+        const eased = 1 - Math.pow(1 - progreso, 3);
+        const valor = inicio + (objetivo - inicio) * eased;
+        elemento.textContent = formatearNumero(valor, decimales);
+
+        if (progreso < 1) {
+            requestAnimationFrame(paso);
+        } else {
+            elemento.dataset.valorActual = String(objetivo);
+            elemento.classList.add("kpi-updated");
+            setTimeout(() => elemento.classList.remove("kpi-updated"), 420);
+        }
+    }
+
+    requestAnimationFrame(paso);
+}
+
+function formatearNumero(valor, decimales = 0) {
+    const n = Number(valor || 0);
+    return n.toLocaleString("es-CL", {
+        minimumFractionDigits: decimales,
+        maximumFractionDigits: decimales
+    });
+}
+
+async function cargarIndicadoresPostventa() {
+    try {
+        const res = await fetch("/api/indicadores-postventa");
+        if (!res.ok) throw new Error("No se pudieron cargar indicadores");
+
+        const data = await res.json();
+
+        const elCasas = document.getElementById("kpi_total_casas");
+        const elFamilias = document.getElementById("kpi_total_familias");
+        const elPromFamiliasCasa = document.getElementById("kpi_prom_familias_casa");
+        const elPromTareasFamilia = document.getElementById("kpi_prom_tareas_familia");
+
+        animarValorKpi(elCasas, data.total_casas_con_pv, 0);
+        animarValorKpi(elFamilias, data.total_familias_acumuladas, 0);
+        animarValorKpi(elPromFamiliasCasa, data.promedio_familias_por_casa, 2);
+        animarValorKpi(elPromTareasFamilia, data.promedio_tareas_por_familia, 2);
+    } catch (error) {
+        console.error("Error cargando indicadores:", error);
+    }
+}
+
+function renderizarFechaEncabezado() {
+    const el = document.getElementById("app_fecha");
+    if (!el) return;
+
+    const hoy = new Date();
+    el.textContent = hoy.toLocaleDateString("es-CL", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    });
+}
+
+function actualizarIndicadoresFlujo() {
+    const chipInmueble = document.getElementById("chip_inmueble");
+    const chipPostventa = document.getElementById("chip_postventa");
+    const chipFamilias = document.getElementById("chip_familias");
+    if (!chipInmueble || !chipPostventa || !chipFamilias) return;
+
+    const inmuebleCompleto = Boolean(
+        document.getElementById("id_proyecto")?.value &&
+        document.getElementById("id_inmueble")?.value &&
+        document.getElementById("estado_inmueble")?.value
+    );
+    const postventaCompleta = Boolean(postventaActiva);
+    const familiasCompleto = historialFamilias.length > 0;
+
+    chipInmueble.classList.toggle("completado", inmuebleCompleto);
+    chipInmueble.classList.toggle("pendiente", !inmuebleCompleto);
+
+    chipPostventa.classList.toggle("completado", postventaCompleta);
+    chipPostventa.classList.toggle("pendiente", !postventaCompleta);
+
+    chipFamilias.classList.toggle("completado", familiasCompleto);
+    chipFamilias.classList.toggle("pendiente", !familiasCompleto);
+}
+
 function mostrarAnclajePostventa() {
     const banner = document.getElementById("banner_anclaje");
     if (!banner || !postventaActiva) return;
@@ -89,6 +181,14 @@ document.addEventListener("DOMContentLoaded", () => {
     renderizarUltimosRegistros();
     limpiarAnclajePostventa();
     actualizarColorEtiquetaAccion();
+    actualizarIndicadoresFlujo();
+    renderizarFechaEncabezado();
+    cargarIndicadoresPostventa();
+
+    ["id_proyecto", "id_inmueble", "estado_inmueble"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener("change", actualizarIndicadoresFlujo);
+    });
 });
 //------------------------------------CARGA DE DATOS------------------//
 async function cargarProyectos() {
@@ -113,7 +213,10 @@ async function cargarIdentificadores() {
 
     const id_proyecto = document.getElementById("id_proyecto").value;
 
-    if (!id_proyecto) return;
+    if (!id_proyecto) {
+        actualizarIndicadoresFlujo();
+        return;
+    }
 
     const res = await fetch(`/api/proyectos/${id_proyecto}/inmuebles`);
     const data = await res.json();
@@ -132,6 +235,7 @@ async function cargarIdentificadores() {
     ordenados.forEach(i => {
         select.innerHTML += `<option value="${i.id_inmueble}">${i.numero_identificador}</option>`;
     });
+    actualizarIndicadoresFlujo();
 }
 
 //-- CARGAR DATOS DEL INMUEBLE--//
@@ -139,7 +243,10 @@ async function cargarDatosInmueble() {
 
     const id_inmueble = document.getElementById("id_inmueble").value;
 
-    if (!id_inmueble) return;
+    if (!id_inmueble) {
+        actualizarIndicadoresFlujo();
+        return;
+    }
 
     const res = await fetch(`/api/inmuebles/detalle/${id_inmueble}`);
     const data = await res.json();
@@ -148,6 +255,7 @@ async function cargarDatosInmueble() {
     document.getElementById("val-modelo").value = data.modelo || "";
     document.getElementById("val-orientacion").value = data.orientacion || "";
     document.getElementById("val-fecha").value = data.fecha_entrega?.split("T")[0] || "";
+    actualizarIndicadoresFlujo();
 }
 
 //-------CARGAR SUBFAMILIAS DINÃMICAMENTE-------//
@@ -224,6 +332,8 @@ async function crearPostventa() {
     document.getElementById("icono_boton").className = "fas fa-plus";
 
     mostrarAnclajePostventa();
+    actualizarIndicadoresFlujo();
+    cargarIndicadoresPostventa();
 }
 
 
@@ -231,8 +341,7 @@ async function crearPostventa() {
 // NUEVA POSTVENTA
 // =====================================================
 function activarBotonNuevaPostventa() {
-    document.getElementById("btn_nueva_postventa")
-        .addEventListener("click", () => {
+    const resetPostventa = () => {
             postventaActiva = null;
             historialFamilias = [];
             renderizarUltimosRegistros();
@@ -240,7 +349,16 @@ function activarBotonNuevaPostventa() {
             document.getElementById("btn_agregar_tabla").disabled = true;
             document.getElementById("icono_boton").className = "fas fa-lock";
             alert("Lista para crear nueva postventa");
-        });
+            actualizarIndicadoresFlujo();
+            cargarIndicadoresPostventa();
+    };
+
+    const botones = [
+        document.getElementById("btn_nueva_postventa"),
+        document.getElementById("btn_nueva_postventa_footer")
+    ].filter(Boolean);
+
+    botones.forEach(btn => btn.addEventListener("click", resetPostventa));
 }
 
 
@@ -348,7 +466,7 @@ async function guardarFamiliaCompleta() {
         etiqueta_accion: document.getElementById("etiqueta_accion").value,
         recinto: document.getElementById("reg_recinto").value,
         comentarios_previos: document.getElementById("reg_comentarios_cliente").value,
-        fecha_firma_acta: document.getElementById("fecha_firma_acta").value,
+        fecha_firma_acta: document.getElementById("fecha_firma_acta").value || null,
         
         // CORRECCIÃ“N CLAVE: Usamos la fecha del acta o la de hoy 
         // para que 'fecha_levantamiento' nunca sea NULL y no rompa la DB
@@ -410,7 +528,8 @@ async function guardarFamiliaCompleta() {
             responsable: responsableTxt
         });
         renderizarUltimosRegistros();
-    limpiarAnclajePostventa();
+        actualizarIndicadoresFlujo();
+        cargarIndicadoresPostventa();
         // Mostrar alerta verde (Toast)
         const toast = document.getElementById('toast_familia');
         if (toast) {

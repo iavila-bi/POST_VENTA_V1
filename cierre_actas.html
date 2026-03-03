@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Cierre de Actas | Grupo Patagual</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="estilo_cierre_actas.css">
+</head>
+<body>
+    <main class="page-wrap">
+        <header class="hero-cierre">
+            <a href="index.html" class="btn-volver">
+                <i class="fas fa-chevron-left"></i> Volver al Menú
+            </a>
+            <div class="hero-texto">
+                <h1>Gestión de Cierre de Actas</h1>
+                <p>Visualiza y gestiona solo familias pendientes de fecha firma de acta.</p>
+            </div>
+        </header>
+
+        <section class="panel-cierre">
+            <div class="filtros-barra">
+                <div class="filtro-item">
+                    <label for="filtro_proyecto">Proyecto</label>
+                    <select id="filtro_proyecto">
+                        <option value="">Todos los proyectos</option>
+                    </select>
+                </div>
+
+                <div class="filtro-item filtro-buscador">
+                    <label for="filtro_busqueda">Buscador</label>
+                    <input id="filtro_busqueda" type="text" placeholder="Buscar por cliente, familia, subfamilia, recinto o responsable">
+                </div>
+            </div>
+
+            <div class="meta-resultados">
+                <span id="resumen_resultados">0 pendientes</span>
+            </div>
+
+            <div class="tabla-wrap">
+                <table class="tabla-pendientes">
+                    <thead>
+                        <tr>
+                            <th>Proyecto</th>
+                            <th>Identificador</th>
+                            <th>Postventa</th>
+                            <th>Cliente</th>
+                            <th>Familia</th>
+                            <th>Subfamilia</th>
+                            <th>Recinto</th>
+                            <th>Responsable</th>
+                            <th>Origen</th>
+                            <th>Levantamiento</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody_pendientes">
+                        <tr><td colspan="10">Cargando registros...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="logica_cierre_actas.js"></script>
+</body>
+</html>
+

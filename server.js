@@ -34,6 +34,66 @@ app.get('/api/proyectos', async (req, res) => {
     }
 });
 
+app.get('/api/cierre-actas/pendientes', async (req, res) => {
+    try {
+        const { id_proyecto, q } = req.query;
+        const where = ['rf.fecha_firma_acta IS NULL'];
+        const params = [];
+
+        if (id_proyecto) {
+            params.push(id_proyecto);
+            where.push(`i.id_proyecto = $${params.length}`);
+        }
+
+        if (q) {
+            params.push(`%${q.trim()}%`);
+            where.push(`(
+                p.nombre_proyecto ILIKE $${params.length}
+                OR i.numero_identificador::text ILIKE $${params.length}
+                OR c.nombre_completo ILIKE $${params.length}
+                OR f.nombre_familia ILIKE $${params.length}
+                OR sf.nombre_subfamilia ILIKE $${params.length}
+                OR r.nombre_responsable ILIKE $${params.length}
+                OR rf.recinto ILIKE $${params.length}
+            )`);
+        }
+
+        const query = `
+            SELECT
+                rf.id_registro,
+                pv.id_postventa,
+                p.id_proyecto,
+                p.nombre_proyecto,
+                i.numero_identificador,
+                c.nombre_completo AS cliente,
+                f.nombre_familia AS familia,
+                sf.nombre_subfamilia AS subfamilia,
+                rf.recinto,
+                r.nombre_responsable AS responsable,
+                rf.origen,
+                rf.etiqueta_accion,
+                rf.fecha_levantamiento,
+                rf.fecha_visita
+            FROM registros_familias rf
+            JOIN postventas pv ON pv.id_postventa = rf.id_postventa
+            JOIN inmuebles i ON i.id_inmueble = pv.id_inmueble
+            JOIN proyectos p ON p.id_proyecto = i.id_proyecto
+            JOIN clientes c ON c.id_cliente = pv.id_cliente
+            LEFT JOIN familias f ON f.id_familia = rf.id_familia
+            LEFT JOIN subfamilias sf ON sf.id_subfamilia = rf.id_subfamilia
+            LEFT JOIN responsables r ON r.id_responsable = rf.id_responsable
+            WHERE ${where.join(' AND ')}
+            ORDER BY p.nombre_proyecto ASC, i.numero_identificador ASC, rf.fecha_levantamiento DESC, rf.id_registro DESC
+        `;
+
+        const result = await pool.query(query, params);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error cierre actas pendientes:', error);
+        res.status(500).json({ error: 'Error al obtener registros pendientes de cierre' });
+    }
+});
+
 app.get('/api/proyectos/:id_proyecto/inmuebles', async (req, res) => {
     try {
         const result = await pool.query(
@@ -116,6 +176,42 @@ app.get('/api/ejecutantes', async (req, res) => {
     } catch (error) {
         console.error('Error ejecutantes:', error);
         res.status(500).json({ error: 'Error al obtener ejecutantes' });
+    }
+});
+
+app.get('/api/indicadores-postventa', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            WITH casas AS (
+                SELECT COUNT(DISTINCT id_inmueble)::int AS total
+                FROM postventas
+            ),
+            familias AS (
+                SELECT COUNT(*)::int AS total
+                FROM registros_familias
+            ),
+            tareas AS (
+                SELECT COUNT(*)::int AS total
+                FROM tareas
+            )
+            SELECT
+                casas.total AS total_casas_con_pv,
+                familias.total AS total_familias_acumuladas,
+                CASE
+                    WHEN casas.total = 0 THEN 0
+                    ELSE ROUND(familias.total::numeric / casas.total, 2)
+                END AS promedio_familias_por_casa,
+                CASE
+                    WHEN familias.total = 0 THEN 0
+                    ELSE ROUND(tareas.total::numeric / familias.total, 2)
+                END AS promedio_tareas_por_familia
+            FROM casas, familias, tareas
+        `);
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error indicadores postventa:', error);
+        res.status(500).json({ error: 'Error al obtener indicadores' });
     }
 });
 
@@ -209,7 +305,7 @@ app.post('/api/guardar-familia-completa', async (req, res) => {
                 registro.comentarios_previos,
                 registro.fecha_levantamiento,
                 registro.fecha_visita,
-                registro.fecha_firma_acta
+                registro.fecha_firma_acta || null
             ]
         );
 

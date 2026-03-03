@@ -1,5 +1,5 @@
-/* ============================= */
-/* 🎨 PALETA CORPORATIVA */
+﻿/* ============================= */
+/* ðŸŽ¨ PALETA CORPORATIVA */
 /* ============================= */
 
 :root {
@@ -31,7 +31,7 @@ body {
 }
 
 /* ============================= */
-/* 🧭 SIDEBAR DASHBOARD */
+/* ðŸ§­ SIDEBAR DASHBOARD */
 /* ============================= */
 
 .sidebar {
@@ -61,7 +61,7 @@ body {
 }
 
 /* ============================= */
-/* 📦 CONTENIDO */
+/* ðŸ“¦ CONTENIDO */
 /* ============================= */
 
 .contenido {
@@ -72,7 +72,7 @@ body {
 }
 
 /* ============================= */
-/* 🧱 TARJETAS */
+/* ðŸ§± TARJETAS */
 /* ============================= */
 
 .tarjeta-modulo {
@@ -87,7 +87,7 @@ body {
 
 .tarjeta-postventa {
     margin-top: 60px !important;    /* Espacio suficiente pero no excesivo */
-    margin-bottom: 60px !important; /* Separa de la sección 3 */
+    margin-bottom: 60px !important; /* Separa de la secciÃ³n 3 */
     padding: 40px !important;       /* Aire interno para que respire el contenido */
     border-top: 5px solid var(--azul-600) !important; /* Identificador visual azul */
     background: var(--blanco);
@@ -106,7 +106,7 @@ body {
 }
 
 /* ============================= */
-/* 🏷 TITULOS */
+/* ðŸ· TITULOS */
 /* ============================= */
 
 .titulo-seccion {
@@ -123,7 +123,7 @@ body {
 }
 
 /* ============================= */
-/* 📋 GRID FORMULARIOS */
+/* ðŸ“‹ GRID FORMULARIOS */
 /* ============================= */
 
 .grid-campos-doble {
@@ -137,7 +137,7 @@ body {
 }
 
 /* ============================= */
-/* 📝 INPUTS */
+/* ðŸ“ INPUTS */
 /* ============================= */
 
 .grupo-input label {
@@ -173,7 +173,7 @@ input[readonly] {
 }
 
 /* ============================= */
-/* 🔵 BOTONES */
+/* ðŸ”µ BOTONES */
 /* ============================= */
 
 .btn-principal {
@@ -208,7 +208,7 @@ button:disabled {
 }
 
 /* ============================= */
-/* 📊 TABLA */
+/* ðŸ“Š TABLA */
 /* ============================= */
 
 .tabla-dinamica {
@@ -231,7 +231,7 @@ button:disabled {
 }
 
 /* ============================= */
-/* 🟢 TOAST NOTIFICACIÓN */
+/* ðŸŸ¢ TOAST NOTIFICACIÃ“N */
 /* ============================= */
 
 .toast-exito {
@@ -255,7 +255,7 @@ button:disabled {
 }
 
 /* ============================= */
-/* 📌 POSTVENTA ANCLADA */
+/* ðŸ“Œ POSTVENTA ANCLADA */
 /* ============================= */
 
 #banner_anclaje {
@@ -309,7 +309,7 @@ button:disabled {
     box-shadow: none !important;
 }
 
-/* Botón Crear Postventa (Azul y llamativo) */
+/* BotÃ³n Crear Postventa (Azul y llamativo) */
 .btn-apertura {
     background: linear-gradient(135deg, var(--azul-600), var(--azul-700)) !important;
     color: white !important;
@@ -330,7 +330,7 @@ button:disabled {
     transform: translateY(-1px);
 }
 
-/* Botón Nueva Postventa (Gris sutil) */
+/* BotÃ³n Nueva Postventa (Gris sutil) */
 .btn-secundario {
     background-color: #e2e8f0 !important;
     color: var(--texto-oscuro) !important;
@@ -341,7 +341,7 @@ button:disabled {
     cursor: pointer;
 }
 
-/* El botón de Volver al Dashboard */
+/* El botÃ³n de Volver al Dashboard */
 .btn-volver {
     display: flex;
     align-items: center;
@@ -364,15 +364,15 @@ button:disabled {
     transform: translateX(-4px); /* Efecto sutil de retroceso */
 }
 
-/* Alineación a la izquierda */
+/* AlineaciÃ³n a la izquierda */
 .header-left {
     display: flex;
-    flex-direction: column; /* El botón arriba, el título abajo */
+    flex-direction: column; /* El botÃ³n arriba, el tÃ­tulo abajo */
     gap: 15px;
     align-items: flex-start;
 }
 
-/* Título con mejor tipografía */
+/* TÃ­tulo con mejor tipografÃ­a */
 .header-left h1 {
     font-size: 2.2rem;
     color: #1e293b;
@@ -381,7 +381,7 @@ button:disabled {
     letter-spacing: -1px;
 }
 
-/* Botón de volver con estilo de 'pestaña' */
+/* BotÃ³n de volver con estilo de 'pestaÃ±a' */
 .btn-volver {
     text-decoration: none;
     color: #64748b;
@@ -404,16 +404,16 @@ button:disabled {
 
 /* Espaciado general del Header */
 .header-postventa {
-    padding: 80px 0 40px 0; /* 80px arriba para máxima elegancia */
+    padding: 80px 0 40px 0; /* 80px arriba para mÃ¡xima elegancia */
     text-align: center;
     position: relative;
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* Título imponente y centrado */
+/* TÃ­tulo imponente y centrado */
 .titulo-central h1 {
-    font-size: 2.8rem; /* Tamaño grande y legible */
+    font-size: 2.8rem; /* TamaÃ±o grande y legible */
     color: #0f172a;    /* Azul casi negro muy profesional */
     font-weight: 800;
     letter-spacing: -1.5px;
@@ -424,12 +424,12 @@ button:disabled {
     -webkit-text-fill-color: transparent; /* Efecto de degradado sutil */
 }
 
-/* Línea decorativa bajo el título */
+/* LÃ­nea decorativa bajo el tÃ­tulo */
 .sublinea-decorativa {
     display: none;
 }
 
-/* Botón de volver mejorado (arriba a la izquierda) */
+/* BotÃ³n de volver mejorado (arriba a la izquierda) */
 .btn-volver-top {
     position: absolute;
     top: 30px;
@@ -478,7 +478,7 @@ button:disabled {
 #estado_ticket {
     cursor: pointer;
     position: relative;
-    z-index: 20; /* Más alto para que el desplegable gane siempre */
+    z-index: 20; /* MÃ¡s alto para que el desplegable gane siempre */
 }
 
 /* Evita que el campo de contacto se desborde */
@@ -496,7 +496,7 @@ button:disabled {
     border-top: 1px solid #e2e8f0;
 }
 
-/* FUERZA EL ESPACIO PARA QUE EL MENÚ NO SE CORTE */
+/* FUERZA EL ESPACIO PARA QUE EL MENÃš NO SE CORTE */
 .tarjeta-postventa .grid-campos-doble {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important; /* Mantiene las 3 columnas */
@@ -505,7 +505,7 @@ button:disabled {
     padding-bottom: 20px !important;
 }
 
-/* ESTO HACE QUE EL SELECT FLOTE SOBRE TODO LO DEMÁS */
+/* ESTO HACE QUE EL SELECT FLOTE SOBRE TODO LO DEMÃS */
 .grupo-input {
     position: relative !important;
     z-index: 999 !important;
@@ -513,7 +513,7 @@ button:disabled {
 
 #estado_ticket {
     position: relative !important;
-    z-index: 100 !important; /* Capa superior máxima */
+    z-index: 100 !important; /* Capa superior mÃ¡xima */
     cursor: pointer;
 }
 
@@ -546,7 +546,7 @@ button:disabled {
 }
 
 
-/* --- ESTILOS TABLA PLANIFICACIÓN --- */
+/* --- ESTILOS TABLA PLANIFICACIÃ“N --- */
 
 .contenedor-tabla {
     overflow-x: auto;
@@ -583,12 +583,12 @@ button:disabled {
     width: 100% !important;
 }
 
-/* Anchos específicos para que no se muevan */
+/* Anchos especÃ­ficos para que no se muevan */
 .select-ejecutante { width: 180px !important; }
 .input-fecha { width: 150px !important; }
 .input-tarea { min-width: 250px !important; }
 
-/* Botón de agregar (+) */
+/* BotÃ³n de agregar (+) */
 .btn-add-row {
     background: var(--azul-50);
     color: var(--azul-600);
@@ -608,7 +608,7 @@ button:disabled {
     color: white;
 }
 
-/* --- ESTILOS MEJORADOS PARA LA TABLA DE PLANIFICACIÓN --- */
+/* --- ESTILOS MEJORADOS PARA LA TABLA DE PLANIFICACIÃ“N --- */
 
 .seccion-planificacion-azul {
     margin-top: 30px !important;
@@ -656,7 +656,7 @@ button:disabled {
     outline: none;
 }
 
-/* El botón de agregar (+) */
+/* El botÃ³n de agregar (+) */
 .btn-add-row {
     background: var(--azul-600) !important;
     color: white !important;
@@ -701,7 +701,7 @@ button:disabled {
 /* AJUSTE VISUAL TABLAS REGISTRO */
 /* ============================= */
 
-/* Contenedor principal de planificación */
+/* Contenedor principal de planificaciÃ³n */
 .seccion-planificacion-azul {
     padding: 28px 28px 24px;
     border: 1px solid var(--gris-border);
@@ -811,7 +811,7 @@ button:disabled {
     cursor: pointer;
 }
 
-/* Tabla de últimos 5 registros */
+/* Tabla de Ãºltimos 5 registros */
 .tabla-responsive {
     overflow-x: auto;
     margin-top: 2px;
@@ -1071,6 +1071,27 @@ button:disabled {
     font-weight: 500;
 }
 
+.app-kicker {
+    display: inline-block;
+    margin-bottom: 6px;
+    padding: 4px 10px;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.app-fecha {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
 .flujo-pasos {
     margin-top: 18px;
     display: flex;
@@ -1095,6 +1116,115 @@ button:disabled {
 .paso-chip.activo {
     background: #dbeafe;
     border-color: #93c5fd;
+}
+
+.paso-chip.pendiente {
+    opacity: 0.68;
+}
+
+.paso-chip.completado {
+    opacity: 1;
+    background: #dbeafe;
+    border-color: #93c5fd;
+}
+
+.paso-chip.completado::after {
+    content: "\\2713";
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.indicadores-kpi {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(180px, 1fr));
+    gap: 14px;
+    margin: 0 0 22px;
+}
+
+.kpi-card {
+    background: #ffffff;
+    border: 1px solid #bfd6ff;
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: 0 6px 18px rgba(30, 58, 138, 0.07);
+    position: relative;
+    overflow: hidden;
+    animation: kpiIn 0.55s ease both;
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.kpi-card:nth-child(1) { animation-delay: 0.04s; }
+.kpi-card:nth-child(2) { animation-delay: 0.09s; }
+.kpi-card:nth-child(3) { animation-delay: 0.14s; }
+.kpi-card:nth-child(4) { animation-delay: 0.19s; }
+
+.kpi-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 20%, rgba(59, 130, 246, 0.08) 50%, transparent 80%);
+    transform: translateX(-120%);
+    transition: transform 0.65s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-3px);
+    border-color: #93c5fd;
+    box-shadow: 0 12px 26px rgba(30, 58, 138, 0.12);
+}
+
+.kpi-card:hover::before {
+    transform: translateX(120%);
+}
+
+.kpi-label {
+    font-size: 0.82rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.kpi-icon {
+    font-size: 0.78rem;
+    color: #1d4ed8;
+    opacity: 0.9;
+    transform-origin: center;
+    transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+.kpi-card:hover .kpi-icon {
+    transform: translateY(-1px) scale(1.16);
+    opacity: 1;
+}
+
+.kpi-value {
+    margin-top: 6px;
+    font-size: 1.75rem;
+    line-height: 1.1;
+    color: #1e293b;
+    font-weight: 700;
+    transition: transform 0.22s ease, color 0.22s ease;
+}
+
+.kpi-value.kpi-updated {
+    transform: scale(1.04);
+    color: #1d4ed8;
+}
+
+@keyframes kpiIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .tarjeta-modulo {
@@ -1124,7 +1254,7 @@ button:disabled {
     }
 }
 
-/* Fondo global + separación visual de bloques */
+/* Fondo global + separaciÃ³n visual de bloques */
 body.bg-dashboard {
     background:
         radial-gradient(circle at 10% 0%, rgba(59, 130, 246, 0.15), transparent 40%),
@@ -1198,3 +1328,22 @@ body.bg-dashboard {
         grid-template-columns: 1fr;
     }
 }
+
+@media (max-width: 900px) {
+    .indicadores-kpi {
+        grid-template-columns: repeat(2, minmax(180px, 1fr));
+    }
+}
+
+@media (max-width: 560px) {
+    .indicadores-kpi {
+        grid-template-columns: 1fr;
+    }
+}
+
+.acciones-finales-postventa {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+}
+
