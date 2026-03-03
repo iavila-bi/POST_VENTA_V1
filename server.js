@@ -292,6 +292,112 @@ app.post('/api/postventas/crear', async (req, res) => {
     }
 });
 
+app.get('/api/postventas/recientes', async (req, res) => {
+    try {
+        const dias = Number(req.query.dias || 7);
+        const result = await pool.query(
+            `SELECT DISTINCT ON (pv.id_inmueble)
+                pv.id_postventa,
+                pv.fecha_apertura,
+                pv.estado,
+                pv.id_inmueble,
+                p.nombre_proyecto,
+                i.numero_identificador,
+                c.nombre_completo AS cliente,
+                (
+                    SELECT COUNT(*)::int
+                    FROM registros_familias rf
+                    WHERE rf.id_postventa = pv.id_postventa
+                ) AS total_familias
+             FROM postventas pv
+             JOIN inmuebles i ON i.id_inmueble = pv.id_inmueble
+             JOIN proyectos p ON p.id_proyecto = i.id_proyecto
+             JOIN clientes c ON c.id_cliente = pv.id_cliente
+              WHERE pv.fecha_apertura >= CURRENT_DATE - ($1::int - 1) * INTERVAL '1 day'
+              ORDER BY pv.id_inmueble, pv.fecha_apertura DESC, pv.id_postventa DESC`,
+            [dias]
+        );
+
+        const ordenadas = result.rows.sort((a, b) => {
+            const fa = new Date(a.fecha_apertura).getTime();
+            const fb = new Date(b.fecha_apertura).getTime();
+            if (fb !== fa) return fb - fa;
+            return Number(b.id_postventa) - Number(a.id_postventa);
+        });
+
+        res.json(ordenadas);
+    } catch (error) {
+        console.error('Error postventas recientes:', error);
+        res.status(500).json({ error: 'Error al obtener postventas recientes' });
+    }
+});
+
+app.get('/api/postventas/:id_postventa/detalle', async (req, res) => {
+    try {
+        const { id_postventa } = req.params;
+        const result = await pool.query(
+            `SELECT
+                pv.id_postventa,
+                pv.id_inmueble,
+                pv.estado AS estado_ticket,
+                i.id_proyecto,
+                p.nombre_proyecto,
+                i.numero_identificador,
+                c.nombre_completo AS cliente,
+                c.numero_contacto,
+                (
+                    SELECT COUNT(*)::int
+                    FROM registros_familias rf
+                    WHERE rf.id_postventa = pv.id_postventa
+                ) AS total_familias
+             FROM postventas pv
+             JOIN inmuebles i ON i.id_inmueble = pv.id_inmueble
+             JOIN proyectos p ON p.id_proyecto = i.id_proyecto
+             JOIN clientes c ON c.id_cliente = pv.id_cliente
+             WHERE pv.id_postventa = $1`,
+            [id_postventa]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Postventa no encontrada' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error detalle postventa:', error);
+        res.status(500).json({ error: 'Error al obtener detalle de la postventa' });
+    }
+});
+
+app.get('/api/postventas/:id_postventa/familias-recientes', async (req, res) => {
+    try {
+        const { id_postventa } = req.params;
+        const limite = Math.max(1, Math.min(Number(req.query.limit || 5), 20));
+        const result = await pool.query(
+            `SELECT
+                f.nombre_familia AS familia,
+                sf.nombre_subfamilia AS subfamilia,
+                rf.recinto,
+                rf.fecha_levantamiento AS levantamiento,
+                r.nombre_responsable AS responsable,
+                r.cargo AS cargo_responsable
+             FROM registros_familias rf
+             LEFT JOIN familias f ON f.id_familia = rf.id_familia
+             LEFT JOIN subfamilias sf ON sf.id_subfamilia = rf.id_subfamilia
+             LEFT JOIN responsables r ON r.id_responsable = rf.id_responsable
+             WHERE rf.id_postventa = $1
+             ORDER BY rf.id_registro DESC
+             LIMIT $2`,
+            [id_postventa, limite]
+        );
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error familias recientes postventa:', error);
+        res.status(500).json({ error: 'Error al obtener familias recientes de la postventa' });
+    }
+});
+
 // ======================================================
 // GUARDAR FAMILIA + TAREAS + EJECUTANTES
 // ======================================================

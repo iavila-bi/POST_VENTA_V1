@@ -4,6 +4,38 @@
 let postventaActiva = null;
 let listaEjecutantes = [];
 let historialFamilias = [];
+const STORAGE_KEY_TEMA = "app_postventa_tema";
+
+function aplicarTema(tema) {
+    const body = document.body;
+    const boton = document.getElementById("theme_toggle");
+    if (!body || !boton) return;
+
+    const esOscuro = tema === "dark";
+    body.classList.toggle("dark-mode", esOscuro);
+    boton.innerHTML = esOscuro
+        ? '<i class="fas fa-sun" aria-hidden="true"></i>'
+        : '<i class="fas fa-moon" aria-hidden="true"></i>';
+    boton.setAttribute("title", esOscuro ? "Cambiar a modo claro" : "Cambiar a modo oscuro");
+    boton.setAttribute("aria-label", esOscuro ? "Cambiar a modo claro" : "Cambiar a modo oscuro");
+}
+
+function inicializarTema() {
+    const boton = document.getElementById("theme_toggle");
+    if (!boton) return;
+
+    const guardado = localStorage.getItem(STORAGE_KEY_TEMA);
+    const prefiereOscuro = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const temaInicial = guardado || (prefiereOscuro ? "dark" : "light");
+    aplicarTema(temaInicial);
+
+    boton.addEventListener("click", () => {
+        const actualOscuro = document.body.classList.contains("dark-mode");
+        const nuevoTema = actualOscuro ? "light" : "dark";
+        localStorage.setItem(STORAGE_KEY_TEMA, nuevoTema);
+        aplicarTema(nuevoTema);
+    });
+}
 
 function animarValorKpi(elemento, valorObjetivo, decimales = 0) {
     if (!elemento) return;
@@ -73,6 +105,208 @@ function renderizarFechaEncabezado() {
     });
 }
 
+function formatearFechaCorta(valor) {
+    if (!valor) return "-";
+    const d = new Date(valor);
+    if (Number.isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString("es-CL");
+}
+
+function actualizarEstadoPostventaSeleccionada(texto) {
+    const el = document.getElementById("estado_postventa_seleccionada");
+    if (!el) return;
+    el.textContent = texto || "Ninguna";
+    actualizarEstadoPostventaEnModulos(texto || "Ninguna");
+}
+
+function actualizarDetalleSeleccionada({ estado = "-", familias = 0 } = {}) {
+    const estadoEl = document.getElementById("estado_ticket_seleccionada");
+    const familiasEl = document.getElementById("familias_seleccionadas_count");
+    if (estadoEl) estadoEl.textContent = `Estado: ${estado || "-"}`;
+    if (familiasEl) familiasEl.textContent = `Familias: ${Number(familias || 0)}`;
+}
+
+function actualizarEstadoPostventaEnModulos(textoEstado) {
+    const ids = ["estado_modulo_inmueble", "estado_modulo_postventa", "estado_modulo_familia"];
+    const sinSeleccion = !textoEstado || textoEstado === "Ninguna";
+    const texto = sinSeleccion
+        ? "No Hay PostVenta Seleccionada"
+        : `Postventa Activa: ${textoEstado}`;
+
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = texto;
+        el.classList.toggle("estado-postventa-modulo--sin", sinSeleccion);
+        el.classList.toggle("estado-postventa-modulo--ok", !sinSeleccion);
+    });
+}
+
+function construirTextoEstadoPostventa(option, idPostventa) {
+    if (!option || !idPostventa) return "Ninguna";
+    const proyecto = option.dataset.proyecto || "-";
+    const identificador = option.dataset.identificador || "-";
+    return `#${idPostventa} · ${proyecto} · ${identificador}`;
+}
+
+function setValorSeguroSelect(select, valor) {
+    if (!select) return;
+    const existe = Array.from(select.options).some(op => String(op.value) === String(valor));
+    if (existe) {
+        select.value = String(valor);
+    }
+}
+
+function bloquearCamposCabecera(bloquear) {
+    const ids = [
+        "id_proyecto",
+        "id_inmueble",
+        "estado_inmueble",
+        "estado_ticket",
+        "nombre_cliente",
+        "telefono_cliente"
+    ];
+
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = bloquear;
+    });
+
+    const botonCrear = document.getElementById("btn_agregar_tabla");
+    const icono = document.getElementById("icono_boton");
+    if (!botonCrear || !icono) return;
+
+    if (bloquear) {
+        botonCrear.disabled = true;
+        icono.className = "fas fa-lock";
+    } else {
+        botonCrear.disabled = false;
+        icono.className = "fas fa-plus";
+    }
+}
+
+async function cargarDetallePostventaSeleccionada(idPostventa) {
+    const res = await fetch(`/api/postventas/${idPostventa}/detalle`);
+    if (!res.ok) throw new Error("No se pudo cargar el detalle de la postventa");
+    const detalle = await res.json();
+
+    const proyecto = document.getElementById("id_proyecto");
+    const inmueble = document.getElementById("id_inmueble");
+    const estadoTicket = document.getElementById("estado_ticket");
+    const nombreCliente = document.getElementById("nombre_cliente");
+    const telefono = document.getElementById("telefono_cliente");
+
+    if (proyecto) {
+        proyecto.value = String(detalle.id_proyecto || "");
+        await cargarIdentificadores();
+    }
+
+    setValorSeguroSelect(inmueble, detalle.id_inmueble);
+    await cargarDatosInmueble();
+    setValorSeguroSelect(estadoTicket, detalle.estado_ticket);
+    if (nombreCliente) nombreCliente.value = detalle.cliente || "";
+    if (telefono) telefono.value = detalle.numero_contacto || "";
+
+    return detalle;
+}
+
+async function cargarFamiliasRecientesDePostventa(idPostventa) {
+    const res = await fetch(`/api/postventas/${idPostventa}/familias-recientes?limit=5`);
+    if (!res.ok) throw new Error("No se pudieron cargar los registros recientes");
+    const data = await res.json();
+
+    historialFamilias = data.map(item => ({
+        familia: item.familia || "-",
+        subfamilia: item.subfamilia || "-",
+        recinto: item.recinto || "-",
+        levantamiento: item.levantamiento ? String(item.levantamiento).split("T")[0] : "-",
+        responsable: item.responsable || "-",
+        cargo_responsable: item.cargo_responsable || ""
+    }));
+    renderizarUltimosRegistros();
+}
+
+async function cargarPostventasRecientes(preseleccionarId = null, autoSeleccionar = true) {
+    const select = document.getElementById("select_postventa_existente");
+    if (!select) return;
+
+    try {
+        const res = await fetch("/api/postventas/recientes?dias=7");
+        if (!res.ok) throw new Error("Error al cargar postventas recientes");
+        const data = await res.json();
+
+        select.innerHTML = '<option value="">-- Ninguna --</option>';
+        data.forEach(item => {
+            const option = document.createElement("option");
+            option.value = String(item.id_postventa);
+            option.dataset.proyecto = item.nombre_proyecto || "-";
+            option.dataset.identificador = item.numero_identificador || "-";
+            option.dataset.cliente = item.cliente || "-";
+            option.dataset.estado = item.estado || "-";
+            option.dataset.familias = String(item.total_familias || 0);
+            option.textContent = `#${item.id_postventa} - ${item.nombre_proyecto} - ${item.numero_identificador} - Familias: ${item.total_familias || 0}`;
+            select.appendChild(option);
+        });
+
+        const idObjetivo = preseleccionarId || postventaActiva;
+        if (idObjetivo) {
+            const existe = Array.from(select.options).some(op => op.value === String(idObjetivo));
+            select.value = existe ? String(idObjetivo) : "";
+        } else {
+            select.value = "";
+        }
+
+        if (select.value && autoSeleccionar) {
+            await seleccionarPostventaExistente();
+        } else if (!postventaActiva) {
+            actualizarEstadoPostventaSeleccionada("Ninguna");
+        }
+    } catch (error) {
+        console.error("Error cargando postventas recientes:", error);
+    }
+}
+
+async function seleccionarPostventaExistente() {
+    const select = document.getElementById("select_postventa_existente");
+    if (!select) return;
+
+    const idSeleccionado = select.value;
+    if (!idSeleccionado) {
+        postventaActiva = null;
+        historialFamilias = [];
+        renderizarUltimosRegistros();
+        bloquearCamposCabecera(false);
+        limpiarAnclajePostventa();
+        actualizarIndicadoresFlujo();
+        return;
+    }
+
+    postventaActiva = Number(idSeleccionado);
+    try {
+        const detalle = await cargarDetallePostventaSeleccionada(postventaActiva);
+        await cargarFamiliasRecientesDePostventa(postventaActiva);
+        bloquearCamposCabecera(true);
+
+        const option = select.selectedOptions[0];
+        mostrarAnclajePostventa({
+            proyecto: detalle?.nombre_proyecto || option?.dataset.proyecto || "-",
+            identificador: detalle?.numero_identificador || option?.dataset.identificador || "-",
+            cliente: detalle?.cliente || option?.dataset.cliente || "-",
+            estado: detalle?.estado_ticket || option?.dataset.estado || "-",
+            familias: detalle?.total_familias || 0
+        });
+        actualizarEstadoPostventaSeleccionada(construirTextoEstadoPostventa(option, postventaActiva));
+        actualizarDetalleSeleccionada({
+            estado: detalle?.estado_ticket || option?.dataset.estado || "-",
+            familias: detalle?.total_familias || historialFamilias.length
+        });
+        actualizarIndicadoresFlujo();
+    } catch (error) {
+        console.error("Error seleccionando postventa existente:", error);
+        alert("No se pudo cargar la postventa seleccionada.");
+    }
+}
+
 function actualizarIndicadoresFlujo() {
     const chipInmueble = document.getElementById("chip_inmueble");
     const chipPostventa = document.getElementById("chip_postventa");
@@ -97,29 +331,103 @@ function actualizarIndicadoresFlujo() {
     chipFamilias.classList.toggle("pendiente", !familiasCompleto);
 }
 
-function mostrarAnclajePostventa() {
+function mostrarAnclajePostventa(detalle = null) {
     const banner = document.getElementById("banner_anclaje");
-    if (!banner || !postventaActiva) return;
+    if (!postventaActiva) return;
 
-    const proyecto = document.getElementById("id_proyecto")?.selectedOptions?.[0]?.text || "-";
-    const identificador = document.getElementById("id_inmueble")?.selectedOptions?.[0]?.text || "-";
-    const cliente = document.getElementById("nombre_cliente")?.value?.trim() || "-";
-    const estado = document.getElementById("estado_ticket")?.value || "-";
+    const proyecto = detalle?.proyecto ?? document.getElementById("id_proyecto")?.selectedOptions?.[0]?.text ?? "-";
+    const identificador = detalle?.identificador ?? document.getElementById("id_inmueble")?.selectedOptions?.[0]?.text ?? "-";
+    const cliente = detalle?.cliente ?? document.getElementById("nombre_cliente")?.value?.trim() ?? "-";
+    const estado = detalle?.estado ?? document.getElementById("estado_ticket")?.value ?? "-";
+    const familias = Number(detalle?.familias ?? historialFamilias.length ?? 0);
 
-    banner.innerHTML = `
-        <div class="anclaje-card">
-            <strong>Postventa activa #${postventaActiva}</strong><br>
-            <small>Proyecto: ${proyecto} | Identificador: ${identificador} | Cliente: ${cliente} | Estado: ${estado}</small>
-        </div>
-    `;
-    banner.hidden = false;
+    if (banner) {
+        banner.innerHTML = "";
+        banner.hidden = true;
+    }
+
+    actualizarEstadoPostventaSeleccionada(`#${postventaActiva} · ${proyecto} · ${identificador}`);
+    actualizarDetalleSeleccionada({ estado, familias });
 }
 
 function limpiarAnclajePostventa() {
     const banner = document.getElementById("banner_anclaje");
-    if (!banner) return;
-    banner.hidden = true;
-    banner.innerHTML = "";
+    if (banner) {
+        banner.innerHTML = "";
+        banner.hidden = true;
+    }
+    actualizarEstadoPostventaSeleccionada("Ninguna");
+    actualizarDetalleSeleccionada({ estado: "-", familias: 0 });
+}
+
+function mostrarAlertaCentro(texto) {
+    const toast = document.getElementById("toast_reset_postventa");
+    if (!toast) return;
+    toast.textContent = texto;
+    toast.classList.add("visible");
+    setTimeout(() => toast.classList.remove("visible"), 1900);
+}
+
+function resetearFormularioPostventa() {
+    const proyecto = document.getElementById("id_proyecto");
+    const inmueble = document.getElementById("id_inmueble");
+    const estadoInmueble = document.getElementById("estado_inmueble");
+    const estadoTicket = document.getElementById("estado_ticket");
+    const nombreCliente = document.getElementById("nombre_cliente");
+    const telefono = document.getElementById("telefono_cliente");
+
+    if (proyecto) proyecto.value = "";
+    if (inmueble) inmueble.innerHTML = '<option value="">Seleccione proyecto...</option>';
+    if (estadoInmueble) estadoInmueble.value = "";
+    if (estadoTicket) estadoTicket.value = "";
+    if (nombreCliente) nombreCliente.value = "";
+    if (telefono) telefono.value = "";
+
+    const valTipo = document.getElementById("val-tipo");
+    const valModelo = document.getElementById("val-modelo");
+    const valOrientacion = document.getElementById("val-orientacion");
+    const valFecha = document.getElementById("val-fecha");
+    if (valTipo) valTipo.value = "";
+    if (valModelo) valModelo.value = "";
+    if (valOrientacion) valOrientacion.value = "";
+    if (valFecha) valFecha.value = "";
+
+    const regOrigen = document.getElementById("reg_origen");
+    const regFamilia = document.getElementById("select_familia");
+    const regSubfamilia = document.getElementById("select_subfamilia");
+    const regRecinto = document.getElementById("reg_recinto");
+    const regComentario = document.getElementById("reg_comentarios_cliente");
+    const regFLev = document.getElementById("reg_fecha_levantamiento");
+    const regFVis = document.getElementById("reg_fecha_visita");
+    const regResp = document.getElementById("reg_responsable");
+    const regObs = document.getElementById("reg_observaciones_internas");
+    const regFFirma = document.getElementById("fecha_firma_acta");
+    const regEtiqueta = document.getElementById("etiqueta_accion");
+
+    if (regOrigen) regOrigen.value = "";
+    if (regFamilia) regFamilia.value = "";
+    if (regSubfamilia) regSubfamilia.innerHTML = '<option value="">Seleccionar subfamilia...</option>';
+    if (regRecinto) regRecinto.value = "";
+    if (regComentario) regComentario.value = "";
+    if (regFLev) regFLev.value = "";
+    if (regFVis) regFVis.value = "";
+    if (regResp) regResp.value = "";
+    if (regObs) regObs.value = "";
+    if (regFFirma) regFFirma.value = "";
+    if (regEtiqueta) regEtiqueta.value = "";
+    actualizarColorEtiquetaAccion();
+
+    const tbodyTareas = document.getElementById("body_ejecutantes");
+    if (tbodyTareas) tbodyTareas.innerHTML = "";
+
+    const inpEjecutante = document.getElementById("input_sel_ejecutante");
+    const inpInicio = document.getElementById("input_f_inicio");
+    const inpTermino = document.getElementById("input_f_termino");
+    const inpTarea = document.getElementById("input_f_tarea");
+    if (inpEjecutante) inpEjecutante.value = "";
+    if (inpInicio) inpInicio.value = "";
+    if (inpTermino) inpTermino.value = "";
+    if (inpTarea) inpTarea.value = "";
 }
 
 function actualizarColorEtiquetaAccion() {
@@ -145,18 +453,31 @@ function renderizarUltimosRegistros() {
 
     if (ultimosCinco.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5">Sin registros recientes.</td></tr>`;
-        if (chips) chips.innerHTML = '<span class="sin-registros">Esperando primer registro...</span>';
+        if (chips) {
+            const textoVacio = postventaActiva
+                ? "Sin familias registradas en esta postventa."
+                : "Esperando primer registro...";
+            chips.innerHTML = `<span class="sin-registros">${textoVacio}</span>`;
+        }
         return;
     }
 
     ultimosCinco.forEach(item => {
         const fila = document.createElement("tr");
+        const cargoResponsable = item.cargo_responsable
+            ? `<span class="tag-cargo">${item.cargo_responsable}</span>`
+            : "";
         fila.innerHTML = `
             <td>${item.familia}</td>
             <td>${item.subfamilia}</td>
             <td>${item.recinto}</td>
             <td>${item.levantamiento}</td>
-            <td>${item.responsable}</td>
+            <td>
+                <div class="responsable-con-etiqueta">
+                    <span>${item.responsable}</span>
+                    ${cargoResponsable}
+                </div>
+            </td>
         `;
         tbody.appendChild(fila);
     });
@@ -173,6 +494,7 @@ function renderizarUltimosRegistros() {
 // INICIO
 // =====================================================
 document.addEventListener("DOMContentLoaded", () => {
+    inicializarTema();
     cargarProyectos();
     cargarFamilias();
     cargarResponsables();
@@ -184,11 +506,17 @@ document.addEventListener("DOMContentLoaded", () => {
     actualizarIndicadoresFlujo();
     renderizarFechaEncabezado();
     cargarIndicadoresPostventa();
+    cargarPostventasRecientes();
 
     ["id_proyecto", "id_inmueble", "estado_inmueble"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener("change", actualizarIndicadoresFlujo);
     });
+
+    const selectPostventa = document.getElementById("select_postventa_existente");
+    if (selectPostventa) {
+        selectPostventa.addEventListener("change", seleccionarPostventaExistente);
+    }
 });
 //------------------------------------CARGA DE DATOS------------------//
 async function cargarProyectos() {
@@ -331,9 +659,18 @@ async function crearPostventa() {
     document.getElementById("btn_agregar_tabla").disabled = false;
     document.getElementById("icono_boton").className = "fas fa-plus";
 
-    mostrarAnclajePostventa();
+    bloquearCamposCabecera(false);
+    mostrarAnclajePostventa({ familias: 0 });
     actualizarIndicadoresFlujo();
     cargarIndicadoresPostventa();
+    await cargarPostventasRecientes(postventaActiva, false);
+    const select = document.getElementById("select_postventa_existente");
+    const option = select?.selectedOptions?.[0];
+    actualizarEstadoPostventaSeleccionada(construirTextoEstadoPostventa(option, postventaActiva));
+    actualizarDetalleSeleccionada({
+        estado: document.getElementById("estado_ticket")?.value || "-",
+        familias: 0
+    });
 }
 
 
@@ -344,13 +681,18 @@ function activarBotonNuevaPostventa() {
     const resetPostventa = () => {
             postventaActiva = null;
             historialFamilias = [];
+            resetearFormularioPostventa();
+            bloquearCamposCabecera(false);
             renderizarUltimosRegistros();
             limpiarAnclajePostventa();
+            const selectPostventa = document.getElementById("select_postventa_existente");
+            if (selectPostventa) selectPostventa.value = "";
             document.getElementById("btn_agregar_tabla").disabled = true;
             document.getElementById("icono_boton").className = "fas fa-lock";
-            alert("Lista para crear nueva postventa");
+            mostrarAlertaCentro("Formulario listo para nueva postventa");
             actualizarIndicadoresFlujo();
             cargarIndicadoresPostventa();
+            cargarPostventasRecientes();
     };
 
     const botones = [
@@ -391,7 +733,12 @@ async function cargarResponsables() {
     select.innerHTML = '<option value="">Seleccione responsable...</option>';
 
     data.forEach(r => {
-        select.innerHTML += `<option value="${r.id_responsable}">${r.nombre_responsable}</option>`;
+        const cargo = (r.cargo || "Sin cargo").trim();
+        select.innerHTML += `
+            <option value="${r.id_responsable}" data-cargo="${cargo}">
+                ${r.nombre_responsable} - ${cargo}
+            </option>
+        `;
     });
 }
 
@@ -407,7 +754,12 @@ async function cargarEjecutantes() {
     select.innerHTML = '<option value="" disabled selected>Seleccione para agregar...</option>';
 
     listaEjecutantes.forEach(e => {
-        select.innerHTML += `<option value="${e.id_ejecutante}">${e.nombre_ejecutante}</option>`;
+        const especialidad = (e.especialidad || "Sin especialidad").trim();
+        select.innerHTML += `
+            <option value="${e.id_ejecutante}" data-especialidad="${especialidad}">
+                ${e.nombre_ejecutante} - ${especialidad}
+            </option>
+        `;
     });
 }
 
@@ -418,7 +770,10 @@ async function cargarEjecutantes() {
 function confirmarNuevaFila() {
 
     const id_ejecutante = document.getElementById("input_sel_ejecutante").value;
-    const nombre = document.getElementById("input_sel_ejecutante").selectedOptions[0].text;
+    const ejecutanteOption = document.getElementById("input_sel_ejecutante").selectedOptions[0];
+    const nombreCompleto = ejecutanteOption?.text || "";
+    const nombre = nombreCompleto.split(" - ")[0] || nombreCompleto;
+    const especialidad = ejecutanteOption?.dataset?.especialidad || "Sin especialidad";
     const inicio = document.getElementById("input_f_inicio").value;
     const termino = document.getElementById("input_f_termino").value;
     const tarea = document.getElementById("input_f_tarea").value;
@@ -434,7 +789,12 @@ function confirmarNuevaFila() {
     fila.classList.add("fila-tarea");
 
     fila.innerHTML = `
-        <td data-id="${id_ejecutante}">${nombre}</td>
+        <td data-id="${id_ejecutante}">
+            <div class="ejecutante-con-etiqueta">
+                <span class="ejecutante-nombre">${nombre}</span>
+                <span class="tag-especialidad">${especialidad}</span>
+            </div>
+        </td>
         <td>${inicio}</td>
         <td>${termino}</td>
         <td>${tarea}</td>
@@ -516,7 +876,10 @@ async function guardarFamiliaCompleta() {
 
         const familiaTxt = document.getElementById("select_familia").selectedOptions[0]?.text || "-";
         const subfamiliaTxt = document.getElementById("select_subfamilia").selectedOptions[0]?.text || "-";
-        const responsableTxt = document.getElementById("reg_responsable").selectedOptions[0]?.text || "-";
+        const responsableOption = document.getElementById("reg_responsable").selectedOptions[0];
+        const responsableCompleto = responsableOption?.text || "-";
+        const responsableTxt = responsableCompleto.split(" - ")[0] || responsableCompleto;
+        const cargoResponsableTxt = responsableOption?.dataset?.cargo || "";
         const recintoTxt = document.getElementById("reg_recinto").value || "-";
         const fechaLevTxt = registro.fecha_levantamiento || "-";
 
@@ -525,9 +888,15 @@ async function guardarFamiliaCompleta() {
             subfamilia: subfamiliaTxt,
             recinto: recintoTxt,
             levantamiento: fechaLevTxt,
-            responsable: responsableTxt
+            responsable: responsableTxt,
+            cargo_responsable: cargoResponsableTxt
         });
-        renderizarUltimosRegistros();
+        await cargarFamiliasRecientesDePostventa(postventaActiva);
+        const detallePostventa = await cargarDetallePostventaSeleccionada(postventaActiva);
+        actualizarDetalleSeleccionada({
+            estado: detallePostventa?.estado_ticket || "-",
+            familias: detallePostventa?.total_familias || historialFamilias.length
+        });
         actualizarIndicadoresFlujo();
         cargarIndicadoresPostventa();
         // Mostrar alerta verde (Toast)

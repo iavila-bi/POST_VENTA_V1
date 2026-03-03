@@ -13,6 +13,9 @@
 </head>
 <body class="bg-dashboard">
 <div id="banner_anclaje" hidden></div>
+<button type="button" id="theme_toggle" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+    <i class="fas fa-moon" aria-hidden="true"></i>
+</button>
 
 <div class="contenedor-registro animate-fade-in">
     <header class="header-postventa">
@@ -35,6 +38,27 @@
         </div>
     </header>
 
+    <section class="selector-postventa-card">
+        <div class="selector-postventa-head">
+            <div>
+                <h3>Registro de Postventa</h3>
+                <p>Crea una nueva postventa o selecciona una existente de los últimos 7 días para continuar.</p>
+            </div>
+            <div class="selector-postventa-estado">
+                <span>Seleccionada</span>
+                <strong id="estado_postventa_seleccionada">Ninguna</strong>
+                <small id="estado_ticket_seleccionada">Estado: -</small>
+                <small id="familias_seleccionadas_count">Familias: 0</small>
+            </div>
+        </div>
+        <div class="selector-postventa-input">
+            <label for="select_postventa_existente">Seleccionar postventa existente (semana actual)</label>
+            <select id="select_postventa_existente">
+                <option value="">-- Ninguna --</option>
+            </select>
+        </div>
+    </section>
+
     <section class="indicadores-kpi">
         <article class="kpi-card">
             <p class="kpi-label"><i class="fas fa-house kpi-icon" aria-hidden="true"></i> Total casas con PV</p>
@@ -55,7 +79,12 @@
     </section>
 
     <div class="tarjeta-modulo">
-        <h3 class="titulo-seccion"><i class="fas fa-building"></i> 1. Identificaci&oacute;n del inmueble</h3>
+        <div class="cabecera-modulo">
+            <h3 class="titulo-seccion"><i class="fas fa-building"></i> 1. Identificaci&oacute;n del inmueble</h3>
+            <div id="estado_modulo_inmueble" class="estado-postventa-modulo estado-postventa-modulo--sin">
+                No Hay PostVenta Seleccionada
+            </div>
+        </div>
         <div class="grid-campos-doble">
             <div class="grupo-input"><label>Proyecto *</label><select id="id_proyecto" onchange="cargarIdentificadores()"><option>Cargando...</option></select></div>
             <div class="grupo-input"><label>Identificador *</label><select id="id_inmueble" onchange="cargarDatosInmueble()"><option>Seleccione proyecto...</option></select></div>
@@ -78,7 +107,12 @@
     </div>
 
     <div class="tarjeta-modulo tarjeta-postventa">
-        <h3 class="titulo-seccion"><i class="fas fa-id-card"></i> 2. Datos de la Postventa</h3>
+        <div class="cabecera-modulo">
+            <h3 class="titulo-seccion"><i class="fas fa-id-card"></i> 2. Datos de la Postventa</h3>
+            <div id="estado_modulo_postventa" class="estado-postventa-modulo estado-postventa-modulo--sin">
+                No Hay PostVenta Seleccionada
+            </div>
+        </div>
         <div class="grid-campos-doble">
             <div class="grupo-input">
                 <label>Estado del Ticket *</label>
@@ -120,7 +154,12 @@
     </div>
 
     <div class="tarjeta-modulo">
-        <h3 class="titulo-seccion"><i class="fas fa-tools"></i> 3. Registro por Familia</h3>
+        <div class="cabecera-modulo">
+            <h3 class="titulo-seccion"><i class="fas fa-tools"></i> 3. Registro por Familia</h3>
+            <div id="estado_modulo_familia" class="estado-postventa-modulo estado-postventa-modulo--sin">
+                No Hay PostVenta Seleccionada
+            </div>
+        </div>
         <div class="grid-primarios-familia">
             <div class="grupo-input">
                 <label>Origen *</label>
@@ -274,6 +313,10 @@
 <div id="toast_familia" class="toast-exito-verde">
     <i class="fas fa-check-circle"></i>
     <span>&iexcl;Familia agregada con &eacute;xito!</span>
+</div>
+
+<div id="toast_reset_postventa" class="toast-centro">
+    Formulario reiniciado para nueva postventa
 </div>
 </body>
 </html>
