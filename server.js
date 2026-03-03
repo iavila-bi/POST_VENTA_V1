@@ -1,4 +1,4 @@
-console.log("🔥 VERSION ACTUAL DEL SERVER CARGADA");
+﻿console.log("ðŸ”¥ VERSION ACTUAL DEL SERVER CARGADA");
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -7,7 +7,7 @@ const { Pool } = require('pg');
 const app = express();
 
 // ======================================================
-// CONFIGURACIÓN
+// CONFIGURACIÃ“N
 // ======================================================
 app.use(cors());
 app.use(express.json());
@@ -135,7 +135,7 @@ app.post('/api/postventas/crear', async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        // 1️⃣ Crear cliente
+        // 1ï¸âƒ£ Crear cliente
         const resCliente = await client.query(
             `INSERT INTO clientes (nombre_completo, numero_contacto)
              VALUES ($1, $2)
@@ -145,7 +145,7 @@ app.post('/api/postventas/crear', async (req, res) => {
 
         const id_cliente = resCliente.rows[0].id_cliente;
 
-        // 2️⃣ Crear postventa
+        // 2ï¸âƒ£ Crear postventa
         const resPostventa = await client.query(
             `INSERT INTO postventas (id_inmueble, id_cliente, fecha_apertura, estado)
              VALUES ($1, $2, CURRENT_DATE, $3)
@@ -188,17 +188,18 @@ app.post('/api/guardar-familia-completa', async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        // 1️⃣ Insertar registro_familias
+        // 1ï¸âƒ£ Insertar registro_familias
         const resRegistro = await client.query(
             `INSERT INTO registros_familias
-            (id_postventa, id_familia, id_subfamilia, id_responsable, recinto, comentarios_previos, fecha_levantamiento, fecha_visita, fecha_firma_acta)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+            (id_postventa, id_familia, id_subfamilia, id_responsable, origen, recinto, comentarios_previos, fecha_levantamiento, fecha_visita, fecha_firma_acta)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
             RETURNING id_registro`,
             [
                 registro.id_postventa,
                 registro.id_familia,
                 registro.id_subfamilia,
                 registro.id_responsable,
+                registro.origen,
                 registro.recinto,
                 registro.comentarios_previos,
                 registro.fecha_levantamiento,
@@ -209,7 +210,7 @@ app.post('/api/guardar-familia-completa', async (req, res) => {
 
         const id_registro = resRegistro.rows[0].id_registro;
 
-        // 2️⃣ Insertar tareas y ejecutantes
+        // 2ï¸âƒ£ Insertar tareas y ejecutantes
         for (const t of tareas) {
 
             const resTarea = await client.query(
@@ -250,5 +251,6 @@ app.post('/api/guardar-familia-completa', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`ðŸš€ Servidor corriendo en http://localhost:${PORT}`);
 });
+

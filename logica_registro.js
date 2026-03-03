@@ -1,8 +1,67 @@
-// =====================================================
+﻿// =====================================================
 // ESTADO GLOBAL
 // =====================================================
 let postventaActiva = null;
 let listaEjecutantes = [];
+let historialFamilias = [];
+
+function mostrarAnclajePostventa() {
+    const banner = document.getElementById("banner_anclaje");
+    if (!banner || !postventaActiva) return;
+
+    const proyecto = document.getElementById("id_proyecto")?.selectedOptions?.[0]?.text || "-";
+    const identificador = document.getElementById("id_inmueble")?.selectedOptions?.[0]?.text || "-";
+    const cliente = document.getElementById("nombre_cliente")?.value?.trim() || "-";
+    const estado = document.getElementById("estado_ticket")?.value || "-";
+
+    banner.innerHTML = `
+        <div class="anclaje-card">
+            <strong>Postventa activa #${postventaActiva}</strong><br>
+            <small>Proyecto: ${proyecto} | Identificador: ${identificador} | Cliente: ${cliente} | Estado: ${estado}</small>
+        </div>
+    `;
+    banner.hidden = false;
+}
+
+function limpiarAnclajePostventa() {
+    const banner = document.getElementById("banner_anclaje");
+    if (!banner) return;
+    banner.hidden = true;
+    banner.innerHTML = "";
+}
+
+function renderizarUltimosRegistros() {
+    const tbody = document.getElementById("tbody-registros");
+    const chips = document.getElementById("lista_recientes_chips");
+    if (!tbody) return;
+
+    const ultimosCinco = historialFamilias.slice(0, 5);
+    tbody.innerHTML = "";
+
+    if (ultimosCinco.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5">Sin registros recientes.</td></tr>`;
+        if (chips) chips.innerHTML = '<span class="sin-registros">Esperando primer registro...</span>';
+        return;
+    }
+
+    ultimosCinco.forEach(item => {
+        const fila = document.createElement("tr");
+        fila.innerHTML = `
+            <td>${item.familia}</td>
+            <td>${item.subfamilia}</td>
+            <td>${item.recinto}</td>
+            <td>${item.levantamiento}</td>
+            <td>${item.responsable}</td>
+        `;
+        tbody.appendChild(fila);
+    });
+
+    if (chips) {
+        chips.innerHTML = ultimosCinco
+            .map(item => `<span class="chip-reciente">${item.familia} - ${item.recinto}</span>`)
+            .join("");
+    }
+}
 
 
 // =====================================================
@@ -14,6 +73,8 @@ document.addEventListener("DOMContentLoaded", () => {
     cargarResponsables();
     cargarEjecutantes();
     activarBotonNuevaPostventa();
+    renderizarUltimosRegistros();
+    limpiarAnclajePostventa();
 });
 //------------------------------------CARGA DE DATOS------------------//
 async function cargarProyectos() {
@@ -67,7 +128,7 @@ async function cargarDatosInmueble() {
     document.getElementById("val-fecha").value = data.fecha_entrega?.split("T")[0] || "";
 }
 
-//-------CARGAR SUBFAMILIAS DINÁMICAMENTE-------//
+//-------CARGAR SUBFAMILIAS DINÃMICAMENTE-------//
 async function cargarSubfamilias() {
 
     const id_familia = document.getElementById("select_familia").value;
@@ -136,11 +197,11 @@ async function crearPostventa() {
 
     postventaActiva = data.id_postventa;
 
-    // 🔓 Activar botón
+    // ðŸ”“ Activar botÃ³n
     document.getElementById("btn_agregar_tabla").disabled = false;
     document.getElementById("icono_boton").className = "fas fa-plus";
 
-    alert("Postventa creada correctamente");
+    mostrarAnclajePostventa();
 }
 
 
@@ -151,6 +212,9 @@ function activarBotonNuevaPostventa() {
     document.getElementById("btn_nueva_postventa")
         .addEventListener("click", () => {
             postventaActiva = null;
+            historialFamilias = [];
+            renderizarUltimosRegistros();
+            limpiarAnclajePostventa();
             document.getElementById("btn_agregar_tabla").disabled = true;
             document.getElementById("icono_boton").className = "fas fa-lock";
             alert("Lista para crear nueva postventa");
@@ -258,11 +322,12 @@ async function guardarFamiliaCompleta() {
         id_familia: document.getElementById("select_familia").value,
         id_subfamilia: document.getElementById("select_subfamilia").value,
         id_responsable: document.getElementById("reg_responsable").value,
+        origen: document.getElementById("reg_origen").value,
         recinto: document.getElementById("reg_recinto").value,
         comentarios_previos: document.getElementById("reg_comentarios_cliente").value,
         fecha_firma_acta: document.getElementById("fecha_firma_acta").value,
         
-        // CORRECCIÓN CLAVE: Usamos la fecha del acta o la de hoy 
+        // CORRECCIÃ“N CLAVE: Usamos la fecha del acta o la de hoy 
         // para que 'fecha_levantamiento' nunca sea NULL y no rompa la DB
         fecha_levantamiento: document.getElementById("fecha_firma_acta").value || new Date().toISOString().split('T')[0],
         fecha_visita: document.getElementById("fecha_firma_acta").value || new Date().toISOString().split('T')[0]
@@ -300,8 +365,24 @@ async function guardarFamiliaCompleta() {
             throw new Error(data.error || "Error en el servidor");
         }
 
-        // --- ÉXITO ---
+        // --- Ã‰XITO ---
         
+
+        const familiaTxt = document.getElementById("select_familia").selectedOptions[0]?.text || "-";
+        const subfamiliaTxt = document.getElementById("select_subfamilia").selectedOptions[0]?.text || "-";
+        const responsableTxt = document.getElementById("reg_responsable").selectedOptions[0]?.text || "-";
+        const recintoTxt = document.getElementById("reg_recinto").value || "-";
+        const fechaLevTxt = registro.fecha_levantamiento || "-";
+
+        historialFamilias.unshift({
+            familia: familiaTxt,
+            subfamilia: subfamiliaTxt,
+            recinto: recintoTxt,
+            levantamiento: fechaLevTxt,
+            responsable: responsableTxt
+        });
+        renderizarUltimosRegistros();
+    limpiarAnclajePostventa();
         // Mostrar alerta verde (Toast)
         const toast = document.getElementById('toast_familia');
         if (toast) {
@@ -309,7 +390,7 @@ async function guardarFamiliaCompleta() {
             setTimeout(() => toast.classList.remove('visible'), 3000);
         }
 
-        // Limpiar campos de la sección familia
+        // Limpiar campos de la secciÃ³n familia
         document.querySelectorAll('.input-familia').forEach(i => i.value = "");
         
         // Limpiar tabla de tareas
@@ -323,3 +404,12 @@ async function guardarFamiliaCompleta() {
         alert("No se pudo guardar: " + error.message);
     }
 }
+
+
+
+
+
+
+
+
+
