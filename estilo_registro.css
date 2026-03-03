@@ -1192,6 +1192,24 @@ body.dark-mode #etiqueta_accion option {
     line-height: 1;
 }
 
+.paso-chip-btn {
+    border: 1px solid #93c5fd;
+    background: #eff6ff;
+    color: #1e3a8a;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.paso-chip-btn:hover {
+    background: #dbeafe;
+}
+
+.paso-chip-btn.activo {
+    background: #dbeafe;
+    border-color: #60a5fa;
+    color: #1d4ed8;
+}
+
 .indicadores-kpi {
     display: grid;
     grid-template-columns: repeat(4, minmax(180px, 1fr));
@@ -1404,6 +1422,60 @@ body.bg-dashboard {
     justify-content: flex-end;
 }
 
+.panel-gestion-registros .titulo-seccion {
+    margin-bottom: 0;
+}
+
+.gestion-ayuda {
+    margin: 8px 0 12px;
+    color: #64748b;
+    font-size: 0.93rem;
+}
+
+.tabla-gestion-registros th:last-child,
+.tabla-gestion-registros td:last-child {
+    width: 170px;
+    text-align: center;
+}
+
+.btn-eliminar-familia {
+    border: 1px solid #fecaca;
+    background: #fff1f2;
+    color: #b91c1c;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.gestion-acciones-finales {
+    margin-top: 14px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-eliminar-postventa {
+    border: 1px solid #ef4444;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #fff;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-eliminar-postventa:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
 .estado-postventa-modulo {
     margin: 0;
     font-size: 0.92rem;
@@ -1601,6 +1673,32 @@ body.dark-mode .theme-toggle {
     background: #1d4ed8;
     color: #eff6ff;
     border-color: #60a5fa;
+}
+
+body.dark-mode .paso-chip-btn {
+    background: #1d4ed8;
+    color: #eff6ff;
+    border-color: #60a5fa;
+}
+
+body.dark-mode .paso-chip-btn.activo {
+    background: #2563eb;
+    border-color: #93c5fd;
+}
+
+body.dark-mode .gestion-ayuda {
+    color: #94a3b8;
+}
+
+body.dark-mode .btn-eliminar-familia {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: rgba(248, 113, 113, 0.6);
+    color: #fca5a5;
+}
+
+body.dark-mode .btn-eliminar-postventa {
+    border-color: rgba(248, 113, 113, 0.7);
+    box-shadow: 0 10px 18px rgba(127, 29, 29, 0.35);
 }
 
 .selector-postventa-card {

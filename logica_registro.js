@@ -4,6 +4,7 @@
 let postventaActiva = null;
 let listaEjecutantes = [];
 let historialFamilias = [];
+let modoGestionRegistros = false;
 const STORAGE_KEY_TEMA = "app_postventa_tema";
 
 function aplicarTema(tema) {
@@ -142,11 +143,173 @@ function actualizarEstadoPostventaEnModulos(textoEstado) {
     });
 }
 
+function actualizarEstadoPanelGestion(textoEstado) {
+    const el = document.getElementById("estado_panel_gestion");
+    if (!el) return;
+    const sinSeleccion = !textoEstado || textoEstado === "Ninguna";
+    el.textContent = sinSeleccion ? "No Hay PostVenta Seleccionada" : `Postventa Activa: ${textoEstado}`;
+    el.classList.toggle("estado-postventa-modulo--sin", sinSeleccion);
+    el.classList.toggle("estado-postventa-modulo--ok", !sinSeleccion);
+}
+
 function construirTextoEstadoPostventa(option, idPostventa) {
     if (!option || !idPostventa) return "Ninguna";
     const proyecto = option.dataset.proyecto || "-";
     const identificador = option.dataset.identificador || "-";
     return `#${idPostventa} · ${proyecto} · ${identificador}`;
+}
+
+function renderizarGestionVacia(texto = "Seleccione una postventa para gestionar registros.") {
+    const tbody = document.getElementById("tbody_gestion_registros");
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="7">${texto}</td></tr>`;
+}
+
+async function cargarRegistrosGestionPostventa(idPostventa) {
+    const tbody = document.getElementById("tbody_gestion_registros");
+    const btnEliminarPostventa = document.getElementById("btn_eliminar_postventa");
+    if (!tbody) return;
+
+    if (!idPostventa) {
+        renderizarGestionVacia();
+        if (btnEliminarPostventa) btnEliminarPostventa.disabled = true;
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/postventas/${idPostventa}/registros`);
+        if (!res.ok) throw new Error("No se pudieron cargar los registros");
+        const data = await res.json();
+
+        if (btnEliminarPostventa) btnEliminarPostventa.disabled = false;
+
+        if (!data.length) {
+            renderizarGestionVacia("Esta postventa no tiene familias registradas.");
+            return;
+        }
+
+        tbody.innerHTML = data.map(item => {
+            const fecha = item.fecha_levantamiento ? String(item.fecha_levantamiento).split("T")[0] : "-";
+            return `
+                <tr>
+                    <td>#${item.id_registro}</td>
+                    <td>${item.familia || "-"}</td>
+                    <td>${item.subfamilia || "-"}</td>
+                    <td>${item.recinto || "-"}</td>
+                    <td>${fecha}</td>
+                    <td>${item.responsable || "-"}</td>
+                    <td>
+                        <button type="button" class="btn-eliminar-familia" data-id-registro="${item.id_registro}">
+                            Eliminar familia
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+        tbody.querySelectorAll(".btn-eliminar-familia").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const idRegistro = btn.dataset.idRegistro;
+                if (!idRegistro) return;
+                const confirma = confirm(`¿Eliminar el registro de familia #${idRegistro}? Esta acción no se puede deshacer.`);
+                if (!confirma) return;
+
+                try {
+                    const delRes = await fetch(`/api/registros-familia/${idRegistro}`, { method: "DELETE" });
+                    const delData = await delRes.json();
+                    if (!delRes.ok) throw new Error(delData.error || "No se pudo eliminar la familia");
+
+                    await cargarFamiliasRecientesDePostventa(postventaActiva);
+                    await cargarRegistrosGestionPostventa(postventaActiva);
+                    const detalle = await cargarDetallePostventaSeleccionada(postventaActiva);
+                    actualizarDetalleSeleccionada({
+                        estado: detalle?.estado_ticket || "-",
+                        familias: detalle?.total_familias || historialFamilias.length
+                    });
+                    await cargarPostventasRecientes(postventaActiva, false);
+                    cargarIndicadoresPostventa();
+                    actualizarIndicadoresFlujo();
+                } catch (error) {
+                    console.error("Error eliminando familia:", error);
+                    alert(error.message || "No se pudo eliminar la familia.");
+                }
+            });
+        });
+    } catch (error) {
+        console.error("Error cargando gestión de registros:", error);
+        renderizarGestionVacia("No se pudieron cargar los registros de esta postventa.");
+        if (btnEliminarPostventa) btnEliminarPostventa.disabled = true;
+    }
+}
+
+function alternarPanelGestionRegistros() {
+    setModoGestionRegistros(!modoGestionRegistros);
+}
+
+function setModoGestionRegistros(activo) {
+    modoGestionRegistros = Boolean(activo);
+
+    const panel = document.getElementById("panel_gestion_registros");
+    const modulos = [
+        document.getElementById("modulo_identificacion_inmueble"),
+        document.getElementById("modulo_datos_postventa"),
+        document.getElementById("modulo_registro_familia"),
+        document.getElementById("modulo_resumen_postventa")
+    ];
+    const btnGestion = document.getElementById("btn_gestion_registros");
+
+    if (panel) panel.hidden = !modoGestionRegistros;
+    modulos.forEach(m => { if (m) m.hidden = modoGestionRegistros; });
+
+    if (btnGestion) {
+        btnGestion.classList.toggle("activo", modoGestionRegistros);
+        btnGestion.innerHTML = modoGestionRegistros
+            ? '<i class="fas fa-clipboard-list"></i> Gestión de registros (activa)'
+            : '<i class="fas fa-clipboard-list"></i> Gestión de registros';
+    }
+
+    if (modoGestionRegistros && panel) {
+        panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+}
+
+async function eliminarPostventaActiva() {
+    if (!postventaActiva) {
+        alert("No hay una postventa seleccionada.");
+        return;
+    }
+
+    const confirma = confirm(`¿Eliminar la postventa #${postventaActiva} completa? Se eliminarán todas sus familias y tareas.`);
+    if (!confirma) return;
+
+    try {
+        const res = await fetch(`/api/postventas/${postventaActiva}`, { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "No se pudo eliminar la postventa.");
+
+        postventaActiva = null;
+        historialFamilias = [];
+        resetearFormularioPostventa();
+        bloquearCamposCabecera(false);
+        renderizarUltimosRegistros();
+        limpiarAnclajePostventa();
+        actualizarEstadoPanelGestion("Ninguna");
+        renderizarGestionVacia();
+        const selectPostventa = document.getElementById("select_postventa_existente");
+        if (selectPostventa) selectPostventa.value = "";
+        const btnEliminarPostventa = document.getElementById("btn_eliminar_postventa");
+        if (btnEliminarPostventa) btnEliminarPostventa.disabled = true;
+        document.getElementById("btn_agregar_tabla").disabled = true;
+        document.getElementById("icono_boton").className = "fas fa-lock";
+
+        await cargarPostventasRecientes();
+        cargarIndicadoresPostventa();
+        actualizarIndicadoresFlujo();
+        mostrarAlertaCentro("Postventa eliminada correctamente");
+    } catch (error) {
+        console.error("Error eliminando postventa:", error);
+        alert(error.message || "No se pudo eliminar la postventa.");
+    }
 }
 
 function setValorSeguroSelect(select, valor) {
@@ -275,6 +438,10 @@ async function seleccionarPostventaExistente() {
         postventaActiva = null;
         historialFamilias = [];
         renderizarUltimosRegistros();
+        renderizarGestionVacia();
+        actualizarEstadoPanelGestion("Ninguna");
+        const btnEliminarPostventa = document.getElementById("btn_eliminar_postventa");
+        if (btnEliminarPostventa) btnEliminarPostventa.disabled = true;
         bloquearCamposCabecera(false);
         limpiarAnclajePostventa();
         actualizarIndicadoresFlujo();
@@ -285,6 +452,7 @@ async function seleccionarPostventaExistente() {
     try {
         const detalle = await cargarDetallePostventaSeleccionada(postventaActiva);
         await cargarFamiliasRecientesDePostventa(postventaActiva);
+        await cargarRegistrosGestionPostventa(postventaActiva);
         bloquearCamposCabecera(true);
 
         const option = select.selectedOptions[0];
@@ -296,6 +464,7 @@ async function seleccionarPostventaExistente() {
             familias: detalle?.total_familias || 0
         });
         actualizarEstadoPostventaSeleccionada(construirTextoEstadoPostventa(option, postventaActiva));
+        actualizarEstadoPanelGestion(construirTextoEstadoPostventa(option, postventaActiva));
         actualizarDetalleSeleccionada({
             estado: detalle?.estado_ticket || option?.dataset.estado || "-",
             familias: detalle?.total_familias || historialFamilias.length
@@ -517,6 +686,25 @@ document.addEventListener("DOMContentLoaded", () => {
     if (selectPostventa) {
         selectPostventa.addEventListener("change", seleccionarPostventaExistente);
     }
+
+    const btnGestion = document.getElementById("btn_gestion_registros");
+    if (btnGestion) btnGestion.addEventListener("click", alternarPanelGestionRegistros);
+
+    const btnEliminarPostventa = document.getElementById("btn_eliminar_postventa");
+    if (btnEliminarPostventa) btnEliminarPostventa.addEventListener("click", eliminarPostventaActiva);
+
+    const btnGestionFamilias = document.getElementById("btn_gestion_familias");
+    if (btnGestionFamilias) {
+        btnGestionFamilias.addEventListener("click", () => {
+            setModoGestionRegistros(false);
+            const moduloFamilia = document.getElementById("modulo_registro_familia");
+            if (moduloFamilia) moduloFamilia.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+    }
+
+    actualizarEstadoPanelGestion("Ninguna");
+    renderizarGestionVacia();
+    setModoGestionRegistros(false);
 });
 //------------------------------------CARGA DE DATOS------------------//
 async function cargarProyectos() {
@@ -671,6 +859,8 @@ async function crearPostventa() {
         estado: document.getElementById("estado_ticket")?.value || "-",
         familias: 0
     });
+    actualizarEstadoPanelGestion(construirTextoEstadoPostventa(option, postventaActiva));
+    await cargarRegistrosGestionPostventa(postventaActiva);
 }
 
 
@@ -684,9 +874,13 @@ function activarBotonNuevaPostventa() {
             resetearFormularioPostventa();
             bloquearCamposCabecera(false);
             renderizarUltimosRegistros();
+            renderizarGestionVacia();
+            actualizarEstadoPanelGestion("Ninguna");
             limpiarAnclajePostventa();
             const selectPostventa = document.getElementById("select_postventa_existente");
             if (selectPostventa) selectPostventa.value = "";
+            const btnEliminarPostventa = document.getElementById("btn_eliminar_postventa");
+            if (btnEliminarPostventa) btnEliminarPostventa.disabled = true;
             document.getElementById("btn_agregar_tabla").disabled = true;
             document.getElementById("icono_boton").className = "fas fa-lock";
             mostrarAlertaCentro("Formulario listo para nueva postventa");
@@ -892,6 +1086,7 @@ async function guardarFamiliaCompleta() {
             cargo_responsable: cargoResponsableTxt
         });
         await cargarFamiliasRecientesDePostventa(postventaActiva);
+        await cargarRegistrosGestionPostventa(postventaActiva);
         const detallePostventa = await cargarDetallePostventaSeleccionada(postventaActiva);
         actualizarDetalleSeleccionada({
             estado: detallePostventa?.estado_ticket || "-",

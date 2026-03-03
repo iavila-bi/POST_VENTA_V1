@@ -398,6 +398,145 @@ app.get('/api/postventas/:id_postventa/familias-recientes', async (req, res) => 
     }
 });
 
+app.get('/api/postventas/:id_postventa/registros', async (req, res) => {
+    try {
+        const { id_postventa } = req.params;
+        const result = await pool.query(
+            `SELECT
+                rf.id_registro,
+                f.nombre_familia AS familia,
+                sf.nombre_subfamilia AS subfamilia,
+                rf.recinto,
+                rf.fecha_levantamiento,
+                r.nombre_responsable AS responsable,
+                r.cargo AS cargo_responsable
+             FROM registros_familias rf
+             LEFT JOIN familias f ON f.id_familia = rf.id_familia
+             LEFT JOIN subfamilias sf ON sf.id_subfamilia = rf.id_subfamilia
+             LEFT JOIN responsables r ON r.id_responsable = rf.id_responsable
+             WHERE rf.id_postventa = $1
+             ORDER BY rf.id_registro DESC`,
+            [id_postventa]
+        );
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error obteniendo registros por postventa:', error);
+        res.status(500).json({ error: 'Error al obtener registros de la postventa' });
+    }
+});
+
+app.delete('/api/registros-familia/:id_registro', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const { id_registro } = req.params;
+        await client.query('BEGIN');
+
+        await client.query(
+            `DELETE FROM tareas_ejecutantes
+             WHERE id_tarea IN (
+                SELECT id_tarea FROM tareas WHERE id_registro_familia = $1
+             )`,
+            [id_registro]
+        );
+
+        await client.query(
+            `DELETE FROM tareas WHERE id_registro_familia = $1`,
+            [id_registro]
+        );
+
+        const delRegistro = await client.query(
+            `DELETE FROM registros_familias
+             WHERE id_registro = $1
+             RETURNING id_registro, id_postventa`,
+            [id_registro]
+        );
+
+        if (delRegistro.rowCount === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Registro no encontrado' });
+        }
+
+        await client.query('COMMIT');
+        res.json({ success: true, registro: delRegistro.rows[0] });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error eliminando registro de familia:', error);
+        res.status(500).json({ error: 'Error al eliminar registro de familia' });
+    } finally {
+        client.release();
+    }
+});
+
+app.delete('/api/postventas/:id_postventa', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const { id_postventa } = req.params;
+        await client.query('BEGIN');
+
+        const postventaRes = await client.query(
+            `SELECT id_postventa, id_cliente FROM postventas WHERE id_postventa = $1`,
+            [id_postventa]
+        );
+
+        if (postventaRes.rowCount === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Postventa no encontrada' });
+        }
+
+        const id_cliente = postventaRes.rows[0].id_cliente;
+
+        await client.query(
+            `DELETE FROM tareas_ejecutantes
+             WHERE id_tarea IN (
+                SELECT t.id_tarea
+                FROM tareas t
+                JOIN registros_familias rf ON rf.id_registro = t.id_registro_familia
+                WHERE rf.id_postventa = $1
+             )`,
+            [id_postventa]
+        );
+
+        await client.query(
+            `DELETE FROM tareas
+             WHERE id_registro_familia IN (
+                SELECT id_registro
+                FROM registros_familias
+                WHERE id_postventa = $1
+             )`,
+            [id_postventa]
+        );
+
+        await client.query(
+            `DELETE FROM registros_familias WHERE id_postventa = $1`,
+            [id_postventa]
+        );
+
+        await client.query(
+            `DELETE FROM postventas WHERE id_postventa = $1`,
+            [id_postventa]
+        );
+
+        await client.query(
+            `DELETE FROM clientes c
+             WHERE c.id_cliente = $1
+               AND NOT EXISTS (
+                    SELECT 1 FROM postventas pv WHERE pv.id_cliente = c.id_cliente
+               )`,
+            [id_cliente]
+        );
+
+        await client.query('COMMIT');
+        res.json({ success: true, id_postventa: Number(id_postventa) });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error eliminando postventa:', error);
+        res.status(500).json({ error: 'Error al eliminar postventa' });
+    } finally {
+        client.release();
+    }
+});
+
 // ======================================================
 // GUARDAR FAMILIA + TAREAS + EJECUTANTES
 // ======================================================

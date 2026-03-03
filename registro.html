@@ -35,6 +35,9 @@
             <span id="chip_inmueble" class="paso-chip"><i class="fas fa-building"></i> Inmueble</span>
             <span id="chip_postventa" class="paso-chip"><i class="fas fa-id-card"></i> Postventa</span>
             <span id="chip_familias" class="paso-chip"><i class="fas fa-tools"></i> Familias</span>
+            <button type="button" id="btn_gestion_registros" class="paso-chip paso-chip-btn">
+                <i class="fas fa-clipboard-list"></i> Gestión de registros
+            </button>
         </div>
     </header>
 
@@ -78,7 +81,43 @@
         </article>
     </section>
 
-    <div class="tarjeta-modulo">
+    <section id="panel_gestion_registros" class="tarjeta-modulo panel-gestion-registros" hidden>
+        <div class="cabecera-modulo">
+            <h3 class="titulo-seccion"><i class="fas fa-clipboard-list"></i> Gestión de Registros</h3>
+            <div id="estado_panel_gestion" class="estado-postventa-modulo estado-postventa-modulo--sin">
+                No Hay PostVenta Seleccionada
+            </div>
+        </div>
+        <p class="gestion-ayuda">Aquí puedes eliminar familias específicas o eliminar la postventa completa seleccionada.</p>
+        <div class="tabla-responsive">
+            <table class="tabla-registros tabla-gestion-registros">
+                <thead>
+                    <tr>
+                        <th>ID Registro</th>
+                        <th>Familia</th>
+                        <th>Subfamilia</th>
+                        <th>Recinto</th>
+                        <th>Levantamiento</th>
+                        <th>Responsable</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody_gestion_registros">
+                    <tr><td colspan="7">Seleccione una postventa para gestionar registros.</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="gestion-acciones-finales">
+            <button type="button" id="btn_gestion_familias" class="btn-secundario">
+                <i class="fas fa-arrow-left"></i> Gestión de familias
+            </button>
+            <button type="button" id="btn_eliminar_postventa" class="btn-eliminar-postventa" disabled>
+                <i class="fas fa-trash"></i> Eliminar Postventa Completa
+            </button>
+        </div>
+    </section>
+
+    <div id="modulo_identificacion_inmueble" class="tarjeta-modulo">
         <div class="cabecera-modulo">
             <h3 class="titulo-seccion"><i class="fas fa-building"></i> 1. Identificaci&oacute;n del inmueble</h3>
             <div id="estado_modulo_inmueble" class="estado-postventa-modulo estado-postventa-modulo--sin">
@@ -106,7 +145,7 @@
         </div>
     </div>
 
-    <div class="tarjeta-modulo tarjeta-postventa">
+    <div id="modulo_datos_postventa" class="tarjeta-modulo tarjeta-postventa">
         <div class="cabecera-modulo">
             <h3 class="titulo-seccion"><i class="fas fa-id-card"></i> 2. Datos de la Postventa</h3>
             <div id="estado_modulo_postventa" class="estado-postventa-modulo estado-postventa-modulo--sin">
@@ -153,7 +192,7 @@
         </div>
     </div>
 
-    <div class="tarjeta-modulo">
+    <div id="modulo_registro_familia" class="tarjeta-modulo">
         <div class="cabecera-modulo">
             <h3 class="titulo-seccion"><i class="fas fa-tools"></i> 3. Registro por Familia</h3>
             <div id="estado_modulo_familia" class="estado-postventa-modulo estado-postventa-modulo--sin">
@@ -282,7 +321,7 @@
         </div>
     </div>
 
-    <div class="tarjeta-modulo tarjeta-resumen-postventa">
+    <div id="modulo_resumen_postventa" class="tarjeta-modulo tarjeta-resumen-postventa">
         <div class="historial-anclaje">
             <p class="label-ancladas">FAMILIAS ANCLADAS A ESTA POSTVENTA:</p>
             <div id="lista_recientes_chips" class="flex-chips">
