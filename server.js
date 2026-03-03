@@ -179,6 +179,10 @@ app.post('/api/guardar-familia-completa', async (req, res) => {
         return res.status(400).json({ error: 'Datos incompletos del registro' });
     }
 
+    if (!registro?.etiqueta_accion) {
+        return res.status(400).json({ error: 'Etiqueta acción es obligatoria' });
+    }
+
     if (!Array.isArray(tareas) || tareas.length === 0) {
         return res.status(400).json({ error: 'Debe agregar al menos una tarea' });
     }
@@ -191,8 +195,8 @@ app.post('/api/guardar-familia-completa', async (req, res) => {
         // 1ï¸âƒ£ Insertar registro_familias
         const resRegistro = await client.query(
             `INSERT INTO registros_familias
-            (id_postventa, id_familia, id_subfamilia, id_responsable, origen, recinto, comentarios_previos, fecha_levantamiento, fecha_visita, fecha_firma_acta)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+            (id_postventa, id_familia, id_subfamilia, id_responsable, origen, etiqueta_accion, recinto, comentarios_previos, fecha_levantamiento, fecha_visita, fecha_firma_acta)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
             RETURNING id_registro`,
             [
                 registro.id_postventa,
@@ -200,6 +204,7 @@ app.post('/api/guardar-familia-completa', async (req, res) => {
                 registro.id_subfamilia,
                 registro.id_responsable,
                 registro.origen,
+                registro.etiqueta_accion,
                 registro.recinto,
                 registro.comentarios_previos,
                 registro.fecha_levantamiento,

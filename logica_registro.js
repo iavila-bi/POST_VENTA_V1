@@ -30,6 +30,19 @@ function limpiarAnclajePostventa() {
     banner.innerHTML = "";
 }
 
+function actualizarColorEtiquetaAccion() {
+    const select = document.getElementById("etiqueta_accion");
+    if (!select) return;
+
+    select.classList.remove("etiqueta-aplica", "etiqueta-no-aplica");
+
+    if (select.value === "APLICA") {
+        select.classList.add("etiqueta-aplica");
+    } else if (select.value === "NO APLICA") {
+        select.classList.add("etiqueta-no-aplica");
+    }
+}
+
 function renderizarUltimosRegistros() {
     const tbody = document.getElementById("tbody-registros");
     const chips = document.getElementById("lista_recientes_chips");
@@ -75,6 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
     activarBotonNuevaPostventa();
     renderizarUltimosRegistros();
     limpiarAnclajePostventa();
+    actualizarColorEtiquetaAccion();
 });
 //------------------------------------CARGA DE DATOS------------------//
 async function cargarProyectos() {
@@ -107,7 +121,15 @@ async function cargarIdentificadores() {
     const select = document.getElementById("id_inmueble");
     select.innerHTML = '<option value="">Seleccione identificador...</option>';
 
-    data.forEach(i => {
+    const ordenados = [...data].sort((a, b) =>
+        String(a.numero_identificador).localeCompare(
+            String(b.numero_identificador),
+            "es",
+            { numeric: true, sensitivity: "base" }
+        )
+    );
+
+    ordenados.forEach(i => {
         select.innerHTML += `<option value="${i.id_inmueble}">${i.numero_identificador}</option>`;
     });
 }
@@ -323,6 +345,7 @@ async function guardarFamiliaCompleta() {
         id_subfamilia: document.getElementById("select_subfamilia").value,
         id_responsable: document.getElementById("reg_responsable").value,
         origen: document.getElementById("reg_origen").value,
+        etiqueta_accion: document.getElementById("etiqueta_accion").value,
         recinto: document.getElementById("reg_recinto").value,
         comentarios_previos: document.getElementById("reg_comentarios_cliente").value,
         fecha_firma_acta: document.getElementById("fecha_firma_acta").value,
@@ -332,6 +355,11 @@ async function guardarFamiliaCompleta() {
         fecha_levantamiento: document.getElementById("fecha_firma_acta").value || new Date().toISOString().split('T')[0],
         fecha_visita: document.getElementById("fecha_firma_acta").value || new Date().toISOString().split('T')[0]
     };
+
+    if (!registro.etiqueta_accion) {
+        alert("Debe seleccionar una Etiqueta Acción (APLICA / NO APLICA).");
+        return;
+    }
 
     // 3. Recolectar tareas
     const tareas = [];
@@ -396,6 +424,12 @@ async function guardarFamiliaCompleta() {
         // Limpiar tabla de tareas
         const tabla = document.getElementById("body_ejecutantes");
         if (tabla) tabla.innerHTML = "";
+
+        const selectEtiqueta = document.getElementById("etiqueta_accion");
+        if (selectEtiqueta) {
+            selectEtiqueta.value = "";
+            actualizarColorEtiquetaAccion();
+        }
 
         console.log("Guardado exitoso con ID:", data.id_registro);
 

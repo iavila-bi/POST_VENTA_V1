@@ -426,11 +426,7 @@ button:disabled {
 
 /* Línea decorativa bajo el título */
 .sublinea-decorativa {
-    height: 4px;
-    width: 60px;
-    background: var(--azul-600);
-    margin: 0 auto;
-    border-radius: 10px;
+    display: none;
 }
 
 /* Botón de volver mejorado (arriba a la izquierda) */
@@ -1013,5 +1009,192 @@ button:disabled {
     .btn-guardar-familia {
         width: 100%;
         justify-content: center;
+    }
+}
+
+.fila-firma-etiqueta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: end;
+}
+
+.etiqueta-accion-select {
+    font-weight: 600;
+}
+
+.etiqueta-accion-select.etiqueta-aplica {
+    background: #ecfdf3 !important;
+    border-color: #22c55e !important;
+    color: #166534 !important;
+}
+
+.etiqueta-accion-select.etiqueta-no-aplica {
+    background: #fef2f2 !important;
+    border-color: #ef4444 !important;
+    color: #991b1b !important;
+}
+
+@media (max-width: 900px) {
+    .fila-firma-etiqueta {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+
+/* Flujo visual continuo */
+.contenedor-registro {
+    width: min(1320px, 96%);
+    margin: 0 auto 44px;
+}
+
+.header-postventa {
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 22px;
+    padding: 38px 24px 26px !important;
+    border: 1px solid #dbeafe;
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at 15% 10%, rgba(59, 130, 246, 0.22), transparent 48%),
+        radial-gradient(circle at 85% 8%, rgba(37, 99, 235, 0.16), transparent 44%),
+        linear-gradient(180deg, #f8fbff 0%, #f2f8ff 100%);
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+}
+
+.hero-subtitulo {
+    margin-top: 8px;
+    font-size: 0.98rem;
+    color: #475569;
+    font-weight: 500;
+}
+
+.flujo-pasos {
+    margin-top: 18px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.paso-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: #1e3a8a;
+    font-size: 0.83rem;
+    font-weight: 500;
+}
+
+.paso-chip.activo {
+    background: #dbeafe;
+    border-color: #93c5fd;
+}
+
+.tarjeta-modulo {
+    width: 100%;
+    margin-bottom: 24px;
+}
+
+.tarjeta-resumen-postventa {
+    margin-bottom: 0;
+}
+
+.historial-anclaje {
+    margin-bottom: 16px;
+}
+
+@media (max-width: 900px) {
+    .header-postventa {
+        padding: 26px 16px 18px !important;
+    }
+
+    .titulo-central h1 {
+        font-size: 2.2rem;
+    }
+
+    .hero-subtitulo {
+        font-size: 0.9rem;
+    }
+}
+
+/* Fondo global + separación visual de bloques */
+body.bg-dashboard {
+    background:
+        radial-gradient(circle at 10% 0%, rgba(59, 130, 246, 0.15), transparent 40%),
+        radial-gradient(circle at 90% 12%, rgba(37, 99, 235, 0.1), transparent 36%),
+        linear-gradient(180deg, #f6f9ff 0%, #eef4ff 48%, #eaf1ff 100%);
+    min-height: 100vh;
+}
+
+.tarjeta-modulo {
+    border: 1px solid #bfd6ff;
+    box-shadow: 0 10px 26px rgba(30, 58, 138, 0.09);
+}
+
+.tarjeta-modulo + .tarjeta-modulo {
+    margin-top: 6px;
+}
+
+.seccion-planificacion-azul,
+.tarjeta-resumen-postventa {
+    border-color: #a8c7ff;
+}
+
+/* Primer bloque de Registro por Familia: 2x2 */
+.grid-primarios-familia {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    gap: 18px 24px;
+    margin-bottom: 18px;
+}
+
+/* Ajuste de layout: 2. Datos de la Postventa */
+.tarjeta-postventa .grid-campos-doble {
+    grid-template-columns: repeat(3, minmax(260px, 1fr)) !important;
+    gap: 18px 24px !important;
+    align-items: start !important;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-bottom: 10px !important;
+}
+
+.tarjeta-postventa .grupo-input {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.tarjeta-postventa #estado_ticket {
+    max-width: none !important;
+    width: 100% !important;
+}
+
+.tarjeta-postventa .form-actions-postventa {
+    margin-top: 12px !important;
+    padding-top: 16px;
+    justify-content: center;
+    align-items: center;
+}
+
+@media (max-width: 1100px) {
+    .tarjeta-postventa .grid-campos-doble {
+        grid-template-columns: repeat(2, minmax(240px, 1fr)) !important;
+    }
+}
+
+@media (max-width: 700px) {
+    .tarjeta-postventa .grid-campos-doble {
+        grid-template-columns: 1fr !important;
+    }
+
+    .grid-primarios-familia {
+        grid-template-columns: 1fr;
     }
 }
