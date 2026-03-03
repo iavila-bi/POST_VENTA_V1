@@ -1,5 +1,13 @@
 let debounceTimer = null;
 
+function mostrarToast(msg) {
+    const toast = document.getElementById("toast_cierre");
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.classList.add("visible");
+    setTimeout(() => toast.classList.remove("visible"), 2200);
+}
+
 function fmtFecha(valor) {
     if (!valor) return "-";
     const d = new Date(valor);
@@ -38,9 +46,11 @@ function renderTablaPendientes(rows) {
         return;
     }
 
-    rows.forEach(r => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
+    rows.forEach((r, idx) => {
+        const filaPar = idx % 2 === 0;
+        const trDatos = document.createElement("tr");
+        trDatos.className = `fila-registro-datos ${filaPar ? "par" : "impar"}`;
+        trDatos.innerHTML = `
             <td>${r.nombre_proyecto || "-"}</td>
             <td>${r.numero_identificador || "-"}</td>
             <td>#${r.id_postventa ?? "-"}</td>
@@ -52,8 +62,49 @@ function renderTablaPendientes(rows) {
             <td>${r.origen || "-"}</td>
             <td>${fmtFecha(r.fecha_levantamiento)}</td>
         `;
-        tbody.appendChild(tr);
+        tbody.appendChild(trDatos);
+
+        const trAccion = document.createElement("tr");
+        trAccion.className = `fila-registro-accion ${filaPar ? "par" : "impar"}`;
+        trAccion.innerHTML = `
+            <td colspan="10">
+                <div class="accion-firma-wrap">
+                    <span class="accion-label">Fecha firma de acta</span>
+                    <input type="date" class="input-firma-acta" id="firma_${r.id_registro}">
+                    <button type="button" class="btn-hoy-firma" data-id="${r.id_registro}">Hoy</button>
+                    <button type="button" class="btn-guardar-firma" data-id="${r.id_registro}">Guardar cierre</button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(trAccion);
     });
+}
+
+async function guardarFirmaActa(idRegistro) {
+    const input = document.getElementById(`firma_${idRegistro}`);
+    const fecha = input?.value || "";
+
+    if (!fecha) {
+        alert("Debes seleccionar la fecha firma de acta.");
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/cierre-actas/${idRegistro}/firma-acta`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fecha_firma_acta: fecha })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "No se pudo actualizar");
+
+        mostrarToast("Cierre de acta guardado correctamente");
+        await cargarPendientesCierre();
+    } catch (error) {
+        console.error(error);
+        alert("Error: " + error.message);
+    }
 }
 
 async function cargarPendientesCierre() {
@@ -92,5 +143,19 @@ document.addEventListener("DOMContentLoaded", async () => {
             debounceTimer = setTimeout(cargarPendientesCierre, 280);
         });
     }
-});
 
+    document.addEventListener("click", async (e) => {
+        const btnHoy = e.target.closest(".btn-hoy-firma");
+        if (btnHoy) {
+            const id = btnHoy.dataset.id;
+            const input = document.getElementById(`firma_${id}`);
+            if (input) input.value = new Date().toISOString().split("T")[0];
+            return;
+        }
+
+        const btnGuardar = e.target.closest(".btn-guardar-firma");
+        if (btnGuardar) {
+            await guardarFirmaActa(btnGuardar.dataset.id);
+        }
+    });
+});

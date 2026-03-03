@@ -9,6 +9,18 @@
     --texto: #1e293b;
     --texto-soft: #64748b;
     --blanco: #ffffff;
+
+    /* Anchos configurables por columna */
+    --c-proyecto: 130px;
+    --c-identificador: 95px;
+    --c-postventa: 110px;
+    --c-cliente: 150px;
+    --c-familia: 140px;
+    --c-subfamilia: 170px;
+    --c-recinto: 120px;
+    --c-responsable: 140px;
+    --c-origen: 90px;
+    --c-levantamiento: 125px;
 }
 
 * {
@@ -122,10 +134,23 @@ body {
 
 .tabla-pendientes {
     width: 100%;
-    min-width: 1200px;
-    border-collapse: collapse;
+    min-width: 1280px;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
     background: #ffffff;
 }
+
+.tabla-pendientes .col-proyecto { width: var(--c-proyecto); }
+.tabla-pendientes .col-identificador { width: var(--c-identificador); }
+.tabla-pendientes .col-postventa { width: var(--c-postventa); }
+.tabla-pendientes .col-cliente { width: var(--c-cliente); }
+.tabla-pendientes .col-familia { width: var(--c-familia); }
+.tabla-pendientes .col-subfamilia { width: var(--c-subfamilia); }
+.tabla-pendientes .col-recinto { width: var(--c-recinto); }
+.tabla-pendientes .col-responsable { width: var(--c-responsable); }
+.tabla-pendientes .col-origen { width: var(--c-origen); }
+.tabla-pendientes .col-levantamiento { width: var(--c-levantamiento); }
 
 .tabla-pendientes thead th {
     background: #eef5ff;
@@ -143,16 +168,112 @@ body {
     padding: 11px 10px;
     font-size: 0.92rem;
     color: #1e293b;
-    border-bottom: 1px solid #e7efff;
+    border-bottom: 1px solid #dde8ff;
     vertical-align: middle;
+    word-break: break-word;
 }
 
-.tabla-pendientes tbody tr:nth-child(even) {
-    background: #fbfdff;
+.fila-registro-datos.par td {
+    background: #fcfeff;
 }
 
-.tabla-pendientes tbody tr:hover {
-    background: #f3f8ff;
+.fila-registro-datos.impar td {
+    background: #ffffff;
+}
+
+.fila-registro-datos td {
+    border-bottom: 0;
+}
+
+.fila-registro-accion td {
+    background: #f8fbff;
+    border-top: 1px dashed #d2e2ff;
+    border-bottom: 2px solid #b7cff8;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.accion-firma-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    min-width: 0;
+    width: auto;
+    padding: 4px 0;
+    flex-wrap: nowrap;
+}
+
+.accion-label {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #1e3a8a;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.input-firma-acta {
+    height: 36px;
+    width: 170px;
+    border: 1px solid #c5d7f7;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 0 10px;
+    font-size: 0.88rem;
+}
+
+.btn-hoy-firma,
+.btn-guardar-firma {
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #b7cff8;
+    background: #eff6ff;
+    color: #1e3a8a;
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 0 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-hoy-firma:hover {
+    background: #dbeafe;
+}
+
+.btn-guardar-firma {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    border-color: #2563eb;
+    color: #ffffff;
+}
+
+.btn-guardar-firma:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.25);
+}
+
+.toast-cierre {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    background: #ecfdf3;
+    color: #166534;
+    border: 1px solid #86efac;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.15);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+.toast-cierre.visible {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 @media (max-width: 900px) {
@@ -163,5 +284,19 @@ body {
     .hero-texto h1 {
         font-size: 1.75rem;
     }
-}
 
+    .accion-firma-wrap {
+        display: grid;
+        grid-template-columns: 1fr;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .accion-label {
+        margin-bottom: 2px;
+    }
+
+    .input-firma-acta {
+        width: 100%;
+    }
+}

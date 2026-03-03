@@ -94,6 +94,34 @@ app.get('/api/cierre-actas/pendientes', async (req, res) => {
     }
 });
 
+app.put('/api/cierre-actas/:id_registro/firma-acta', async (req, res) => {
+    try {
+        const { id_registro } = req.params;
+        const { fecha_firma_acta } = req.body;
+
+        if (!fecha_firma_acta) {
+            return res.status(400).json({ error: 'Fecha firma de acta es obligatoria' });
+        }
+
+        const result = await pool.query(
+            `UPDATE registros_familias
+             SET fecha_firma_acta = $1
+             WHERE id_registro = $2
+             RETURNING id_registro, fecha_firma_acta`,
+            [fecha_firma_acta, id_registro]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Registro no encontrado' });
+        }
+
+        res.json({ success: true, registro: result.rows[0] });
+    } catch (error) {
+        console.error('Error actualizando fecha firma acta:', error);
+        res.status(500).json({ error: 'Error al actualizar fecha firma de acta' });
+    }
+});
+
 app.get('/api/proyectos/:id_proyecto/inmuebles', async (req, res) => {
     try {
         const result = await pool.query(
