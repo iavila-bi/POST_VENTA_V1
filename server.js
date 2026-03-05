@@ -426,6 +426,122 @@ app.get('/api/postventas/:id_postventa/registros', async (req, res) => {
     }
 });
 
+app.get('/api/historico/postventas', async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT
+                pv.id_postventa,
+                p.nombre_proyecto,
+                i.numero_identificador
+             FROM postventas pv
+             JOIN inmuebles i ON i.id_inmueble = pv.id_inmueble
+             JOIN proyectos p ON p.id_proyecto = i.id_proyecto
+             ORDER BY pv.id_postventa DESC`
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error listado postventas historico:', error);
+        res.status(500).json({ error: 'Error al listar postventas históricas' });
+    }
+});
+
+app.get('/api/historico/registros', async (req, res) => {
+    try {
+        const {
+            id_proyecto,
+            id_postventa,
+            id_familia,
+            id_responsable,
+            fecha_desde,
+            fecha_hasta,
+            q
+        } = req.query;
+
+        const where = [];
+        const params = [];
+
+        if (id_proyecto) {
+            params.push(id_proyecto);
+            where.push(`i.id_proyecto = $${params.length}`);
+        }
+
+        if (id_postventa) {
+            params.push(id_postventa);
+            where.push(`pv.id_postventa = $${params.length}`);
+        }
+
+        if (id_familia) {
+            params.push(id_familia);
+            where.push(`rf.id_familia = $${params.length}`);
+        }
+
+        if (id_responsable) {
+            params.push(id_responsable);
+            where.push(`rf.id_responsable = $${params.length}`);
+        }
+
+        if (fecha_desde) {
+            params.push(fecha_desde);
+            where.push(`rf.fecha_levantamiento >= $${params.length}`);
+        }
+
+        if (fecha_hasta) {
+            params.push(fecha_hasta);
+            where.push(`rf.fecha_levantamiento <= $${params.length}`);
+        }
+
+        if (q && q.trim()) {
+            params.push(`%${q.trim()}%`);
+            where.push(`(
+                p.nombre_proyecto ILIKE $${params.length}
+                OR i.numero_identificador::text ILIKE $${params.length}
+                OR c.nombre_completo ILIKE $${params.length}
+                OR f.nombre_familia ILIKE $${params.length}
+                OR sf.nombre_subfamilia ILIKE $${params.length}
+                OR rf.recinto ILIKE $${params.length}
+                OR r.nombre_responsable ILIKE $${params.length}
+            )`);
+        }
+
+        const clausulaWhere = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+        const result = await pool.query(
+            `SELECT
+                rf.id_registro,
+                pv.id_postventa,
+                p.nombre_proyecto,
+                i.numero_identificador,
+                c.nombre_completo AS cliente,
+                f.nombre_familia AS familia,
+                sf.nombre_subfamilia AS subfamilia,
+                rf.recinto,
+                r.nombre_responsable AS responsable,
+                r.cargo AS cargo_responsable,
+                rf.origen,
+                rf.etiqueta_accion,
+                rf.fecha_levantamiento,
+                rf.fecha_visita,
+                rf.fecha_firma_acta
+             FROM registros_familias rf
+             JOIN postventas pv ON pv.id_postventa = rf.id_postventa
+             JOIN inmuebles i ON i.id_inmueble = pv.id_inmueble
+             JOIN proyectos p ON p.id_proyecto = i.id_proyecto
+             JOIN clientes c ON c.id_cliente = pv.id_cliente
+             LEFT JOIN familias f ON f.id_familia = rf.id_familia
+             LEFT JOIN subfamilias sf ON sf.id_subfamilia = rf.id_subfamilia
+             LEFT JOIN responsables r ON r.id_responsable = rf.id_responsable
+             ${clausulaWhere}
+             ORDER BY rf.id_registro DESC`,
+            params
+        );
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error histórico registros:', error);
+        res.status(500).json({ error: 'Error al obtener registros históricos' });
+    }
+});
+
 app.delete('/api/registros-familia/:id_registro', async (req, res) => {
     const client = await pool.connect();
     try {

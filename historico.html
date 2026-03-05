@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Registros | Grupo Patagual</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="estilo_historico.css">
+</head>
+<body>
+    <main class="contenedor-historico">
+        <header class="header-historico">
+            <a href="index.html" class="btn-volver">
+                <i class="fas fa-chevron-left"></i> Volver al Menú
+            </a>
+            <a href="registro.html" class="btn-volver">
+                <i class="fas fa-clipboard-list"></i> Ir a Registro
+            </a>
+            <div class="header-centro">
+                <p class="app-kicker">APP POSTVENTA</p>
+                <h1>Histórico de Registros</h1>
+                <p>Consulta dinámica con filtros para trazabilidad completa por postventa y familias.</p>
+            </div>
+        </header>
+
+        <section class="tarjeta-filtros">
+            <div class="grid-filtros">
+                <div class="campo-filtro">
+                    <label>Proyecto</label>
+                    <select id="filtro_proyecto">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="campo-filtro">
+                    <label>Postventa</label>
+                    <select id="filtro_postventa">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                <div class="campo-filtro">
+                    <label>Familia</label>
+                    <select id="filtro_familia">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                <div class="campo-filtro">
+                    <label>Responsable</label>
+                    <select id="filtro_responsable">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="campo-filtro">
+                    <label>Desde</label>
+                    <input type="date" id="filtro_desde">
+                </div>
+                <div class="campo-filtro">
+                    <label>Hasta</label>
+                    <input type="date" id="filtro_hasta">
+                </div>
+                <div class="campo-filtro campo-buscador">
+                    <label>Buscador</label>
+                    <input type="text" id="filtro_busqueda" placeholder="Cliente, proyecto, recinto, familia, responsable...">
+                </div>
+            </div>
+
+            <div class="acciones-filtros">
+                <button id="btn_buscar" class="btn-principal">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+                <button id="btn_limpiar" class="btn-secundario">
+                    <i class="fas fa-rotate-left"></i> Limpiar filtros
+                </button>
+                <span id="total_resultados" class="badge-total">0 resultados</span>
+            </div>
+        </section>
+
+        <section class="tarjeta-tabla">
+            <div class="tabla-responsive">
+                <table class="tabla-historico">
+                    <thead>
+                        <tr>
+                            <th>Registro</th>
+                            <th>Postventa</th>
+                            <th>Proyecto</th>
+                            <th>Identificador</th>
+                            <th>Cliente</th>
+                            <th>Familia</th>
+                            <th>Subfamilia</th>
+                            <th>Recinto</th>
+                            <th>Responsable</th>
+                            <th>Origen</th>
+                            <th>Etiqueta</th>
+                            <th>Levantamiento</th>
+                            <th>Visita</th>
+                            <th>Firma Acta</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody_historico">
+                        <tr><td colspan="14">Cargando registros...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="logica_historico.js"></script>
+</body>
+</html>

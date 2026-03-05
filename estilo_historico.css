@@ -1,0 +1,234 @@
+:root {
+    --azul-900: #0f172a;
+    --azul-700: #1d4ed8;
+    --azul-500: #3b82f6;
+    --azul-100: #dbeafe;
+    --gris-bg: #eef4ff;
+    --gris-border: #cbd5e1;
+    --texto: #1e293b;
+    --texto-sec: #64748b;
+    --blanco: #ffffff;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: "Inter", sans-serif;
+}
+
+body {
+    background:
+        radial-gradient(circle at 10% 0%, rgba(59, 130, 246, 0.15), transparent 40%),
+        radial-gradient(circle at 90% 12%, rgba(37, 99, 235, 0.1), transparent 36%),
+        linear-gradient(180deg, #f6f9ff 0%, #eef4ff 48%, #eaf1ff 100%);
+    color: var(--texto);
+}
+
+.contenedor-historico {
+    width: min(1400px, 96%);
+    margin: 14px auto 30px;
+}
+
+.header-historico {
+    background: linear-gradient(180deg, #f8fbff 0%, #f2f8ff 100%);
+    border: 1px solid var(--azul-100);
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+}
+
+.header-centro {
+    text-align: center;
+    margin-top: 12px;
+}
+
+.header-centro h1 {
+    font-size: 2.3rem;
+    margin-bottom: 6px;
+    color: #1e293b;
+}
+
+.header-centro p {
+    color: #475569;
+}
+
+.app-kicker {
+    display: inline-block;
+    margin-bottom: 6px;
+    padding: 4px 10px;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.btn-volver {
+    text-decoration: none;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 20px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    margin-right: 8px;
+}
+
+.tarjeta-filtros,
+.tarjeta-tabla {
+    margin-top: 14px;
+    background: var(--blanco);
+    border: 1px solid #bfd6ff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 8px 20px rgba(30, 58, 138, 0.08);
+}
+
+.grid-filtros {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.campo-buscador {
+    grid-column: span 2;
+}
+
+.campo-filtro label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--azul-700);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.campo-filtro input,
+.campo-filtro select {
+    width: 100%;
+    height: 40px;
+    border: 1px solid var(--gris-border);
+    border-radius: 10px;
+    padding: 0 10px;
+    background: #f7fbff;
+    font-size: 0.94rem;
+}
+
+.acciones-filtros {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.btn-principal,
+.btn-secundario {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-principal {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #fff;
+}
+
+.btn-secundario {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.badge-total {
+    margin-left: auto;
+    color: #1e3a8a;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.tabla-responsive {
+    overflow-x: auto;
+}
+
+.tabla-historico {
+    width: 100%;
+    min-width: 1600px;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.tabla-historico th {
+    background: #f0f7ff;
+    color: #1e3a8a;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid #dbeafe;
+    white-space: nowrap;
+}
+
+.tabla-historico td {
+    font-size: 0.9rem;
+    color: #1e293b;
+    padding: 10px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.tabla-historico tbody tr:nth-child(even) {
+    background: #fcfeff;
+}
+
+.tag-cargo {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 7px;
+    font-size: 0.72rem;
+    border-radius: 999px;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    color: #3730a3;
+    font-weight: 600;
+}
+
+@media (max-width: 1200px) {
+    .grid-filtros {
+        grid-template-columns: repeat(3, minmax(140px, 1fr));
+    }
+
+    .campo-buscador {
+        grid-column: span 3;
+    }
+}
+
+@media (max-width: 760px) {
+    .grid-filtros {
+        grid-template-columns: 1fr;
+    }
+
+    .campo-buscador {
+        grid-column: span 1;
+    }
+
+    .header-centro h1 {
+        font-size: 1.8rem;
+    }
+}

@@ -690,6 +690,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnGestion = document.getElementById("btn_gestion_registros");
     if (btnGestion) btnGestion.addEventListener("click", alternarPanelGestionRegistros);
 
+    const btnIrHistorico = document.getElementById("btn_ir_historico");
+    if (btnIrHistorico) {
+        btnIrHistorico.addEventListener("click", () => {
+            window.location.href = "historico.html";
+        });
+    }
+
     const btnEliminarPostventa = document.getElementById("btn_eliminar_postventa");
     if (btnEliminarPostventa) btnEliminarPostventa.addEventListener("click", eliminarPostventaActiva);
 
