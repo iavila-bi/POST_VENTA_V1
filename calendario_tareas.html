@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario de Tareas | Grupo Patagual</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="estilo_calendario_tareas.css">
+</head>
+<body>
+    <button type="button" id="theme_toggle" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+        <i class="fas fa-moon" aria-hidden="true"></i>
+    </button>
+
+    <main class="wrap-calendario">
+        <header class="hero-calendario">
+            <div class="hero-actions">
+                <a href="registro.html" class="btn-volver"><i class="fas fa-chevron-left"></i> Volver a Registro</a>
+                <a href="index.html" class="btn-volver"><i class="fas fa-home"></i> Men&uacute;</a>
+            </div>
+            <div class="hero-titulo">
+                <p class="app-kicker">APP POSTVENTA</p>
+                <h1>Calendario de Tareas</h1>
+                <p>Seguimiento de fechas de inicio y t&eacute;rmino para medir desempe&ntilde;o de ejecutantes.</p>
+            </div>
+        </header>
+
+        <section class="panel-controles">
+            <div class="controles-izq">
+                <button id="btn_prev_mes" class="btn-secundario" type="button" aria-label="Mes anterior">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <h2 id="titulo_mes">Mes A&ntilde;o</h2>
+                <button id="btn_next_mes" class="btn-secundario" type="button" aria-label="Mes siguiente">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <button id="btn_hoy" class="btn-secundario" type="button">Hoy</button>
+            </div>
+            <div class="controles-filtros">
+                <select id="filtro_ejecutante">
+                    <option value="">Todos los ejecutantes</option>
+                </select>
+                <select id="filtro_proyecto">
+                    <option value="">Todos los proyectos</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="panel-resumen">
+            <h3>Desempe&ntilde;o de Ejecutantes (mes actual)</h3>
+            <div id="resumen_ejecutantes" class="chips-resumen">
+                <span class="chip-vacio">Sin tareas para este per&iacute;odo</span>
+            </div>
+        </section>
+
+        <section class="panel-calendario">
+            <div class="calendario-header-grid" aria-hidden="true">
+                <span>Lunes</span>
+                <span>Martes</span>
+                <span>Mi&eacute;rcoles</span>
+                <span>Jueves</span>
+                <span>Viernes</span>
+                <span>S&aacute;bado</span>
+                <span>Domingo</span>
+            </div>
+            <div class="calendario-grid" id="calendario_grid"></div>
+        </section>
+    </main>
+
+    <script src="logica_calendario_tareas.js"></script>
+</body>
+</html>

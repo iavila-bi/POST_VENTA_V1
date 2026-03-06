@@ -1,58 +1,61 @@
-/* ==========================================
-   LÓGICA DEL MENÚ PRINCIPAL (DASHBOARD)
-   ========================================== */
-
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("Menú principal cargado correctamente.");
-    
-    // Aquí a futuro conectaremos los gráficos y tarjetas de resumen
-    // para que muestren la cantidad de tickets abiertos, cerrados, etc.
+    inicializarTema();
+    renderFechaActual();
+    activarEfectosDashboard();
 });
 
-// Función de navegación general (por si la usas en otras tarjetas de tu menú)
-function irAModulo(url) {
-    window.location.href = url;
+const STORAGE_KEY_TEMA = "app_postventa_tema";
+
+function aplicarTema(tema) {
+    const body = document.body;
+    const boton = document.getElementById("theme_toggle");
+    if (!body || !boton) return;
+
+    const esOscuro = tema === "dark";
+    body.classList.toggle("dark-mode", esOscuro);
+    boton.innerHTML = esOscuro
+        ? '<i class="fas fa-sun" aria-hidden="true"></i>'
+        : '<i class="fas fa-moon" aria-hidden="true"></i>';
+    boton.setAttribute("title", esOscuro ? "Cambiar a modo claro" : "Cambiar a modo oscuro");
+    boton.setAttribute("aria-label", esOscuro ? "Cambiar a modo claro" : "Cambiar a modo oscuro");
 }
 
-// Función para crear una nueva fila de ejecutante
-function agregarFilaEjecutante() {
-    const tbody = document.getElementById('body_ejecutantes');
-    const tr = document.createElement('tr');
-    
-    tr.innerHTML = `
-        <td>
-            <select class="sel-ejecutante-tabla">
-                <option value="" disabled selected>Escribe o selecciona</option>
-                </select>
-        </td>
-        <td><input type="date" class="date-plan" value="${new Date().toISOString().split('T')[0]}"></td>
-        <td><input type="date" class="date-plan" value="${new Date().toISOString().split('T')[0]}"></td>
-        <td><input type="text" placeholder="Traslado, instalación..." class="input-tarea"></td>
-        <td><button type="button" onclick="this.closest('tr').remove()" class="btn-del">×</button></td>
-    `;
-    tbody.appendChild(tr);
+function inicializarTema() {
+    const boton = document.getElementById("theme_toggle");
+    if (!boton) return;
+
+    const guardado = localStorage.getItem(STORAGE_KEY_TEMA);
+    const prefiereOscuro = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const temaInicial = guardado || (prefiereOscuro ? "dark" : "light");
+    aplicarTema(temaInicial);
+
+    boton.addEventListener("click", () => {
+        const actualOscuro = document.body.classList.contains("dark-mode");
+        const nuevoTema = actualOscuro ? "light" : "dark";
+        localStorage.setItem(STORAGE_KEY_TEMA, nuevoTema);
+        aplicarTema(nuevoTema);
+    });
 }
 
-// Escuchador del botón para agregar fila
-document.getElementById('btn_add_ejecutante_row')?.addEventListener('click', agregarFilaEjecutante);
+function renderFechaActual() {
+    const elFecha = document.getElementById("fecha-actual");
+    if (!elFecha) return;
 
-// Alerta tipo "Burbuja"
-function mostrarAlertaExito(mensaje) {
-    const toast = document.createElement('div');
-    toast.className = 'toast-exito';
-    toast.style.display = 'block';
-    toast.textContent = mensaje;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
+    const hoy = new Date();
+    const texto = hoy.toLocaleDateString("es-CL", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+    });
+
+    elFecha.textContent = texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
-// Ejemplo al pulsar el botón azul
-document.getElementById('btn_finalizar_familia')?.addEventListener('click', () => {
-    // Aquí irá la lógica de guardado en BD...
-    
-    mostrarAlertaExito("✅ Familia agregada con éxito");
-    // Lógica para actualizar las últimas 5...
-});
+function activarEfectosDashboard() {
+    const cards = document.querySelectorAll(".card");
+    cards.forEach((card, index) => {
+        card.style.animationDelay = `${0.08 * index}s`;
+        card.classList.add("card-reveal");
+    });
+}

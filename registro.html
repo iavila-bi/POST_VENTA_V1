@@ -88,7 +88,7 @@
         <div class="cabecera-modulo">
             <h3 class="titulo-seccion"><i class="fas fa-clipboard-list"></i> Gestión de Registros</h3>
             <div id="estado_panel_gestion" class="estado-postventa-modulo estado-postventa-modulo--sin">
-                No Hay PostVenta Seleccionada
+                No hay postventa seleccionada
             </div>
         </div>
         <p class="gestion-ayuda">Aquí puedes eliminar familias específicas o eliminar la postventa completa seleccionada.</p>
@@ -124,7 +124,7 @@
         <div class="cabecera-modulo">
             <h3 class="titulo-seccion"><i class="fas fa-building"></i> 1. Identificaci&oacute;n del inmueble</h3>
             <div id="estado_modulo_inmueble" class="estado-postventa-modulo estado-postventa-modulo--sin">
-                No Hay PostVenta Seleccionada
+                No hay postventa seleccionada
             </div>
         </div>
         <div class="grid-campos-doble">
@@ -152,7 +152,7 @@
         <div class="cabecera-modulo">
             <h3 class="titulo-seccion"><i class="fas fa-id-card"></i> 2. Datos de la Postventa</h3>
             <div id="estado_modulo_postventa" class="estado-postventa-modulo estado-postventa-modulo--sin">
-                No Hay PostVenta Seleccionada
+                No hay postventa seleccionada
             </div>
         </div>
         <div class="grid-campos-doble">
@@ -199,7 +199,7 @@
         <div class="cabecera-modulo">
             <h3 class="titulo-seccion"><i class="fas fa-tools"></i> 3. Registro por Familia</h3>
             <div id="estado_modulo_familia" class="estado-postventa-modulo estado-postventa-modulo--sin">
-                No Hay PostVenta Seleccionada
+                No hay postventa seleccionada
             </div>
         </div>
         <div class="grid-primarios-familia">
@@ -336,7 +336,7 @@
         <div class="tabla-responsive">
             <table class="tabla-registros">
                 <thead>
-                    <tr><th>Familia</th><th>Subfamilia</th><th>Recinto</th><th>Levantamiento</th><th>Responsable</th></tr>
+                    <tr><th>Familia</th><th>Subfamilia</th><th>Recinto</th><th>Levantamiento</th><th>Responsable</th><th>Estado</th></tr>
                 </thead>
                 <tbody id="tbody-registros"></tbody>
             </table>
@@ -348,6 +348,53 @@
             </button>
         </div>
     </div>
+
+    <section id="modulo_calendario_embebido" class="tarjeta-modulo tarjeta-calendario-embebido">
+        <div class="cabecera-modulo">
+            <h3 class="titulo-seccion"><i class="fas fa-calendar-days"></i> Calendario de Planificaci&oacute;n</h3>
+        </div>
+        <p class="calendario-embebido-ayuda">
+            Vista r&aacute;pida del calendario de tareas (inicio y t&eacute;rmino) para seguimiento de ejecutantes.
+        </p>
+        <section class="cal-panel-controles">
+            <div class="cal-controles-izq">
+                <button id="cal_btn_prev_mes" class="btn-secundario" type="button" aria-label="Mes anterior">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <h4 id="cal_titulo_mes" class="cal-titulo-mes">Mes A&ntilde;o</h4>
+                <button id="cal_btn_next_mes" class="btn-secundario" type="button" aria-label="Mes siguiente">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <button id="cal_btn_hoy" class="btn-secundario" type="button">Hoy</button>
+            </div>
+            <div class="cal-controles-filtros">
+                <select id="cal_filtro_ejecutante">
+                    <option value="">Todos los ejecutantes</option>
+                </select>
+                <select id="cal_filtro_proyecto">
+                    <option value="">Todos los proyectos</option>
+                </select>
+            </div>
+        </section>
+        <section class="cal-panel-resumen">
+            <h4>Desempe&ntilde;o de ejecutantes (mes actual)</h4>
+            <div id="cal_resumen_ejecutantes" class="cal-chips-resumen">
+                <span class="cal-chip-vacio">Sin tareas para este per&iacute;odo</span>
+            </div>
+        </section>
+        <div class="calendario-embebido-frame-wrap calendario-integrado-wrap">
+            <div class="calendario-header-grid">
+                <span>Lunes</span>
+                <span>Martes</span>
+                <span>Mi&eacute;rcoles</span>
+                <span>Jueves</span>
+                <span>Viernes</span>
+                <span>S&aacute;bado</span>
+                <span>Domingo</span>
+            </div>
+            <div id="cal_calendario_grid" class="cal-calendario-grid"></div>
+        </div>
+    </section>
 </div>
 
 <script src="logica_registro.js"></script>

@@ -25,6 +25,26 @@ body {
     color: var(--texto);
 }
 
+.theme-toggle {
+    position: fixed;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 46px;
+    height: 46px;
+    border-radius: 999px;
+    border: 1px solid #93c5fd;
+    background: #ffffff;
+    color: #1d4ed8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 12px 24px rgba(30, 58, 138, 0.2);
+    z-index: 12000;
+}
+
 .contenedor-historico {
     width: min(1400px, 96%);
     margin: 14px auto 30px;
@@ -231,4 +251,89 @@ body {
     .header-centro h1 {
         font-size: 1.8rem;
     }
+}
+
+/* === MODO OSCURO HISTORICO === */
+body.dark-mode {
+    background:
+        radial-gradient(circle at 8% 2%, rgba(59, 130, 246, 0.16), transparent 35%),
+        radial-gradient(circle at 92% 10%, rgba(37, 99, 235, 0.12), transparent 32%),
+        linear-gradient(180deg, #0f172a 0%, #111827 100%);
+    color: #e2e8f0;
+}
+
+body.dark-mode .header-historico,
+body.dark-mode .tarjeta-filtros,
+body.dark-mode .tarjeta-tabla {
+    background: #162033;
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 24px rgba(2, 6, 23, 0.4);
+}
+
+body.dark-mode .header-centro h1 {
+    color: #e2e8f0;
+}
+
+body.dark-mode .header-centro p {
+    color: #94a3b8;
+}
+
+body.dark-mode .btn-volver {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+body.dark-mode .campo-filtro label {
+    color: #93c5fd;
+}
+
+body.dark-mode .campo-filtro input,
+body.dark-mode .campo-filtro select {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-color: rgba(255, 255, 255, 0.28);
+}
+
+body.dark-mode .btn-secundario {
+    background: #1e293b;
+    color: #dbeafe;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .badge-total {
+    background: #1e293b;
+    border-color: rgba(147, 197, 253, 0.45);
+    color: #bfdbfe;
+}
+
+body.dark-mode .tabla-historico {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .tabla-historico th {
+    background: #111b2d;
+    color: #bfdbfe;
+    border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .tabla-historico td {
+    color: #e2e8f0;
+    border-bottom-color: rgba(148, 163, 184, 0.22);
+}
+
+body.dark-mode .tabla-historico tbody tr:nth-child(even) {
+    background: #0f172a;
+}
+
+body.dark-mode .tag-cargo {
+    background: rgba(129, 140, 248, 0.2);
+    border-color: rgba(165, 180, 252, 0.55);
+    color: #c7d2fe;
+}
+
+body.dark-mode .theme-toggle {
+    background: #1d4ed8;
+    color: #eff6ff;
+    border-color: #60a5fa;
 }

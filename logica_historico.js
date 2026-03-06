@@ -1,3 +1,34 @@
+const STORAGE_KEY_TEMA = "app_postventa_tema";
+
+function aplicarTema(tema) {
+    const body = document.body;
+    const boton = document.getElementById("theme_toggle");
+    if (!body || !boton) return;
+
+    const esOscuro = tema === "dark";
+    body.classList.toggle("dark-mode", esOscuro);
+    boton.innerHTML = esOscuro
+        ? '<i class="fas fa-sun" aria-hidden="true"></i>'
+        : '<i class="fas fa-moon" aria-hidden="true"></i>';
+}
+
+function inicializarTema() {
+    const boton = document.getElementById("theme_toggle");
+    if (!boton) return;
+
+    const guardado = localStorage.getItem(STORAGE_KEY_TEMA);
+    const prefiereOscuro = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const temaInicial = guardado || (prefiereOscuro ? "dark" : "light");
+    aplicarTema(temaInicial);
+
+    boton.addEventListener("click", () => {
+        const actualOscuro = document.body.classList.contains("dark-mode");
+        const nuevoTema = actualOscuro ? "light" : "dark";
+        localStorage.setItem(STORAGE_KEY_TEMA, nuevoTema);
+        aplicarTema(nuevoTema);
+    });
+}
+
 function fmtFecha(valor) {
     if (!valor) return "-";
     const d = new Date(valor);
@@ -121,6 +152,7 @@ function limpiarFiltros() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+    inicializarTema();
     try {
         await cargarFiltros();
         await buscarHistorico();

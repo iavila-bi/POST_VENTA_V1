@@ -6,6 +6,10 @@ let listaEjecutantes = [];
 let historialFamilias = [];
 let modoGestionRegistros = false;
 const STORAGE_KEY_TEMA = "app_postventa_tema";
+const calendarioIntegradoState = {
+    fechaBase: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+    tareasMes: []
+};
 
 function aplicarTema(tema) {
     const body = document.body;
@@ -131,8 +135,8 @@ function actualizarEstadoPostventaEnModulos(textoEstado) {
     const ids = ["estado_modulo_inmueble", "estado_modulo_postventa", "estado_modulo_familia"];
     const sinSeleccion = !textoEstado || textoEstado === "Ninguna";
     const texto = sinSeleccion
-        ? "No Hay PostVenta Seleccionada"
-        : `Postventa Activa: ${textoEstado}`;
+        ? "No hay postventa seleccionada"
+        : `Postventa activa: ${textoEstado}`;
 
     ids.forEach(id => {
         const el = document.getElementById(id);
@@ -147,7 +151,7 @@ function actualizarEstadoPanelGestion(textoEstado) {
     const el = document.getElementById("estado_panel_gestion");
     if (!el) return;
     const sinSeleccion = !textoEstado || textoEstado === "Ninguna";
-    el.textContent = sinSeleccion ? "No Hay PostVenta Seleccionada" : `Postventa Activa: ${textoEstado}`;
+    el.textContent = sinSeleccion ? "No hay postventa seleccionada" : `Postventa activa: ${textoEstado}`;
     el.classList.toggle("estado-postventa-modulo--sin", sinSeleccion);
     el.classList.toggle("estado-postventa-modulo--ok", !sinSeleccion);
 }
@@ -229,6 +233,7 @@ async function cargarRegistrosGestionPostventa(idPostventa) {
                     await cargarPostventasRecientes(postventaActiva, false);
                     cargarIndicadoresPostventa();
                     actualizarIndicadoresFlujo();
+                    cargarTareasCalendarioIntegrado();
                 } catch (error) {
                     console.error("Error eliminando familia:", error);
                     alert(error.message || "No se pudo eliminar la familia.");
@@ -305,6 +310,7 @@ async function eliminarPostventaActiva() {
         await cargarPostventasRecientes();
         cargarIndicadoresPostventa();
         actualizarIndicadoresFlujo();
+        cargarTareasCalendarioIntegrado();
         mostrarAlertaCentro("Postventa eliminada correctamente");
     } catch (error) {
         console.error("Error eliminando postventa:", error);
@@ -379,14 +385,63 @@ async function cargarFamiliasRecientesDePostventa(idPostventa) {
     const data = await res.json();
 
     historialFamilias = data.map(item => ({
+        id_registro: item.id_registro,
         familia: item.familia || "-",
         subfamilia: item.subfamilia || "-",
         recinto: item.recinto || "-",
         levantamiento: item.levantamiento ? String(item.levantamiento).split("T")[0] : "-",
         responsable: item.responsable || "-",
-        cargo_responsable: item.cargo_responsable || ""
+        cargo_responsable: item.cargo_responsable || "",
+        estado_tarea: item.estado_tarea || "Pendiente"
     }));
     renderizarUltimosRegistros();
+}
+
+function normalizarEstadoTarea(valor) {
+    return (valor === "Finalizado" || valor === "Finalizada") ? "Finalizado" : "Pendiente";
+}
+
+function claseEstadoFila(estado) {
+    return normalizarEstadoTarea(estado) === "Finalizado"
+        ? "fila-estado-finalizada"
+        : "fila-estado-pendiente";
+}
+
+async function actualizarEstadoTareaRegistro(idRegistro, estadoTarea) {
+    if (!idRegistro) return;
+    try {
+        const res = await fetch(`/api/registros-familia/${idRegistro}/estado-tarea`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ estado_tarea: estadoTarea })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "No se pudo actualizar el estado.");
+
+        historialFamilias = historialFamilias.map(item => (
+            Number(item.id_registro) === Number(idRegistro)
+                ? { ...item, estado_tarea: estadoTarea }
+                : item
+        ));
+
+        const estadoPostventa = data?.postventa?.estado || "Abierta";
+        const totalFamilias = Number(data?.postventa?.total_familias || historialFamilias.length);
+        const estadoTicket = document.getElementById("estado_ticket");
+        if (estadoTicket) estadoTicket.value = estadoPostventa;
+        actualizarDetalleSeleccionada({ estado: estadoPostventa, familias: totalFamilias });
+
+        const selectPostventa = document.getElementById("select_postventa_existente");
+        if (selectPostventa && postventaActiva) {
+            const option = Array.from(selectPostventa.options).find(op => op.value === String(postventaActiva));
+            if (option) option.dataset.estado = estadoPostventa;
+        }
+
+        renderizarUltimosRegistros();
+        await cargarPostventasRecientes(postventaActiva, false);
+    } catch (error) {
+        console.error("Error actualizando estado_tarea:", error);
+        alert(error.message || "No se pudo actualizar el estado de la tarea.");
+    }
 }
 
 async function cargarPostventasRecientes(preseleccionarId = null, autoSeleccionar = true) {
@@ -621,7 +676,7 @@ function renderizarUltimosRegistros() {
     tbody.innerHTML = "";
 
     if (ultimosCinco.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5">Sin registros recientes.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6">Sin registros recientes.</td></tr>`;
         if (chips) {
             const textoVacio = postventaActiva
                 ? "Sin familias registradas en esta postventa."
@@ -633,9 +688,11 @@ function renderizarUltimosRegistros() {
 
     ultimosCinco.forEach(item => {
         const fila = document.createElement("tr");
+        fila.classList.add(claseEstadoFila(item.estado_tarea));
         const cargoResponsable = item.cargo_responsable
             ? `<span class="tag-cargo">${item.cargo_responsable}</span>`
             : "";
+        const estadoActual = normalizarEstadoTarea(item.estado_tarea);
         fila.innerHTML = `
             <td>${item.familia}</td>
             <td>${item.subfamilia}</td>
@@ -647,8 +704,22 @@ function renderizarUltimosRegistros() {
                     ${cargoResponsable}
                 </div>
             </td>
+            <td>
+                <select class="select-estado-tarea" data-id-registro="${item.id_registro}">
+                    <option value="Pendiente" ${estadoActual === "Pendiente" ? "selected" : ""}>Pendiente</option>
+                    <option value="Finalizado" ${estadoActual === "Finalizado" ? "selected" : ""}>Finalizado</option>
+                </select>
+            </td>
         `;
         tbody.appendChild(fila);
+    });
+
+    tbody.querySelectorAll(".select-estado-tarea").forEach(select => {
+        select.addEventListener("change", (event) => {
+            const idRegistro = event.target.dataset.idRegistro;
+            const estado = normalizarEstadoTarea(event.target.value);
+            actualizarEstadoTareaRegistro(idRegistro, estado);
+        });
     });
 
     if (chips) {
@@ -676,6 +747,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderizarFechaEncabezado();
     cargarIndicadoresPostventa();
     cargarPostventasRecientes();
+    inicializarCalendarioIntegrado();
 
     ["id_proyecto", "id_inmueble", "estado_inmueble"].forEach(id => {
         const el = document.getElementById(id);
@@ -694,6 +766,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnIrHistorico) {
         btnIrHistorico.addEventListener("click", () => {
             window.location.href = "historico.html";
+        });
+    }
+
+    const btnIrCalendario = document.getElementById("btn_ir_calendario");
+    if (btnIrCalendario) {
+        btnIrCalendario.addEventListener("click", () => {
+            window.location.href = "calendario_tareas.html";
         });
     }
 
@@ -1101,6 +1180,7 @@ async function guardarFamiliaCompleta() {
         });
         actualizarIndicadoresFlujo();
         cargarIndicadoresPostventa();
+        cargarTareasCalendarioIntegrado();
         // Mostrar alerta verde (Toast)
         const toast = document.getElementById('toast_familia');
         if (toast) {
@@ -1127,6 +1207,238 @@ async function guardarFamiliaCompleta() {
         console.error("Error al guardar:", error);
         alert("No se pudo guardar: " + error.message);
     }
+}
+
+function calendarioIntegradoDisponible() {
+    return Boolean(document.getElementById("cal_calendario_grid"));
+}
+
+function calFormatearMesAnio(fecha) {
+    return fecha.toLocaleDateString("es-CL", { month: "long", year: "numeric" });
+}
+
+function calFormatearDiaMes(valor) {
+    if (!valor) return "-";
+    const fecha = new Date(valor);
+    if (Number.isNaN(fecha.getTime())) return "-";
+    return fecha.toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit" });
+}
+
+function calNormalizarDia(fecha) {
+    return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+}
+
+function calInicioVista(fechaMes) {
+    const primerDia = new Date(fechaMes.getFullYear(), fechaMes.getMonth(), 1);
+    const diaSemana = primerDia.getDay();
+    const offsetLunes = diaSemana === 0 ? 6 : diaSemana - 1;
+    const inicio = new Date(primerDia);
+    inicio.setDate(primerDia.getDate() - offsetLunes);
+    return inicio;
+}
+
+function calObtenerRango(tarea) {
+    const inicio = tarea.fecha_inicio ? calNormalizarDia(new Date(tarea.fecha_inicio)) : null;
+    const terminoBase = tarea.fecha_termino || tarea.fecha_inicio;
+    const termino = terminoBase ? calNormalizarDia(new Date(terminoBase)) : null;
+    return { inicio, termino };
+}
+
+function calTareaEnDia(tarea, dia) {
+    const { inicio, termino } = calObtenerRango(tarea);
+    if (!inicio || !termino) return false;
+    return dia >= inicio && dia <= termino;
+}
+
+function calDiasEnMesDeTarea(tarea) {
+    const { inicio, termino } = calObtenerRango(tarea);
+    if (!inicio || !termino) return 0;
+
+    const base = calendarioIntegradoState.fechaBase;
+    const inicioMes = new Date(base.getFullYear(), base.getMonth(), 1);
+    const finMes = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+    const inicioReal = inicio > inicioMes ? inicio : inicioMes;
+    const finReal = termino < finMes ? termino : finMes;
+    if (finReal < inicioReal) return 0;
+    return Math.floor((finReal - inicioReal) / 86400000) + 1;
+}
+
+function renderizarTituloCalendarioIntegrado() {
+    const el = document.getElementById("cal_titulo_mes");
+    if (!el) return;
+    el.textContent = calFormatearMesAnio(calendarioIntegradoState.fechaBase);
+}
+
+function renderizarResumenCalendarioIntegrado(tareas) {
+    const contenedor = document.getElementById("cal_resumen_ejecutantes");
+    if (!contenedor) return;
+
+    if (!tareas.length) {
+        contenedor.innerHTML = '<span class="cal-chip-vacio">Sin tareas para este per&iacute;odo</span>';
+        return;
+    }
+
+    const map = new Map();
+    tareas.forEach(tarea => {
+        const key = String(tarea.id_ejecutante || "");
+        if (!key) return;
+        if (!map.has(key)) {
+            map.set(key, {
+                nombre: tarea.nombre_ejecutante || "Sin nombre",
+                especialidad: tarea.especialidad || "Sin especialidad",
+                tareas: 0,
+                dias: 0
+            });
+        }
+        const item = map.get(key);
+        item.tareas += 1;
+        item.dias += calDiasEnMesDeTarea(tarea);
+    });
+
+    const lista = Array.from(map.values())
+        .sort((a, b) => (b.tareas - a.tareas) || (b.dias - a.dias))
+        .slice(0, 12);
+
+    contenedor.innerHTML = lista.map(item => `
+        <article class="cal-chip-desempeno">
+            <p class="chip-nombre">${item.nombre} · ${item.especialidad}</p>
+            <p class="chip-metricas">${item.tareas} tareas · ${item.dias} d&iacute;as</p>
+        </article>
+    `).join("");
+}
+
+function calConstruirCardTarea(tarea) {
+    return `
+        <article class="cal-tarea-card">
+            <p class="cal-tarea-ejecutante">${tarea.nombre_ejecutante || "Sin ejecutante"}</p>
+            <p class="cal-tarea-especialidad">${tarea.especialidad || "Sin especialidad"}</p>
+            <p class="cal-tarea-meta">${tarea.nombre_proyecto || "-"} · ${tarea.numero_identificador || "-"}</p>
+            <p class="cal-tarea-meta">${tarea.nombre_familia || "Sin familia"} · ${tarea.descripcion_tarea || "Sin descripción"}</p>
+            <p class="cal-tarea-rango">${calFormatearDiaMes(tarea.fecha_inicio)} - ${calFormatearDiaMes(tarea.fecha_termino || tarea.fecha_inicio)}</p>
+        </article>
+    `;
+}
+
+function renderizarCalendarioIntegrado() {
+    const grid = document.getElementById("cal_calendario_grid");
+    if (!grid) return;
+
+    const inicio = calInicioVista(calendarioIntegradoState.fechaBase);
+    const hoy = calNormalizarDia(new Date());
+    const celdas = [];
+
+    for (let i = 0; i < 42; i += 1) {
+        const dia = new Date(inicio);
+        dia.setDate(inicio.getDate() + i);
+        const esMesActual = dia.getMonth() === calendarioIntegradoState.fechaBase.getMonth();
+        const esHoy = dia.getTime() === hoy.getTime();
+        const tareas = calendarioIntegradoState.tareasMes.filter(tarea => calTareaEnDia(tarea, dia));
+
+        celdas.push(`
+            <div class="cal-celda-dia ${esMesActual ? "" : "fuera-mes"} ${esHoy ? "hoy" : ""}">
+                <div class="cal-dia-header">
+                    <span class="cal-dia-num">${dia.getDate()}</span>
+                    <span class="cal-dia-cantidad">${tareas.length} ${tareas.length === 1 ? "tarea" : "tareas"}</span>
+                </div>
+                ${tareas.length ? tareas.map(calConstruirCardTarea).join("") : '<p class="cal-sin-tareas">Sin tareas</p>'}
+            </div>
+        `);
+    }
+
+    grid.innerHTML = celdas.join("");
+}
+
+async function cargarFiltrosCalendarioIntegrado() {
+    if (!calendarioIntegradoDisponible()) return;
+
+    const selectE = document.getElementById("cal_filtro_ejecutante");
+    const selectP = document.getElementById("cal_filtro_proyecto");
+    if (!selectE || !selectP) return;
+
+    try {
+        const [resE, resP] = await Promise.all([
+            fetch("/api/ejecutantes"),
+            fetch("/api/proyectos")
+        ]);
+
+        if (resE.ok) {
+            const dataE = await resE.json();
+            selectE.innerHTML = '<option value="">Todos los ejecutantes</option>';
+            dataE.forEach(item => {
+                const option = document.createElement("option");
+                option.value = String(item.id_ejecutante);
+                option.textContent = `${item.nombre_ejecutante} - ${item.especialidad || "Sin especialidad"}`;
+                selectE.appendChild(option);
+            });
+        }
+
+        if (resP.ok) {
+            const dataP = await resP.json();
+            selectP.innerHTML = '<option value="">Todos los proyectos</option>';
+            dataP.forEach(item => {
+                const option = document.createElement("option");
+                option.value = String(item.id_proyecto);
+                option.textContent = item.nombre_proyecto || `Proyecto ${item.id_proyecto}`;
+                selectP.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error("Error cargando filtros calendario integrado:", error);
+    }
+}
+
+function queryCalendarioIntegrado() {
+    const params = new URLSearchParams({
+        year: String(calendarioIntegradoState.fechaBase.getFullYear()),
+        month: String(calendarioIntegradoState.fechaBase.getMonth() + 1)
+    });
+
+    const idEjecutante = document.getElementById("cal_filtro_ejecutante")?.value || "";
+    const idProyecto = document.getElementById("cal_filtro_proyecto")?.value || "";
+    if (idEjecutante) params.set("id_ejecutante", idEjecutante);
+    if (idProyecto) params.set("id_proyecto", idProyecto);
+
+    return params.toString();
+}
+
+async function cargarTareasCalendarioIntegrado() {
+    if (!calendarioIntegradoDisponible()) return;
+    try {
+        renderizarTituloCalendarioIntegrado();
+        const res = await fetch(`/api/calendario/tareas?${queryCalendarioIntegrado()}`);
+        if (!res.ok) throw new Error("No se pudo cargar calendario integrado");
+        const data = await res.json();
+        calendarioIntegradoState.tareasMes = Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error("Error calendario integrado:", error);
+        calendarioIntegradoState.tareasMes = [];
+    }
+
+    renderizarResumenCalendarioIntegrado(calendarioIntegradoState.tareasMes);
+    renderizarCalendarioIntegrado();
+}
+
+function moverMesCalendarioIntegrado(delta) {
+    const base = new Date(calendarioIntegradoState.fechaBase);
+    base.setMonth(base.getMonth() + delta);
+    calendarioIntegradoState.fechaBase = new Date(base.getFullYear(), base.getMonth(), 1);
+    cargarTareasCalendarioIntegrado();
+}
+
+function inicializarCalendarioIntegrado() {
+    if (!calendarioIntegradoDisponible()) return;
+
+    document.getElementById("cal_btn_prev_mes")?.addEventListener("click", () => moverMesCalendarioIntegrado(-1));
+    document.getElementById("cal_btn_next_mes")?.addEventListener("click", () => moverMesCalendarioIntegrado(1));
+    document.getElementById("cal_btn_hoy")?.addEventListener("click", () => {
+        const hoy = new Date();
+        calendarioIntegradoState.fechaBase = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        cargarTareasCalendarioIntegrado();
+    });
+    document.getElementById("cal_filtro_ejecutante")?.addEventListener("change", cargarTareasCalendarioIntegrado);
+    document.getElementById("cal_filtro_proyecto")?.addEventListener("change", cargarTareasCalendarioIntegrado);
+
+    cargarFiltrosCalendarioIntegrado().then(cargarTareasCalendarioIntegrado);
 }
 
 
