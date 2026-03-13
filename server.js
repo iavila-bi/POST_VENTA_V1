@@ -15,32 +15,20 @@ app.use(express.static(__dirname));
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
+    // Make connection issues fail fast instead of hanging requests indefinitely.
+    // Neon/pgBouncer over the public internet can occasionally stall on auth/handshake.
+    connectionTimeoutMillis: Number(process.env.PG_CONNECT_TIMEOUT_MS || 15000),
+    idleTimeoutMillis: Number(process.env.PG_IDLE_TIMEOUT_MS || 30000),
+    max: Number(process.env.PG_POOL_MAX || 5),
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 0
 });
 
-async function recalcularEstadoPostventa(client, idPostventa) {
-    const resumen = await client.query(
-        `SELECT
-            COUNT(*)::int AS total,
-            COUNT(*) FILTER (WHERE COALESCE(estado_tarea, 'Pendiente') = 'Finalizado')::int AS finalizadas
-         FROM registros_familias
-         WHERE id_postventa = $1`,
-        [idPostventa]
-    );
-
-    const total = Number(resumen.rows[0]?.total || 0);
-    const finalizadas = Number(resumen.rows[0]?.finalizadas || 0);
-    const nuevoEstado = total > 0 && finalizadas === total ? 'Cerrada' : 'Abierta';
-
-    await client.query(
-        `UPDATE postventas
-         SET estado = $1
-         WHERE id_postventa = $2`,
-        [nuevoEstado, idPostventa]
-    );
-
-    return { nuevoEstado, total, finalizadas };
-}
+pool.on("error", (err) => {
+    // Unexpected errors on idle clients in the pool.
+    console.error("PG pool error:", err);
+});
 
 // ======================================================
 // PROYECTOS E INMUEBLES
@@ -248,7 +236,7 @@ app.get('/api/indicadores-postventa', async (req, res) => {
             )
             SELECT
                 casas.total AS total_casas_con_pv,
-                familias.total AS total_familias_acumuladas,
+                familias.total AS total_familias_acumsuladas,
                 CASE
                     WHEN casas.total = 0 THEN 0
                     ELSE ROUND(familias.total::numeric / casas.total, 2)
@@ -399,14 +387,12 @@ app.get('/api/postventas/:id_postventa/familias-recientes', async (req, res) => 
         const limite = Math.max(1, Math.min(Number(req.query.limit || 5), 20));
         const result = await pool.query(
             `SELECT
-                rf.id_registro,
                 f.nombre_familia AS familia,
                 sf.nombre_subfamilia AS subfamilia,
                 rf.recinto,
                 rf.fecha_levantamiento AS levantamiento,
                 r.nombre_responsable AS responsable,
-                r.cargo AS cargo_responsable,
-                COALESCE(rf.estado_tarea, 'Pendiente') AS estado_tarea
+                r.cargo AS cargo_responsable
              FROM registros_familias rf
              LEFT JOIN familias f ON f.id_familia = rf.id_familia
              LEFT JOIN subfamilias sf ON sf.id_subfamilia = rf.id_subfamilia
@@ -568,120 +554,6 @@ app.get('/api/historico/registros', async (req, res) => {
     }
 });
 
-app.get('/api/calendario/tareas', async (req, res) => {
-    try {
-        const year = Number(req.query.year);
-        const month = Number(req.query.month); // 1-12
-        const id_ejecutante = req.query.id_ejecutante ? Number(req.query.id_ejecutante) : null;
-        const id_proyecto = req.query.id_proyecto ? Number(req.query.id_proyecto) : null;
-
-        if (!year || !month || month < 1 || month > 12) {
-            return res.status(400).json({ error: 'Parámetros year/month inválidos' });
-        }
-
-        const inicioMes = `${year}-${String(month).padStart(2, '0')}-01`;
-        const finMes = `${year}-${String(month).padStart(2, '0')}-01`;
-
-        const params = [inicioMes, finMes];
-        const whereExtras = [];
-
-        if (id_ejecutante) {
-            params.push(id_ejecutante);
-            whereExtras.push(`te.id_ejecutante = $${params.length}`);
-        }
-
-        if (id_proyecto) {
-            params.push(id_proyecto);
-            whereExtras.push(`i.id_proyecto = $${params.length}`);
-        }
-
-        const whereExtraSql = whereExtras.length ? `AND ${whereExtras.join(' AND ')}` : '';
-
-        const result = await pool.query(
-            `SELECT
-                t.id_tarea,
-                t.descripcion_tarea,
-                t.fecha_inicio,
-                t.fecha_termino,
-                e.id_ejecutante,
-                e.nombre_ejecutante,
-                e.especialidad,
-                pv.id_postventa,
-                p.id_proyecto,
-                p.nombre_proyecto,
-                i.numero_identificador,
-                f.nombre_familia
-             FROM tareas t
-             JOIN tareas_ejecutantes te ON te.id_tarea = t.id_tarea
-             JOIN ejecutantes e ON e.id_ejecutante = te.id_ejecutante
-             JOIN registros_familias rf ON rf.id_registro = t.id_registro_familia
-             JOIN postventas pv ON pv.id_postventa = rf.id_postventa
-             JOIN inmuebles i ON i.id_inmueble = pv.id_inmueble
-             JOIN proyectos p ON p.id_proyecto = i.id_proyecto
-             LEFT JOIN familias f ON f.id_familia = rf.id_familia
-             WHERE t.fecha_inicio <= (date_trunc('month', $2::date) + INTERVAL '1 month - 1 day')
-               AND COALESCE(t.fecha_termino, t.fecha_inicio) >= date_trunc('month', $1::date)
-               ${whereExtraSql}
-             ORDER BY t.fecha_inicio ASC, t.id_tarea ASC`,
-            params
-        );
-
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error calendario tareas:', error);
-        res.status(500).json({ error: 'Error al obtener calendario de tareas' });
-    }
-});
-
-app.put('/api/registros-familia/:id_registro/estado-tarea', async (req, res) => {
-    const client = await pool.connect();
-    try {
-        const { id_registro } = req.params;
-        const { estado_tarea } = req.body;
-        const estadosValidos = ['Pendiente', 'Finalizado'];
-
-        if (!estadosValidos.includes(estado_tarea)) {
-            return res.status(400).json({ error: 'Estado inválido. Use Pendiente o Finalizado.' });
-        }
-
-        await client.query('BEGIN');
-
-        const updRegistro = await client.query(
-            `UPDATE registros_familias
-             SET estado_tarea = $1
-             WHERE id_registro = $2
-             RETURNING id_registro, id_postventa, estado_tarea`,
-            [estado_tarea, id_registro]
-        );
-
-        if (updRegistro.rowCount === 0) {
-            await client.query('ROLLBACK');
-            return res.status(404).json({ error: 'Registro no encontrado' });
-        }
-
-        const idPostventa = updRegistro.rows[0].id_postventa;
-        const resumen = await recalcularEstadoPostventa(client, idPostventa);
-
-        await client.query('COMMIT');
-        res.json({
-            success: true,
-            registro: updRegistro.rows[0],
-            postventa: {
-                id_postventa: idPostventa,
-                estado: resumen.nuevoEstado,
-                total_familias: resumen.total,
-                total_finalizadas: resumen.finalizadas
-            }
-        });
-    } catch (error) {
-        await client.query('ROLLBACK');
-        console.error('Error actualizando estado_tarea:', error);
-        res.status(500).json({ error: 'Error al actualizar estado de la tarea' });
-    } finally {
-        client.release();
-    }
-});
-
 app.delete('/api/registros-familia/:id_registro', async (req, res) => {
     const client = await pool.connect();
     try {
@@ -713,20 +585,8 @@ app.delete('/api/registros-familia/:id_registro', async (req, res) => {
             return res.status(404).json({ error: 'Registro no encontrado' });
         }
 
-        const idPostventa = delRegistro.rows[0].id_postventa;
-        const resumen = await recalcularEstadoPostventa(client, idPostventa);
-
         await client.query('COMMIT');
-        res.json({
-            success: true,
-            registro: delRegistro.rows[0],
-            postventa: {
-                id_postventa: idPostventa,
-                estado: resumen.nuevoEstado,
-                total_familias: resumen.total,
-                total_finalizadas: resumen.finalizadas
-            }
-        });
+        res.json({ success: true, registro: delRegistro.rows[0] });
     } catch (error) {
         await client.query('ROLLBACK');
         console.error('Error eliminando registro de familia:', error);
@@ -832,8 +692,8 @@ app.post('/api/guardar-familia-completa', async (req, res) => {
         // 1ï¸âƒ£ Insertar registro_familias
         const resRegistro = await client.query(
             `INSERT INTO registros_familias
-            (id_postventa, id_familia, id_subfamilia, id_responsable, origen, etiqueta_accion, recinto, comentarios_previos, fecha_levantamiento, fecha_visita, fecha_firma_acta, estado_tarea)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+            (id_postventa, id_familia, id_subfamilia, id_responsable, origen, etiqueta_accion, recinto, comentarios_previos, fecha_levantamiento, fecha_visita, fecha_firma_acta)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
             RETURNING id_registro`,
             [
                 registro.id_postventa,
@@ -846,14 +706,11 @@ app.post('/api/guardar-familia-completa', async (req, res) => {
                 registro.comentarios_previos,
                 registro.fecha_levantamiento,
                 registro.fecha_visita,
-                registro.fecha_firma_acta || null,
-                'Pendiente'
+                registro.fecha_firma_acta || null
             ]
         );
 
         const id_registro = resRegistro.rows[0].id_registro;
-
-        await recalcularEstadoPostventa(client, registro.id_postventa);
 
         // 2ï¸âƒ£ Insertar tareas y ejecutantes
         for (const t of tareas) {
@@ -886,6 +743,82 @@ app.post('/api/guardar-familia-completa', async (req, res) => {
         res.status(500).json({ error: 'Error al guardar registro completo' });
     } finally {
         client.release();
+    }
+});
+
+// ======================================================
+// CALENDARIO (TAREAS)
+// ======================================================
+
+app.get("/api/calendario/tareas", async (req, res) => {
+    try {
+        const year = Number(req.query.year);
+        const month = Number(req.query.month);
+        const idEjecutante = req.query.id_ejecutante ? Number(req.query.id_ejecutante) : null;
+        const idProyecto = req.query.id_proyecto ? Number(req.query.id_proyecto) : null;
+
+        if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+            return res.status(400).json({ error: "Parámetros inválidos. Use year y month (1-12)." });
+        }
+
+        const where = [
+            "t.fecha_inicio IS NOT NULL",
+            "t.fecha_inicio::date <= r.fin",
+            "COALESCE(t.fecha_termino, t.fecha_inicio)::date >= r.inicio"
+        ];
+        const params = [year, month];
+
+        if (idEjecutante && Number.isFinite(idEjecutante)) {
+            params.push(idEjecutante);
+            where.push(`te.id_ejecutante = $${params.length}`);
+        }
+
+        if (idProyecto && Number.isFinite(idProyecto)) {
+            params.push(idProyecto);
+            where.push(`p.id_proyecto = $${params.length}`);
+        }
+
+        const query = `
+            WITH r AS (
+                SELECT
+                    make_date($1::int, $2::int, 1) AS inicio,
+                    (make_date($1::int, $2::int, 1) + interval '1 month' - interval '1 day')::date AS fin
+            )
+            SELECT
+                t.id_tarea,
+                t.descripcion_tarea,
+                t.fecha_inicio,
+                t.fecha_termino,
+                te.id_ejecutante,
+                e.nombre_ejecutante,
+                e.especialidad,
+                p.id_proyecto,
+                p.nombre_proyecto,
+                i.numero_identificador,
+                f.nombre_familia,
+                sf.nombre_subfamilia,
+                rf.recinto,
+                rf.id_registro AS id_registro_familia,
+                pv.id_postventa
+            FROM tareas t
+            JOIN registros_familias rf ON rf.id_registro = t.id_registro_familia
+            JOIN postventas pv ON pv.id_postventa = rf.id_postventa
+            JOIN inmuebles i ON i.id_inmueble = pv.id_inmueble
+            JOIN proyectos p ON p.id_proyecto = i.id_proyecto
+            LEFT JOIN familias f ON f.id_familia = rf.id_familia
+            LEFT JOIN subfamilias sf ON sf.id_subfamilia = rf.id_subfamilia
+            LEFT JOIN tareas_ejecutantes te ON te.id_tarea = t.id_tarea
+            LEFT JOIN ejecutantes e ON e.id_ejecutante = te.id_ejecutante
+            CROSS JOIN r
+            WHERE ${where.join(" AND ")}
+            ORDER BY t.fecha_inicio ASC, t.id_tarea ASC
+        `;
+
+        const result = await pool.query(query, params);
+        res.json(result.rows);
+    } catch (error) {
+        console.error("Error calendario tareas:", error);
+        res.status(500).json({ error: "Error al obtener tareas del calendario" });
     }
 });
 

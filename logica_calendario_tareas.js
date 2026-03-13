@@ -196,7 +196,9 @@ function renderizarCalendario() {
                     <span class="dia-num">${dia.getDate()}</span>
                     <span class="dia-cantidad">${tareasDia.length} ${tareasDia.length === 1 ? "tarea" : "tareas"}</span>
                 </div>
-                ${tareasHtml}
+                <div class="tareas-scroll">
+                    ${tareasHtml}
+                </div>
             </div>
         `);
     }

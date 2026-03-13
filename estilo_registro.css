@@ -1746,11 +1746,14 @@ body.dark-mode .estado-postventa-modulo--sin {
 }
 
 .cal-celda-dia {
-    min-height: 116px;
+    height: clamp(140px, 16vh, 180px);
     border: 1px solid #dbe7f5;
     border-radius: 9px;
     background: #ffffff;
     padding: 6px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .cal-celda-dia.fuera-mes {
@@ -1785,6 +1788,27 @@ body.dark-mode .estado-postventa-modulo--sin {
     margin-top: 7px;
     color: #9aa8ba;
     font-size: 0.66rem;
+}
+
+.cal-tareas-scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.cal-tareas-scroll::-webkit-scrollbar {
+    width: 8px;
+}
+
+.cal-tareas-scroll::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.55);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.cal-tareas-scroll::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 .cal-tarea-card {
@@ -2736,5 +2760,83 @@ body.dark-mode select:focus-visible,
 body.dark-mode textarea:focus-visible,
 body.dark-mode a:focus-visible {
     box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.28) !important;
+}
+
+/* ============================= */
+/* BORDES INTERNOS (SECCIONES CLAVE) */
+/* ============================= */
+
+#modulo_identificacion_inmueble .grid-campos-doble,
+#modulo_datos_postventa .grid-campos-doble,
+#modulo_registro_familia .grid-primarios-familia,
+#modulo_registro_familia .grid-campos-doble,
+#modulo_registro_familia .fila-firma-etiqueta,
+#modulo_resumen_postventa .historial-anclaje {
+    border: 1px solid var(--gris-border);
+    border-radius: 14px;
+    padding: 18px 18px 16px;
+}
+
+#modulo_identificacion_inmueble .grid-campos-doble,
+#modulo_datos_postventa .grid-campos-doble {
+    margin-top: 10px;
+}
+
+#modulo_resumen_postventa .historial-anclaje {
+    padding: 14px 16px 12px;
+}
+
+body.dark-mode #modulo_identificacion_inmueble .grid-campos-doble,
+body.dark-mode #modulo_datos_postventa .grid-campos-doble,
+body.dark-mode #modulo_registro_familia .grid-primarios-familia,
+body.dark-mode #modulo_registro_familia .grid-campos-doble,
+body.dark-mode #modulo_registro_familia .fila-firma-etiqueta,
+body.dark-mode #modulo_resumen_postventa .historial-anclaje {
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* ============================= */
+/* FLASH EXITO: CREAR POSTVENTA */
+/* ============================= */
+
+button.btn-flash-success,
+.btn-principal.btn-flash-success,
+.btn-guardar-familia.btn-flash-success {
+    animation: btnFlashSuccess 800ms ease-out 1;
+    background: linear-gradient(135deg, #16a34a, #059669) !important;
+    color: #ffffff !important;
+    border-color: rgba(16, 185, 129, 0.55) !important;
+    box-shadow:
+        0 10px 22px rgba(16, 185, 129, 0.26),
+        0 18px 36px rgba(15, 23, 42, 0.12) !important;
+    transform: translateY(-1px);
+}
+
+@keyframes btnFlashSuccess {
+    0% {
+        transform: translateY(0) scale(1);
+        filter: saturate(1);
+    }
+    35% {
+        transform: translateY(-1px) scale(1.01);
+        filter: saturate(1.12);
+    }
+    100% {
+        transform: translateY(-1px) scale(1);
+        filter: saturate(1);
+    }
+}
+
+body.dark-mode button.btn-flash-success,
+body.dark-mode .btn-principal.btn-flash-success,
+body.dark-mode .btn-guardar-familia.btn-flash-success {
+    box-shadow:
+        0 10px 22px rgba(16, 185, 129, 0.20),
+        0 18px 44px rgba(0, 0, 0, 0.42) !important;
+}
+
+/* El toast de postventa usa el mismo estilo verde pero se apila sobre el de familia */
+.toast-postventa {
+    bottom: 64px;
 }
 

@@ -6,6 +6,9 @@ let listaEjecutantes = [];
 let historialFamilias = [];
 let modoGestionRegistros = false;
 const STORAGE_KEY_TEMA = "app_postventa_tema";
+let flashCrearPostventaTimeout = null;
+let toastPostventaTimeout = null;
+let toastFamiliaTimeout = null;
 const calendarioIntegradoState = {
     fechaBase: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     tareasMes: []
@@ -592,6 +595,47 @@ function mostrarAlertaCentro(texto) {
     setTimeout(() => toast.classList.remove("visible"), 1900);
 }
 
+function flashBotonExito(boton, iconoEl, { iconoDurante = "fas fa-check", iconoDespues = null, ms = 1200 } = {}) {
+    if (!boton) return;
+
+    if (flashCrearPostventaTimeout) {
+        clearTimeout(flashCrearPostventaTimeout);
+        flashCrearPostventaTimeout = null;
+    }
+
+    boton.classList.remove("btn-flash-success");
+    void boton.offsetWidth;
+    boton.classList.add("btn-flash-success");
+
+    if (iconoEl && iconoDurante) iconoEl.className = iconoDurante;
+
+    flashCrearPostventaTimeout = setTimeout(() => {
+        boton.classList.remove("btn-flash-success");
+        if (iconoEl && iconoDespues) iconoEl.className = iconoDespues;
+        flashCrearPostventaTimeout = null;
+    }, ms);
+}
+
+function mostrarToast(idToast, texto, { ms = 2600 } = {}) {
+    const toast = document.getElementById(idToast);
+    if (!toast) return;
+
+    const span = toast.querySelector("span");
+    if (span) span.textContent = texto;
+
+    toast.classList.remove("visible");
+    void toast.offsetWidth;
+    toast.classList.add("visible");
+
+    return setTimeout(() => toast.classList.remove("visible"), ms);
+}
+
+function mostrarToastPostventaCreada(idPostventa) {
+    if (toastPostventaTimeout) clearTimeout(toastPostventaTimeout);
+    const texto = idPostventa ? `Postventa creada (#${idPostventa})` : "Postventa creada";
+    toastPostventaTimeout = mostrarToast("toast_postventa", texto, { ms: 2600 });
+}
+
 function resetearFormularioPostventa() {
     const proyecto = document.getElementById("id_proyecto");
     const inmueble = document.getElementById("id_inmueble");
@@ -929,9 +973,14 @@ async function crearPostventa() {
 
     postventaActiva = data.id_postventa;
 
-    // ðŸ”“ Activar botÃ³n
-    document.getElementById("btn_agregar_tabla").disabled = false;
-    document.getElementById("icono_boton").className = "fas fa-plus";
+    // Feedback UX: boton verde temporal + toast explicito.
+    const botonCrear = document.getElementById("btn_agregar_tabla");
+    const iconoBoton = document.getElementById("icono_boton");
+    flashBotonExito(botonCrear, iconoBoton, { iconoDurante: "fas fa-check", iconoDespues: "fas fa-plus", ms: 1300 });
+    mostrarToastPostventaCreada(postventaActiva);
+
+    // Activar boton
+    if (botonCrear) botonCrear.disabled = false;
 
     bloquearCamposCabecera(false);
     mostrarAnclajePostventa({ familias: 0 });
@@ -1182,11 +1231,19 @@ async function guardarFamiliaCompleta() {
         cargarIndicadoresPostventa();
         cargarTareasCalendarioIntegrado();
         // Mostrar alerta verde (Toast)
-        const toast = document.getElementById('toast_familia');
-        if (toast) {
-            toast.classList.add('visible');
-            setTimeout(() => toast.classList.remove('visible'), 3000);
-        }
+        const btnGuardarFamilia = document.querySelector(".btn-guardar-familia");
+        flashBotonExito(btnGuardarFamilia, btnGuardarFamilia?.querySelector("i"), {
+            iconoDurante: "fas fa-check",
+            iconoDespues: "fas fa-save",
+            ms: 1300
+        });
+
+        if (toastFamiliaTimeout) clearTimeout(toastFamiliaTimeout);
+        toastFamiliaTimeout = mostrarToast(
+            "toast_familia",
+            `Familia agregada: ${familiaTxt} · ${recintoTxt}`,
+            { ms: 3000 }
+        );
 
         // Limpiar campos de la secciÃ³n familia
         document.querySelectorAll('.input-familia').forEach(i => i.value = "");
@@ -1334,13 +1391,19 @@ function renderizarCalendarioIntegrado() {
         const esHoy = dia.getTime() === hoy.getTime();
         const tareas = calendarioIntegradoState.tareasMes.filter(tarea => calTareaEnDia(tarea, dia));
 
+        const tareasHtml = tareas.length
+            ? tareas.map(calConstruirCardTarea).join("")
+            : '<p class="cal-sin-tareas">Sin tareas</p>';
+
         celdas.push(`
             <div class="cal-celda-dia ${esMesActual ? "" : "fuera-mes"} ${esHoy ? "hoy" : ""}">
                 <div class="cal-dia-header">
                     <span class="cal-dia-num">${dia.getDate()}</span>
                     <span class="cal-dia-cantidad">${tareas.length} ${tareas.length === 1 ? "tarea" : "tareas"}</span>
                 </div>
-                ${tareas.length ? tareas.map(calConstruirCardTarea).join("") : '<p class="cal-sin-tareas">Sin tareas</p>'}
+                <div class="cal-tareas-scroll">
+                    ${tareasHtml}
+                </div>
             </div>
         `);
     }
