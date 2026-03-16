@@ -27,13 +27,27 @@
 
     --r-lg: 18px;
     --r-md: 14px;
+
+    /* Typography scale */
+    --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --fs-xxs: 0.75rem;   /* 12 */
+    --fs-xs: 0.8125rem;  /* 13 */
+    --fs-sm: 0.875rem;   /* 14 */
+    --fs-md: 1rem;       /* 16 */
+    --fs-lg: 1.125rem;   /* 18 */
+    --fs-xl: 1.25rem;    /* 20 */
+    --fs-2xl: 1.5rem;    /* 24 */
+    --fs-3xl: clamp(1.55rem, 1.1rem + 1.2vw, 2.05rem); /* page title */
+
+    --lh-tight: 1.18;
+    --lh-base: 1.45;
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    font-family: var(--font-sans);
 }
 
 body {
@@ -45,6 +59,13 @@ body {
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-size: var(--fs-md);
+    line-height: var(--lh-base);
+}
+
+h1, h2, h3 {
+    letter-spacing: -0.02em;
+    line-height: var(--lh-tight);
 }
 
 /* ==========================================
@@ -218,6 +239,9 @@ body {
 }
 
 .top-header {
+    position: relative;
+    z-index: 90;
+    overflow: visible;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -228,6 +252,54 @@ body {
     border: 1px solid rgba(203, 213, 225, 0.75);
     box-shadow: var(--shadow-sm);
     backdrop-filter: blur(10px);
+}
+
+/* Typography hierarchy (dashboard) */
+.top-header h1 {
+    font-size: var(--fs-3xl);
+    font-weight: 800;
+    color: var(--ink);
+}
+
+.top-header #fecha-actual {
+    font-size: var(--fs-sm);
+    color: var(--muted2);
+    margin-top: 4px;
+}
+
+.welcome-banner h2 {
+    font-size: var(--fs-2xl);
+    font-weight: 800;
+    color: var(--ink);
+}
+
+.welcome-banner p {
+    font-size: var(--fs-sm);
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.card h3 {
+    font-size: var(--fs-lg);
+    font-weight: 800;
+    color: var(--ink);
+}
+
+.card p {
+    font-size: var(--fs-sm);
+    color: var(--muted);
+    line-height: 1.55;
+}
+
+.card-footer span {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+}
+
+.menu-lateral a {
+    font-size: var(--fs-sm);
+    font-weight: 650;
+    letter-spacing: -0.01em;
 }
 
 .header-titles h1 {
@@ -243,6 +315,8 @@ body {
 }
 
 .user-profile {
+    position: relative;
+    z-index: 95;
     display: inline-flex;
     align-items: center;
     gap: 10px;

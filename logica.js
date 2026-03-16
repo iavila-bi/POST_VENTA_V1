@@ -1,7 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
+    protegerSesion();
     inicializarTema();
     renderFechaActual();
     activarEfectosDashboard();
+    aplicarPermisosUI();
+    pintarUsuarioEnHeader();
 });
 
 const STORAGE_KEY_TEMA = "app_postventa_tema";
@@ -58,4 +61,44 @@ function activarEfectosDashboard() {
         card.style.animationDelay = `${0.08 * index}s`;
         card.classList.add("card-reveal");
     });
+}
+
+function getSesion() {
+    const token = localStorage.getItem("token") || "";
+    let user = null;
+    try {
+        user = JSON.parse(localStorage.getItem("user") || "null");
+    } catch (_) {
+        user = null;
+    }
+    return { token, user };
+}
+
+function protegerSesion() {
+    const { token } = getSesion();
+    // Si no hay token, vuelve al login ("/" sirve login.html)
+    if (!token) {
+        window.location.href = "/";
+    }
+}
+
+function esAdmin(user) {
+    return String(user?.rol || "").toLowerCase() === "admin";
+}
+
+function aplicarPermisosUI() {
+    const { user } = getSesion();
+    const admin = esAdmin(user);
+    document.querySelectorAll("[data-admin-only]").forEach(el => {
+        el.style.display = admin ? "" : "none";
+    });
+}
+
+function pintarUsuarioEnHeader() {
+    const { user } = getSesion();
+    const el = document.getElementById("user_name");
+    if (!el) return;
+    if (!user?.username) return;
+    const rol = user?.rol ? ` (${user.rol})` : "";
+    el.textContent = `${user.username}${rol}`;
 }

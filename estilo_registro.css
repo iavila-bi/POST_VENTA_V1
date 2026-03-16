@@ -2771,6 +2771,7 @@ body.dark-mode a:focus-visible {
 #modulo_registro_familia .grid-primarios-familia,
 #modulo_registro_familia .grid-campos-doble,
 #modulo_registro_familia .fila-firma-etiqueta,
+#modulo_registro_familia .historial-anclaje,
 #modulo_resumen_postventa .historial-anclaje {
     border: 1px solid var(--gris-border);
     border-radius: 14px;
@@ -2786,11 +2787,18 @@ body.dark-mode a:focus-visible {
     padding: 14px 16px 12px;
 }
 
+/* Cuando queda debajo del botón "Agregar familia", necesita aire superior */
+#modulo_registro_familia .historial-anclaje {
+    margin-top: 14px;
+    margin-bottom: 0;
+}
+
 body.dark-mode #modulo_identificacion_inmueble .grid-campos-doble,
 body.dark-mode #modulo_datos_postventa .grid-campos-doble,
 body.dark-mode #modulo_registro_familia .grid-primarios-familia,
 body.dark-mode #modulo_registro_familia .grid-campos-doble,
 body.dark-mode #modulo_registro_familia .fila-firma-etiqueta,
+body.dark-mode #modulo_registro_familia .historial-anclaje,
 body.dark-mode #modulo_resumen_postventa .historial-anclaje {
     border-color: rgba(255, 255, 255, 0.16);
 }
@@ -2840,3 +2848,1214 @@ body.dark-mode .btn-guardar-familia.btn-flash-success {
     bottom: 64px;
 }
 
+/* ============================= */
+/* FORM VISUAL REFRESH (REGISTRO) */
+/* Aligns with dashboard style (blue/gray/white) */
+/* ============================= */
+
+body.bg-dashboard {
+    --pv-bg0: #fbfdff;
+    --pv-bg1: #f4f7fb;
+    --pv-bg2: #eef3fa;
+    --pv-card: rgba(255, 255, 255, 0.92);
+    --pv-ink: #0f172a;
+    --pv-heading: #0b2a46;
+    --pv-muted: #475569;
+    --pv-muted2: #64748b;
+    --pv-line: #d8e1ee;
+    --pv-line2: #c6d2e4;
+    --pv-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+    --pv-shadow-sm: 0 8px 18px rgba(15, 23, 42, 0.06);
+    --pv-accent: #2563eb;
+    --pv-accent2: #0ea5e9;
+
+    background:
+        radial-gradient(circle at 18% 0%, rgba(37, 99, 235, 0.10), transparent 42%),
+        radial-gradient(circle at 92% 14%, rgba(14, 165, 233, 0.08), transparent 40%),
+        linear-gradient(180deg, var(--pv-bg0) 0%, var(--pv-bg1) 55%, var(--pv-bg2) 100%) !important;
+    color: var(--pv-ink) !important;
+    line-height: 1.35;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body.bg-dashboard .theme-toggle {
+    border-color: var(--pv-line2) !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    color: var(--pv-accent) !important;
+    box-shadow: 0 18px 34px rgba(15, 23, 42, 0.18) !important;
+    left: auto !important;
+    right: 16px !important;
+    top: 16px !important;
+    transform: none !important;
+}
+
+body.bg-dashboard .contenedor-registro {
+    width: min(1320px, 96%);
+}
+
+body.bg-dashboard .header-postventa {
+    text-align: left !important;
+}
+
+body.bg-dashboard .titulo-central {
+    text-align: left !important;
+}
+
+body.bg-dashboard .titulo-central h1 {
+    letter-spacing: -0.02em !important;
+}
+
+body.bg-dashboard .hero-subtitulo {
+    color: var(--pv-muted2) !important;
+}
+
+body.bg-dashboard .flujo-pasos {
+    justify-content: flex-start !important;
+}
+
+body.bg-dashboard .tarjeta-modulo {
+    background: var(--pv-card) !important;
+    border: 1px solid rgba(198, 210, 228, 0.85) !important;
+    border-radius: 18px !important;
+    box-shadow: var(--pv-shadow-sm) !important;
+    backdrop-filter: blur(10px);
+}
+
+body.bg-dashboard .tarjeta-modulo:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--pv-shadow) !important;
+}
+
+body.bg-dashboard .titulo-seccion {
+    color: var(--pv-heading) !important;
+    border-bottom-color: rgba(216, 225, 238, 0.9) !important;
+}
+
+body.bg-dashboard .titulo-seccion i {
+    color: rgba(37, 99, 235, 0.85) !important;
+}
+
+body.bg-dashboard .grupo-input label {
+    color: var(--pv-muted2) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    font-weight: 700 !important;
+}
+
+body.bg-dashboard input,
+body.bg-dashboard select,
+body.bg-dashboard textarea {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border: 1px solid rgba(198, 210, 228, 0.85) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.04);
+}
+
+body.bg-dashboard input:focus,
+body.bg-dashboard select:focus,
+body.bg-dashboard textarea:focus {
+    border-color: rgba(37, 99, 235, 0.65) !important;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12), 0 10px 22px rgba(15, 23, 42, 0.06) !important;
+    outline: none !important;
+}
+
+body.bg-dashboard .btn-principal {
+    border-radius: 12px !important;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22) !important;
+    border: 1px solid rgba(37, 99, 235, 0.28) !important;
+    outline: none !important;
+}
+
+body.bg-dashboard .btn-principal:hover {
+    box-shadow: 0 16px 34px rgba(37, 99, 235, 0.26) !important;
+}
+
+body.bg-dashboard .btn-principal:focus-visible {
+    outline: none !important;
+    box-shadow:
+        0 0 0 4px rgba(37, 99, 235, 0.18),
+        0 16px 34px rgba(37, 99, 235, 0.26) !important;
+}
+
+body.bg-dashboard .btn-secundario {
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.82) !important;
+    border: 1px solid rgba(198, 210, 228, 0.85) !important;
+    color: var(--pv-ink) !important;
+    box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06) !important;
+}
+
+body.bg-dashboard .btn-secundario:hover {
+    border-color: rgba(37, 99, 235, 0.35) !important;
+    box-shadow: 0 16px 28px rgba(15, 23, 42, 0.10) !important;
+}
+
+body.bg-dashboard .estado-postventa-modulo {
+    background: rgba(255, 255, 255, 0.82) !important;
+    border-color: rgba(198, 210, 228, 0.85) !important;
+}
+
+body.bg-dashboard .estado-postventa-modulo--ok {
+    background: rgba(37, 99, 235, 0.10) !important;
+    border-color: rgba(37, 99, 235, 0.20) !important;
+    color: #1d4ed8 !important;
+}
+
+body.bg-dashboard .estado-postventa-modulo--sin {
+    background: rgba(239, 68, 68, 0.08) !important;
+    border-color: rgba(239, 68, 68, 0.25) !important;
+}
+
+body.bg-dashboard.dark-mode {
+    background:
+        radial-gradient(circle at 18% 0%, rgba(37, 99, 235, 0.20), transparent 42%),
+        radial-gradient(circle at 92% 14%, rgba(14, 165, 233, 0.12), transparent 40%),
+        linear-gradient(180deg, #07101c 0%, #0b1220 100%) !important;
+    color: #e5e7eb !important;
+    --pv-heading: #d6e6ff;
+}
+
+body.bg-dashboard.dark-mode .tarjeta-modulo {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 18px 44px rgba(2, 6, 23, 0.42) !important;
+}
+
+body.bg-dashboard.dark-mode input,
+body.bg-dashboard.dark-mode select,
+body.bg-dashboard.dark-mode textarea {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    color: #e5e7eb !important;
+}
+
+body.bg-dashboard.dark-mode .btn-secundario {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    color: #e5e7eb !important;
+}
+
+body.bg-dashboard.dark-mode .theme-toggle {
+    left: auto !important;
+    right: 16px !important;
+    top: 16px !important;
+    transform: none !important;
+}
+
+/* --- More visible layout + typography upgrades --- */
+body.bg-dashboard .header-postventa {
+    padding: 18px 18px 16px !important;
+    border-radius: 22px !important;
+    background: rgba(255, 255, 255, 0.76) !important;
+    border: 1px solid rgba(198, 210, 228, 0.85) !important;
+    box-shadow: var(--pv-shadow-sm) !important;
+    backdrop-filter: blur(10px);
+    max-width: none !important;
+    margin: 18px auto 18px !important;
+    position: relative;
+    overflow: hidden;
+}
+
+body.bg-dashboard .header-postventa::before {
+    content: "";
+    position: absolute;
+    inset: -40% -20%;
+    background:
+        radial-gradient(circle at 18% 0%, rgba(37, 99, 235, 0.18), transparent 48%),
+        radial-gradient(circle at 88% 22%, rgba(14, 165, 233, 0.12), transparent 54%);
+    pointer-events: none;
+}
+
+body.bg-dashboard .btn-volver-top {
+    top: 16px !important;
+    left: 16px !important;
+    border-radius: 999px !important;
+    border-color: rgba(198, 210, 228, 0.85) !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+    backdrop-filter: blur(10px);
+    position: absolute !important;
+    z-index: 30 !important;
+}
+
+body.bg-dashboard .titulo-central {
+    position: relative;
+    padding-left: 0 !important;
+    padding-top: 54px !important; /* deja espacio para el boton volver */
+    z-index: 10;
+}
+
+body.bg-dashboard .flujo-pasos {
+    position: relative;
+    z-index: 10;
+}
+
+body.bg-dashboard .app-kicker {
+    background: rgba(37, 99, 235, 0.08) !important;
+    border-color: rgba(37, 99, 235, 0.16) !important;
+    color: #1d4ed8 !important;
+}
+
+body.bg-dashboard .app-fecha {
+    color: var(--pv-muted2) !important;
+    font-size: 0.92rem !important;
+}
+
+body.bg-dashboard .flujo-pasos {
+    position: relative;
+    margin-top: 12px !important;
+    gap: 10px !important;
+}
+
+body.bg-dashboard .paso-chip,
+body.bg-dashboard .paso-chip-btn {
+    border-radius: 999px !important;
+    border: 1px solid rgba(198, 210, 228, 0.85) !important;
+    background: rgba(255, 255, 255, 0.72) !important;
+    color: var(--pv-ink) !important;
+    box-shadow: 0 10px 18px rgba(15, 23, 42, 0.05) !important;
+    padding: 10px 14px !important;
+}
+
+body.bg-dashboard .paso-chip i,
+body.bg-dashboard .paso-chip-btn i {
+    color: rgba(37, 99, 235, 0.85) !important;
+}
+
+body.bg-dashboard .paso-chip.pendiente {
+    opacity: 0.7;
+}
+
+body.bg-dashboard .paso-chip.completado {
+    border-color: rgba(16, 185, 129, 0.32) !important;
+    background: rgba(16, 185, 129, 0.08) !important;
+}
+
+body.bg-dashboard .paso-chip.completado i {
+    color: #059669 !important;
+}
+
+body.bg-dashboard .paso-chip-btn.activo,
+body.bg-dashboard .paso-chip.activo {
+    border-color: rgba(37, 99, 235, 0.40) !important;
+    background: rgba(37, 99, 235, 0.10) !important;
+}
+
+body.bg-dashboard .selector-postventa-card {
+    border-radius: 22px !important;
+    padding: 18px 18px 16px !important;
+    background: rgba(255, 255, 255, 0.76) !important;
+    border: 1px solid rgba(198, 210, 228, 0.85) !important;
+    box-shadow: var(--pv-shadow-sm) !important;
+    backdrop-filter: blur(10px);
+}
+
+body.bg-dashboard .selector-postventa-head {
+    display: grid !important;
+    grid-template-columns: 1fr minmax(260px, 340px);
+    column-gap: 18px;
+    row-gap: 12px;
+    align-items: start !important;
+    margin-bottom: 12px !important;
+}
+
+body.bg-dashboard .selector-postventa-head > div:first-child {
+    min-width: 0;
+}
+
+body.bg-dashboard .selector-postventa-head h3 {
+    letter-spacing: -0.01em !important;
+    font-size: 1.02rem !important;
+    color: var(--pv-heading) !important;
+}
+
+body.bg-dashboard .selector-postventa-head p {
+    color: var(--pv-muted2) !important;
+}
+
+body.bg-dashboard .selector-postventa-estado {
+    border-radius: 16px !important;
+    border: 1px solid rgba(198, 210, 228, 0.85) !important;
+    background: rgba(248, 250, 252, 0.78) !important;
+    box-shadow: 0 10px 18px rgba(15, 23, 42, 0.05) !important;
+    padding: 10px 14px !important;
+    min-width: 260px;
+    max-width: 340px;
+    min-height: 62px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+        "label value"
+        "estado familias";
+    column-gap: 14px;
+    row-gap: 6px;
+    align-items: center;
+    line-height: 1.1;
+    justify-self: end;
+    align-self: start;
+}
+
+body.bg-dashboard .selector-postventa-estado span {
+    letter-spacing: 0.10em !important;
+    font-size: 0.68rem !important;
+    color: var(--pv-muted2) !important;
+    grid-area: label;
+    justify-self: start;
+    margin: 0 !important;
+}
+
+body.bg-dashboard .selector-postventa-estado strong {
+    font-size: 1.06rem !important;
+    line-height: 1.05;
+    grid-area: value;
+    justify-self: end;
+    margin: 0 !important;
+}
+
+body.bg-dashboard .selector-postventa-estado small {
+    font-size: 0.84rem !important;
+    line-height: 1.15;
+    margin: 0 !important;
+}
+
+body.bg-dashboard .selector-postventa-estado small:nth-of-type(1) {
+    grid-area: estado;
+    justify-self: start;
+}
+
+body.bg-dashboard .selector-postventa-estado small:nth-of-type(2) {
+    grid-area: familias;
+    justify-self: end;
+}
+
+@media (max-width: 900px) {
+    body.bg-dashboard .selector-postventa-head {
+        grid-template-columns: 1fr;
+    }
+
+    body.bg-dashboard .selector-postventa-estado {
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+        justify-self: stretch;
+    }
+}
+
+@media (max-width: 560px) {
+    body.bg-dashboard .selector-postventa-estado {
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+    }
+}
+
+body.bg-dashboard .selector-postventa-input {
+    margin-top: 10px;
+}
+
+/* Calendar integrated headings */
+body.bg-dashboard .cal-titulo-mes,
+body.bg-dashboard .cal-panel-resumen h4,
+body.bg-dashboard .calendario-header-grid span {
+    color: var(--pv-heading) !important;
+}
+
+body.bg-dashboard .indicadores-kpi {
+    gap: 14px !important;
+}
+
+body.bg-dashboard .kpi-card {
+    border-radius: 18px !important;
+    border: 1px solid rgba(198, 210, 228, 0.85) !important;
+    background: rgba(255, 255, 255, 0.76) !important;
+    box-shadow: 0 12px 22px rgba(15, 23, 42, 0.06) !important;
+}
+
+body.bg-dashboard .kpi-label {
+    color: var(--pv-muted2) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    font-weight: 700 !important;
+    font-size: 0.72rem !important;
+}
+
+body.bg-dashboard .kpi-value {
+    color: var(--pv-heading) !important;
+    letter-spacing: -0.02em !important;
+}
+
+body.bg-dashboard .tarjeta-modulo {
+    padding: 22px 22px 20px !important;
+    margin-bottom: 18px !important;
+}
+
+body.bg-dashboard .cabecera-modulo {
+    margin-bottom: 12px !important;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(216, 225, 238, 0.9);
+}
+
+body.bg-dashboard .grid-campos-doble {
+    gap: 14px 18px !important;
+}
+
+body.bg-dashboard .grid-primarios-familia {
+    gap: 14px 18px !important;
+}
+
+body.bg-dashboard textarea {
+    height: auto !important;
+    padding: 10px 12px !important;
+    min-height: 42px;
+}
+
+body.bg-dashboard .tabla-registros {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(198, 210, 228, 0.85) !important;
+    background: rgba(255, 255, 255, 0.82) !important;
+    box-shadow: 0 12px 22px rgba(15, 23, 42, 0.06) !important;
+}
+
+body.bg-dashboard .tabla-registros thead th {
+    background: rgba(248, 250, 252, 0.90) !important;
+    color: var(--pv-heading) !important;
+}
+
+body.bg-dashboard .tabla-registros tbody td {
+    border-bottom-color: rgba(216, 225, 238, 0.9) !important;
+}
+
+/* Dark mode: keep the same hierarchy */
+body.bg-dashboard.dark-mode .header-postventa {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 18px 44px rgba(2, 6, 23, 0.45) !important;
+}
+
+body.bg-dashboard.dark-mode .paso-chip,
+body.bg-dashboard.dark-mode .paso-chip-btn,
+body.bg-dashboard.dark-mode .selector-postventa-card,
+body.bg-dashboard.dark-mode .kpi-card {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 18px 44px rgba(2, 6, 23, 0.42) !important;
+    color: #e5e7eb !important;
+}
+
+body.bg-dashboard.dark-mode .paso-chip i,
+body.bg-dashboard.dark-mode .paso-chip-btn i {
+    color: rgba(147, 197, 253, 0.85) !important;
+}
+
+body.bg-dashboard.dark-mode .selector-postventa-estado {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+body.bg-dashboard.dark-mode .tabla-registros {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+body.bg-dashboard.dark-mode .tabla-registros thead th {
+    background: rgba(255, 255, 255, 0.04) !important;
+    color: #d6e6ff !important;
+}
+
+/* Phone input: remove "double layers" and match rounded aesthetic */
+body.bg-dashboard .telefono-container {
+    border: 1px solid rgba(198, 210, 228, 0.85) !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.04);
+    overflow: hidden;
+    align-items: stretch;
+}
+
+body.bg-dashboard .telefono-prefix {
+    background: rgba(37, 99, 235, 0.08) !important;
+    color: #1d4ed8 !important;
+    border-right: 1px solid rgba(198, 210, 228, 0.85) !important;
+    border-radius: 12px 0 0 12px;
+    padding: 10px 12px !important;
+}
+
+body.bg-dashboard .telefono-container .telefono-input {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border-radius: 0 12px 12px 0 !important;
+    height: 40px !important;
+    padding: 0 12px !important;
+}
+
+body.bg-dashboard.dark-mode .telefono-container {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 18px 44px rgba(2, 6, 23, 0.30) !important;
+}
+
+body.bg-dashboard.dark-mode .telefono-prefix {
+    background: rgba(37, 99, 235, 0.14) !important;
+    color: rgba(147, 197, 253, 0.95) !important;
+    border-right-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+/* Blocks inside "Registro por Familia" */
+body.bg-dashboard .bloque-formulario {
+    border: 1px solid rgba(198, 210, 228, 0.85);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.64);
+    box-shadow: 0 12px 22px rgba(15, 23, 42, 0.06);
+    padding: 14px 14px 12px;
+    margin-top: 12px;
+}
+
+body.bg-dashboard .bloque-formulario:first-of-type {
+    margin-top: 0;
+}
+
+body.bg-dashboard .bloque-formulario-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 2px 2px 10px;
+    border-bottom: 1px solid rgba(216, 225, 238, 0.9);
+    margin-bottom: 12px;
+}
+
+body.bg-dashboard .bloque-formulario-head h4 {
+    margin: 0;
+    font-size: 0.92rem;
+    letter-spacing: -0.01em;
+    color: var(--pv-heading);
+    font-weight: 750;
+}
+
+body.bg-dashboard .bloque-formulario-head p {
+    margin: 0;
+    font-size: 0.86rem;
+    color: var(--pv-muted2);
+}
+
+@media (max-width: 700px) {
+    body.bg-dashboard .bloque-formulario-head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+}
+
+body.bg-dashboard.dark-mode .bloque-formulario {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 18px 44px rgba(2, 6, 23, 0.42);
+}
+
+body.bg-dashboard.dark-mode .bloque-formulario-head {
+    border-bottom-color: rgba(255, 255, 255, 0.10);
+}
+
+body.bg-dashboard.dark-mode .bloque-formulario-head h4 {
+    color: #e5e7eb;
+}
+
+body.bg-dashboard.dark-mode .bloque-formulario-head p {
+    color: #aebbd0;
+}
+
+/* ======================================================
+   Scroll paint fixes (Chrome): evita "bandas" al scrollear
+   especialmente con dark-mode + blur/backdrop-filter.
+   ====================================================== */
+
+html,
+body {
+    min-height: 100%;
+    background-color: #f6f9ff;
+}
+
+body.bg-dashboard.dark-mode,
+body.dark-mode {
+    background-color: #07101c !important; /* respaldo sólido para repaints */
+}
+
+/* Evita layer fijo con blur dentro del contenedor (causa artefactos al scroll) */
+body.dark-mode .contenedor-registro::before {
+    content: none !important;
+}
+
+/* Fondo decorativo global para dark-mode (sin blur/filter) */
+body.bg-dashboard.dark-mode::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background:
+        radial-gradient(circle at 12% 30%, rgba(56, 189, 248, 0.10), transparent 40%),
+        radial-gradient(circle at 80% 18%, rgba(96, 165, 250, 0.10), transparent 35%),
+        radial-gradient(circle at 50% 100%, rgba(29, 78, 216, 0.12), transparent 55%);
+    transform: translateZ(0); /* fuerza una capa estable */
+}
+
+/* Reduce glitches de composición en dark-mode */
+body.bg-dashboard.dark-mode .header-postventa,
+body.bg-dashboard.dark-mode .btn-volver-top,
+body.bg-dashboard.dark-mode .selector-postventa-card,
+body.bg-dashboard.dark-mode .tarjeta-modulo,
+body.bg-dashboard.dark-mode .anclaje-card,
+body.bg-dashboard.dark-mode .kpi-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* ======================================================
+   Typography hierarchy (registro)
+   ====================================================== */
+
+body.bg-dashboard {
+    --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --fs-xxs: 0.75rem;   /* 12 */
+    --fs-xs: 0.8125rem;  /* 13 */
+    --fs-sm: 0.875rem;   /* 14 */
+    --fs-md: 1rem;       /* 16 */
+    --fs-lg: 1.125rem;   /* 18 */
+    --fs-xl: 1.25rem;    /* 20 */
+    --fs-2xl: 1.55rem;   /* 24-25 */
+    --fs-3xl: clamp(1.7rem, 1.25rem + 1.4vw, 2.3rem); /* page title */
+    --lh-tight: 1.16;
+    --lh-base: 1.48;
+}
+
+body.bg-dashboard,
+body.bg-dashboard input,
+body.bg-dashboard select,
+body.bg-dashboard textarea,
+body.bg-dashboard button {
+    font-family: var(--font-sans);
+}
+
+body.bg-dashboard {
+    font-size: var(--fs-md);
+    line-height: var(--lh-base);
+}
+
+body.bg-dashboard .titulo-central h1 {
+    font-size: var(--fs-3xl) !important;
+    line-height: var(--lh-tight) !important;
+    font-weight: 850 !important;
+    letter-spacing: -0.03em;
+}
+
+body.bg-dashboard .hero-subtitulo {
+    font-size: var(--fs-sm) !important;
+    line-height: 1.55 !important;
+    font-weight: 500 !important;
+}
+
+body.bg-dashboard .titulo-seccion {
+    font-size: var(--fs-xl) !important;
+    line-height: 1.22 !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em;
+}
+
+body.bg-dashboard .bloque-formulario-head h4 {
+    font-size: var(--fs-sm) !important;
+    font-weight: 850 !important;
+    letter-spacing: -0.01em;
+}
+
+body.bg-dashboard .bloque-formulario-head p {
+    font-size: var(--fs-xs) !important;
+    line-height: 1.45 !important;
+}
+
+body.bg-dashboard .grupo-input label,
+body.bg-dashboard .selector-postventa-input label {
+    font-size: var(--fs-xs) !important;
+    font-weight: 750 !important;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+body.bg-dashboard input,
+body.bg-dashboard select,
+body.bg-dashboard textarea {
+    font-size: var(--fs-md) !important;
+    line-height: 1.35 !important;
+}
+
+body.bg-dashboard small,
+body.bg-dashboard .selector-postventa-estado span,
+body.bg-dashboard .kpi-label,
+body.bg-dashboard .calendario-embebido-ayuda {
+    font-size: var(--fs-xs) !important;
+}
+
+body.bg-dashboard .tabla-registros thead th,
+body.bg-dashboard #tabla_ejecutantes_plan thead th,
+body.bg-dashboard .calendario-header-grid span {
+    font-size: var(--fs-xs) !important;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 850 !important;
+}
+
+body.bg-dashboard .tabla-registros tbody td,
+body.bg-dashboard #tabla_ejecutantes_plan tbody td {
+    font-size: var(--fs-sm) !important;
+}
+
+body.bg-dashboard .btn-principal,
+body.bg-dashboard .btn-secundario,
+body.bg-dashboard .btn-guardar-familia {
+    font-size: var(--fs-sm) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.01em;
+}
+
+/* Gestión de registros: bloque postventas + filtros */
+body.bg-dashboard .gestion-bloque {
+    border: 1px solid rgba(216, 225, 238, 0.95);
+    border-radius: 18px;
+    padding: 14px 14px 12px;
+    background: rgba(255, 255, 255, 0.70);
+    box-shadow: 0 12px 22px rgba(15, 23, 42, 0.06);
+    margin-top: 12px;
+}
+
+body.bg-dashboard.dark-mode .gestion-bloque {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 18px 44px rgba(2, 6, 23, 0.42);
+}
+
+body.bg-dashboard .gestion-bloque-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 2px 10px;
+    border-bottom: 1px solid rgba(216, 225, 238, 0.9);
+    margin-bottom: 12px;
+}
+
+body.bg-dashboard.dark-mode .gestion-bloque-head {
+    border-bottom-color: rgba(255, 255, 255, 0.10);
+}
+
+body.bg-dashboard .gestion-bloque-head h4 {
+    margin: 0;
+    font-size: var(--fs-sm);
+    font-weight: 850;
+    letter-spacing: -0.01em;
+    color: var(--pv-heading);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+body.bg-dashboard .gestion-filtros-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.7fr 1.6fr;
+    gap: 12px;
+}
+
+@media (max-width: 900px) {
+    body.bg-dashboard .gestion-filtros-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+body.bg-dashboard .gestion-filtros-acciones {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
+body.bg-dashboard .tabla-gestion-postventas .btn-mini {
+    padding: 8px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(198, 210, 228, 0.85);
+    background: rgba(255, 255, 255, 0.86);
+    font-weight: 800;
+    font-size: var(--fs-xs);
+    cursor: pointer;
+    margin-left: 6px;
+}
+
+body.bg-dashboard .tabla-gestion-postventas .btn-mini:hover {
+    border-color: rgba(37, 99, 235, 0.35);
+    background: rgba(37, 99, 235, 0.08);
+}
+
+body.bg-dashboard .tabla-gestion-postventas .btn-mini.btn-danger {
+    border-color: rgba(239, 68, 68, 0.25);
+    background: rgba(239, 68, 68, 0.10);
+    color: #991b1b;
+}
+
+body.bg-dashboard.dark-mode .tabla-gestion-postventas .btn-mini {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #e5e7eb;
+}
+
+body.bg-dashboard.dark-mode .tabla-gestion-postventas .btn-mini.btn-danger {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.22);
+    color: #fecaca;
+}
+
+/* ======================================================
+   Gestión (árbol): Postventa -> Familias -> Tareas
+   ====================================================== */
+
+body.bg-dashboard .gestion-arbol {
+    display: grid;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+body.bg-dashboard .proj-card {
+    border-radius: 20px;
+    border: 1px solid rgba(216, 225, 238, 0.95);
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow: 0 14px 26px rgba(15, 23, 42, 0.07);
+    overflow: hidden;
+}
+
+body.bg-dashboard.dark-mode .proj-card {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: 0 18px 44px rgba(2, 6, 23, 0.42);
+}
+
+body.bg-dashboard .proj-head {
+    padding: 12px 12px;
+}
+
+body.bg-dashboard .proj-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    cursor: pointer;
+}
+
+body.bg-dashboard .proj-title {
+    display: grid;
+    gap: 2px;
+}
+
+body.bg-dashboard .proj-title .t {
+    font-size: var(--fs-md);
+    font-weight: 900;
+    letter-spacing: -0.015em;
+    color: var(--pv-heading);
+}
+
+body.bg-dashboard .proj-title .s {
+    font-size: var(--fs-xs);
+    color: var(--pv-muted2);
+    line-height: 1.35;
+}
+
+body.bg-dashboard.dark-mode .proj-title .s {
+    color: #aebbd0;
+}
+
+body.bg-dashboard .proj-children {
+    border-top: 1px solid rgba(216, 225, 238, 0.85);
+    padding: 10px 12px 12px;
+    display: none;
+}
+
+body.bg-dashboard.dark-mode .proj-children {
+    border-top-color: rgba(255, 255, 255, 0.10);
+}
+
+body.bg-dashboard .proj-card.open .proj-children {
+    display: block;
+}
+
+body.bg-dashboard .pv-list {
+    display: grid;
+    gap: 12px;
+}
+
+body.bg-dashboard .gestion-arbol-vacio {
+    padding: 14px 16px;
+    border-radius: 16px;
+    border: 1px dashed rgba(148, 163, 184, 0.55);
+    background: rgba(255, 255, 255, 0.55);
+    color: var(--pv-muted);
+    font-size: var(--fs-sm);
+}
+
+body.bg-dashboard.dark-mode .gestion-arbol-vacio {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.03);
+    color: #aebbd0;
+}
+
+body.bg-dashboard .pv-card {
+    border-radius: 18px;
+    border: 1px solid rgba(216, 225, 238, 0.95);
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 12px 22px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+}
+
+body.bg-dashboard.dark-mode .pv-card {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: 0 18px 44px rgba(2, 6, 23, 0.42);
+}
+
+body.bg-dashboard .pv-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 12px;
+}
+
+body.bg-dashboard .pv-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    cursor: pointer;
+}
+
+body.bg-dashboard .pv-title {
+    display: grid;
+    gap: 2px;
+}
+
+body.bg-dashboard .pv-title .t {
+    font-size: var(--fs-sm);
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    color: var(--pv-heading);
+}
+
+body.bg-dashboard .pv-title .s {
+    font-size: var(--fs-xs);
+    color: var(--pv-muted2);
+    line-height: 1.35;
+}
+
+body.bg-dashboard.dark-mode .pv-title .s {
+    color: #aebbd0;
+}
+
+body.bg-dashboard .pv-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+body.bg-dashboard .pv-btn {
+    border: 1px solid rgba(198, 210, 228, 0.85);
+    background: rgba(255, 255, 255, 0.86);
+    border-radius: 999px;
+    padding: 8px 10px;
+    font-size: var(--fs-xs);
+    font-weight: 850;
+    cursor: pointer;
+}
+
+body.bg-dashboard .pv-btn:hover {
+    border-color: rgba(37, 99, 235, 0.35);
+    background: rgba(37, 99, 235, 0.08);
+}
+
+body.bg-dashboard .pv-left .pv-btn i,
+body.bg-dashboard .fam-left .pv-btn i {
+    transition: transform 160ms ease;
+}
+
+body.bg-dashboard .proj-left .pv-btn i {
+    transition: transform 160ms ease;
+}
+
+body.bg-dashboard .proj-card.open .proj-left .pv-btn i {
+    transform: rotate(180deg);
+}
+
+body.bg-dashboard .pv-card.open .pv-left .pv-btn i {
+    transform: rotate(180deg);
+}
+
+body.bg-dashboard .fam-item.open .fam-left .pv-btn i {
+    transform: rotate(180deg);
+}
+
+body.bg-dashboard .pv-btn.danger {
+    border-color: rgba(239, 68, 68, 0.25);
+    background: rgba(239, 68, 68, 0.10);
+    color: #991b1b;
+}
+
+body.bg-dashboard .pv-btn.danger:hover {
+    border-color: rgba(239, 68, 68, 0.35);
+    background: rgba(239, 68, 68, 0.14);
+}
+
+body.bg-dashboard.dark-mode .pv-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #e5e7eb;
+}
+
+body.bg-dashboard.dark-mode .pv-btn.danger {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.22);
+    color: #fecaca;
+}
+
+body.bg-dashboard .pv-children {
+    border-top: 1px solid rgba(216, 225, 238, 0.85);
+    padding: 10px 12px 12px;
+    display: none;
+}
+
+body.bg-dashboard.dark-mode .pv-children {
+    border-top-color: rgba(255, 255, 255, 0.10);
+}
+
+body.bg-dashboard .pv-card.open .pv-children {
+    display: block;
+}
+
+body.bg-dashboard .fam-list {
+    display: grid;
+    gap: 10px;
+}
+
+body.bg-dashboard .fam-item {
+    border-radius: 16px;
+    border: 1px solid rgba(216, 225, 238, 0.92);
+    background: rgba(248, 250, 252, 0.72);
+    overflow: hidden;
+}
+
+body.bg-dashboard.dark-mode .fam-item {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+body.bg-dashboard .fam-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 10px;
+}
+
+body.bg-dashboard .fam-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    cursor: pointer;
+}
+
+body.bg-dashboard .fam-head .t {
+    font-size: var(--fs-sm);
+    font-weight: 850;
+    color: var(--pv-heading);
+    letter-spacing: -0.01em;
+}
+
+body.bg-dashboard .fam-head .s {
+    margin-top: 2px;
+    font-size: var(--fs-xs);
+    color: var(--pv-muted2);
+}
+
+body.bg-dashboard.dark-mode .fam-head .s {
+    color: #aebbd0;
+}
+
+body.bg-dashboard .fam-children {
+    border-top: 1px solid rgba(216, 225, 238, 0.85);
+    padding: 10px 10px 10px;
+    display: none;
+}
+
+body.bg-dashboard.dark-mode .fam-children {
+    border-top-color: rgba(255, 255, 255, 0.10);
+}
+
+body.bg-dashboard .fam-item.open .fam-children {
+    display: block;
+}
+
+body.bg-dashboard .task-list {
+    display: grid;
+    gap: 8px;
+}
+
+body.bg-dashboard .task-item {
+    border-radius: 14px;
+    border: 1px solid rgba(216, 225, 238, 0.85);
+    background: rgba(255, 255, 255, 0.70);
+    padding: 10px 10px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+body.bg-dashboard.dark-mode .task-item {
+    border-color: rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+body.bg-dashboard .task-item .top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+body.bg-dashboard .task-main {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+body.bg-dashboard .task-actions {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding-left: 6px;
+}
+
+body.bg-dashboard .task-actions .pv-btn {
+    padding: 8px 9px;
+}
+
+body.bg-dashboard .task-item .t {
+    font-size: var(--fs-sm);
+    font-weight: 800;
+    color: var(--pv-heading);
+}
+
+body.bg-dashboard .task-item .m {
+    font-size: var(--fs-xs);
+    color: var(--pv-muted2);
+}

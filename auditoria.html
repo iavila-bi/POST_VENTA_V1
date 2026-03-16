@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Auditoría del Sistema</title>
+    <link rel="stylesheet" href="estilo.css" />
+    <link rel="stylesheet" href="auth_ui.css" />
+    <style>
+        .admin-wrap {
+            height: 100vh;
+            overflow: auto;
+        }
+        .admin-page {
+            width: min(1200px, 94%);
+            margin: 22px auto 42px;
+        }
+        .admin-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .admin-head h1 {
+            font-size: clamp(1.4rem, 1.05rem + 1.2vw, 2rem);
+            font-weight: 850;
+            letter-spacing: -0.03em;
+        }
+        .admin-head p {
+            margin-top: 6px;
+            color: var(--muted2);
+            font-size: var(--fs-sm);
+        }
+        .admin-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--r-lg);
+            box-shadow: var(--shadow-sm);
+            padding: 16px;
+            margin-top: 14px;
+        }
+        .btn {
+            appearance: none;
+            border: 1px solid var(--line2);
+            background: rgba(255,255,255,0.92);
+            color: var(--ink);
+            border-radius: 999px;
+            padding: 10px 14px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--line);
+            font-size: var(--fs-sm);
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            color: var(--muted2);
+            font-size: var(--fs-xs);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .pill {
+            display: inline-flex;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(37, 99, 235, 0.18);
+            background: rgba(37, 99, 235, 0.08);
+            color: #1d4ed8;
+            font-weight: 800;
+            font-size: var(--fs-xs);
+            white-space: nowrap;
+        }
+        .msg {
+            margin-top: 10px;
+            font-size: var(--fs-sm);
+            color: var(--muted);
+        }
+        .top-links a {
+            font-size: var(--fs-sm);
+            font-weight: 800;
+            color: var(--accent);
+            text-decoration: none;
+        }
+        .desc {
+            max-width: 560px;
+            line-height: 1.45;
+            color: var(--muted);
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-wrap">
+        <div class="admin-page">
+            <div class="admin-head">
+                <div>
+                    <h1>Auditoría del Sistema</h1>
+                    <p>Últimos 500 eventos. Solo rol <strong>admin</strong>.</p>
+                </div>
+                <div class="top-links">
+                    <a href="index.html">Volver al menú</a>
+                </div>
+            </div>
+
+            <section class="admin-card">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                    <h2 style="font-size: var(--fs-xl); font-weight: 850;">Eventos</h2>
+                    <button class="btn" id="btn_refrescar" type="button">Refrescar</button>
+                </div>
+                <div style="overflow:auto; margin-top: 10px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Rol</th>
+                                <th>Acción</th>
+                                <th>Tabla</th>
+                                <th>Descripción</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody_auditoria"></tbody>
+                    </table>
+                </div>
+                <div id="msg_tabla" class="msg"></div>
+            </section>
+        </div>
+    </div>
+
+    <script src="auth_ui.js"></script>
+    <script>
+        function getToken() {
+            return localStorage.getItem("token") || "";
+        }
+
+        async function apiFetch(url, opts = {}) {
+            const token = getToken();
+            const headers = Object.assign({}, opts.headers || {}, {
+                "Authorization": `Bearer ${token}`
+            });
+            return fetch(url, Object.assign({}, opts, { headers }));
+        }
+
+        function setMsg(text, isError = false) {
+            const el = document.getElementById("msg_tabla");
+            el.textContent = text || "";
+            el.style.color = isError ? "#b91c1c" : "var(--muted)";
+        }
+
+        function fmtFecha(valor) {
+            const d = new Date(valor);
+            if (Number.isNaN(d.getTime())) return String(valor || "-");
+            return d.toLocaleString("es-CL");
+        }
+
+        function fila(a) {
+            const safe = (v) => (v === null || v === undefined) ? "" : String(v);
+            return `
+                <tr>
+                    <td><strong>${safe(a.username)}</strong></td>
+                    <td><span class="pill">${safe(a.rol)}</span></td>
+                    <td>${safe(a.accion)}</td>
+                    <td>${safe(a.tabla_afectada)}</td>
+                    <td class="desc">${safe(a.descripcion)}</td>
+                    <td>${fmtFecha(a.fecha)}</td>
+                </tr>
+            `;
+        }
+
+        async function cargar() {
+            setMsg("Cargando...");
+            const res = await apiFetch("/api/auditoria");
+            const data = await res.json().catch(() => null);
+            if (!res.ok) {
+                setMsg(data?.error || `Error (HTTP ${res.status})`, true);
+                return;
+            }
+            document.getElementById("tbody_auditoria").innerHTML = data.map(fila).join("");
+            setMsg(`${data.length} eventos.`);
+        }
+
+        document.getElementById("btn_refrescar").addEventListener("click", cargar);
+        cargar();
+    </script>
+</body>
+</html>

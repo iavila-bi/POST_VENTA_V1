@@ -15,6 +15,7 @@
 
     <!-- CSS en raíz -->
     <link rel="stylesheet" href="estilo.css">
+    <link rel="stylesheet" href="auth_ui.css">
 </head>
 <body>
     <button type="button" id="theme_toggle" class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
@@ -32,6 +33,7 @@
                 <a href="registro.html"><i class="fas fa-plus-circle"></i> Nuevo Ticket</a>
                 <a href="cierre_actas.html"><i class="fas fa-check-double"></i> Cierre Actas</a>
                 <a href="historico.html"><i class="fas fa-history"></i> Histórico</a>
+                <a href="usuarios.html" data-admin-only><i class="fas fa-users"></i> Usuarios</a>
             </nav>
         </aside>
 
@@ -42,7 +44,7 @@
                     <p id="fecha-actual">Cargando fecha...</p>
                 </div>
                 <div class="user-profile">
-                    <span class="user-name">Administrador</span>
+                    <span class="user-name" id="user_name">Administrador</span>
                     <i class="fas fa-user-circle user-icon"></i>
                 </div>
             </header>
@@ -87,9 +89,20 @@
                     </div>
                 </div>
 
+                <div class="card" data-admin-only onclick="window.location.href='usuarios.html'">
+                    <div class="card-icon azul"><i class="fas fa-users"></i></div>
+                    <h3>Gestión de Usuarios</h3>
+                    <p>Crear, listar y desactivar usuarios. Acceso exclusivo para administradores.</p>
+                    <div class="card-footer">
+                        <span>Administrar usuarios</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
+<script src="auth_ui.js"></script>
 <script src="logica.js"></script>
 </body>
 </html>

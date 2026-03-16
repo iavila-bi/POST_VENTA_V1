@@ -5,6 +5,8 @@ let postventaActiva = null;
 let listaEjecutantes = [];
 let historialFamilias = [];
 let modoGestionRegistros = false;
+let registroFamiliaEditId = null;
+let registroFamiliaEditPostventa = null;
 const STORAGE_KEY_TEMA = "app_postventa_tema";
 let flashCrearPostventaTimeout = null;
 let toastPostventaTimeout = null;
@@ -166,10 +168,573 @@ function construirTextoEstadoPostventa(option, idPostventa) {
     return `#${idPostventa} · ${proyecto} · ${identificador}`;
 }
 
-function renderizarGestionVacia(texto = "Seleccione una postventa para gestionar registros.") {
-    const tbody = document.getElementById("tbody_gestion_registros");
-    if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="7">${texto}</td></tr>`;
+function fmtFechaISO(valor) {
+    if (!valor) return "-";
+    return String(valor).split("T")[0];
+}
+
+function setGestionArbolMensaje(texto) {
+    const host = document.getElementById("gestion_arbol");
+    if (!host) return;
+    host.innerHTML = `<div class="gestion-arbol-vacio">${texto}</div>`;
+}
+
+// Compat: algunas partes del código aún llaman esto.
+function renderizarGestionVacia(texto = "Listado de postventas. Selecciona una para ver familias y tareas.") {
+    setGestionArbolMensaje(texto);
+}
+
+let gestionArbolInit = false;
+function inicializarGestionArbol() {
+    if (gestionArbolInit) return;
+    gestionArbolInit = true;
+
+    const host = document.getElementById("gestion_arbol");
+    if (!host) return;
+
+    host.addEventListener("click", async (e) => {
+        const projToggle = e.target.closest("[data-proj-toggle]");
+        const pvToggle = e.target.closest("[data-pv-toggle]");
+        const pvDelete = e.target.closest("[data-pv-delete]");
+        const famToggle = e.target.closest("[data-fam-toggle]");
+        const famDelete = e.target.closest("[data-fam-delete]");
+        const famEdit = e.target.closest("[data-fam-edit]");
+        const taskDelete = e.target.closest("[data-task-delete]");
+        const taskEdit = e.target.closest("[data-task-edit]");
+
+        if (projToggle) {
+            const card = projToggle.closest(".proj-card");
+            const id = Number(card?.dataset?.idProyecto);
+            if (!Number.isFinite(id) || id <= 0) return;
+            toggleProyecto(card);
+            return;
+        }
+
+        if (pvToggle) {
+            const card = pvToggle.closest(".pv-card");
+            const id = Number(card?.dataset?.idPostventa);
+            if (!Number.isFinite(id) || id <= 0) return;
+            await togglePostventa(card, id);
+            return;
+        }
+
+        if (pvDelete) {
+            const card = pvDelete.closest(".pv-card");
+            const id = Number(card?.dataset?.idPostventa);
+            if (!Number.isFinite(id) || id <= 0) return;
+            await eliminarPostventaPorId(id);
+            return;
+        }
+
+        if (famToggle) {
+            const fam = famToggle.closest(".fam-item");
+            const idRegistro = Number(fam?.dataset?.idRegistro);
+            if (!Number.isFinite(idRegistro) || idRegistro <= 0) return;
+            await toggleFamilia(fam, idRegistro);
+            return;
+        }
+
+        if (famDelete) {
+            const fam = famDelete.closest(".fam-item");
+            const idRegistro = Number(fam?.dataset?.idRegistro);
+            const idPostventa = Number(fam?.closest(".pv-card")?.dataset?.idPostventa);
+            if (!Number.isFinite(idRegistro) || idRegistro <= 0) return;
+            await eliminarRegistroFamiliaGestion(idRegistro, idPostventa);
+            return;
+        }
+
+        if (famEdit) {
+            const fam = famEdit.closest(".fam-item");
+            const idRegistro = Number(fam?.dataset?.idRegistro);
+            if (!Number.isFinite(idRegistro) || idRegistro <= 0) return;
+            await editarRegistroFamiliaDesdeGestion(idRegistro);
+            return;
+        }
+
+        if (taskEdit) {
+            // Edición de tareas: se gestiona desde el formulario completo del registro familia.
+            const fam = taskEdit.closest(".fam-item");
+            const idRegistro = Number(fam?.dataset?.idRegistro);
+            if (!Number.isFinite(idRegistro) || idRegistro <= 0) return;
+            await editarRegistroFamiliaDesdeGestion(idRegistro);
+            // Intentar llevar al usuario directo a la sección de tareas.
+            document.getElementById("tabla_ejecutantes_plan")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            return;
+        }
+
+        if (taskDelete) {
+            const task = taskDelete.closest(".task-item");
+            const fam = taskDelete.closest(".fam-item");
+            const idTarea = Number(task?.dataset?.idTarea);
+            const idRegistro = Number(fam?.dataset?.idRegistro);
+            if (!Number.isFinite(idTarea) || idTarea <= 0) return;
+            if (!Number.isFinite(idRegistro) || idRegistro <= 0) return;
+            await eliminarTareaGestion(idTarea, idRegistro);
+            return;
+        }
+    });
+}
+
+function agruparTareasGestion(rows) {
+    const map = new Map();
+    for (const r of rows) {
+        const id = Number(r.id_tarea);
+        if (!Number.isFinite(id) || id <= 0) continue;
+        const cur = map.get(id) || {
+            id_tarea: id,
+            descripcion_tarea: r.descripcion_tarea,
+            fecha_inicio: r.fecha_inicio,
+            fecha_termino: r.fecha_termino,
+            ejecutantes: []
+        };
+        const nombre = r.nombre_ejecutante ? String(r.nombre_ejecutante) : "";
+        const esp = r.especialidad ? String(r.especialidad) : "";
+        if (nombre) {
+            const label = esp ? `${nombre} (${esp})` : nombre;
+            if (!cur.ejecutantes.includes(label)) cur.ejecutantes.push(label);
+        }
+        map.set(id, cur);
+    }
+    return Array.from(map.values()).sort((a, b) => {
+        const fa = new Date(a.fecha_inicio || "1970-01-01").getTime();
+        const fb = new Date(b.fecha_inicio || "1970-01-01").getTime();
+        if (fa !== fb) return fa - fb;
+        return a.id_tarea - b.id_tarea;
+    });
+}
+
+async function cargarGestionArbol() {
+    setGestionArbolMensaje("Cargando postventas...");
+    try {
+        const res = await fetch("/api/postventas/listado?limit=500");
+        if (!res.ok) throw new Error("No se pudo cargar postventas");
+        const data = await res.json();
+
+        const host = document.getElementById("gestion_arbol");
+        if (!host) return;
+
+        if (!Array.isArray(data) || data.length === 0) {
+            setGestionArbolMensaje("No hay postventas registradas.");
+            return;
+        }
+
+        // Agrupar por proyecto -> postventas
+        const proyectos = new Map();
+        for (const pv of data) {
+            const idp = Number(pv.id_proyecto);
+            const nombre = pv.nombre_proyecto || "Proyecto";
+            const key = Number.isFinite(idp) && idp > 0 ? idp : 0;
+            if (!proyectos.has(key)) proyectos.set(key, { id_proyecto: key, nombre_proyecto: nombre, items: [] });
+            proyectos.get(key).items.push(pv);
+        }
+
+        const proyectosOrdenados = Array.from(proyectos.values()).sort((a, b) => {
+            if (a.id_proyecto === 0 && b.id_proyecto !== 0) return 1;
+            if (b.id_proyecto === 0 && a.id_proyecto !== 0) return -1;
+            return String(a.nombre_proyecto).localeCompare(String(b.nombre_proyecto), "es");
+        });
+
+        host.innerHTML = proyectosOrdenados.map(p => {
+            const totalPostventas = p.items.length;
+            const totalFamilias = p.items.reduce((acc, it) => acc + Number(it.total_familias || 0), 0);
+
+            const postventasHtml = p.items.map(pv => {
+                const id = Number(pv.id_postventa);
+                const proyecto = pv.nombre_proyecto || "-";
+                const casa = pv.numero_identificador || "-";
+                const cliente = pv.cliente || "-";
+                const estado = pv.estado || "-";
+                const apertura = fmtFechaISO(pv.fecha_apertura);
+                const familias = Number(pv.total_familias || 0);
+
+                const subtitle = `${proyecto} · Casa ${casa} · ${cliente}`;
+                const badge = `${estado} · ${familias} familias · ${apertura}`;
+
+                return `
+                    <div class="pv-card" data-id-postventa="${id}" data-id-proyecto="${Number(pv.id_proyecto) || 0}">
+                        <div class="pv-head">
+                            <div class="pv-left" data-pv-toggle>
+                                <button type="button" class="pv-btn" aria-label="Ver familias">
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                                <div class="pv-title">
+                                    <div class="t">Postventa #${id}</div>
+                                    <div class="s">${subtitle} · ${badge}</div>
+                                </div>
+                            </div>
+                            <div class="pv-actions">
+                                <button type="button" class="pv-btn danger" data-pv-delete>
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="pv-children" data-pv-children>
+                            <div class="gestion-arbol-vacio">Cargando familias...</div>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            const nombreProyecto = p.id_proyecto === 0 ? "Sin proyecto" : p.nombre_proyecto;
+            const resumen = `${totalPostventas} postventas · ${totalFamilias} familias`;
+
+            return `
+                <div class="proj-card" data-id-proyecto="${p.id_proyecto}">
+                    <div class="proj-head">
+                        <div class="proj-left" data-proj-toggle>
+                            <button type="button" class="pv-btn" aria-label="Ver postventas">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="proj-title">
+                                <div class="t">${nombreProyecto}</div>
+                                <div class="s">${resumen}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="proj-children">
+                        <div class="pv-list">
+                            ${postventasHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join("");
+    } catch (error) {
+        console.error("Error gestion arbol:", error);
+        setGestionArbolMensaje("Error cargando postventas.");
+    }
+}
+
+function toggleProyecto(card) {
+    if (!card) return;
+    card.classList.toggle("open");
+}
+
+async function togglePostventa(card, idPostventa) {
+    const isOpen = card.classList.toggle("open");
+    if (!isOpen) return;
+
+    const children = card.querySelector("[data-pv-children]");
+    if (!children) return;
+
+    await cargarFamiliasPostventaGestion(children, idPostventa);
+}
+
+async function cargarFamiliasPostventaGestion(children, idPostventa) {
+    if (!children) return;
+    if (children.dataset.loaded === "1") return;
+    children.innerHTML = `<div class="gestion-arbol-vacio">Cargando familias...</div>`;
+
+    try {
+        const res = await fetch(`/api/postventas/${idPostventa}/registros`);
+        if (!res.ok) throw new Error("No se pudieron cargar familias");
+        const data = await res.json();
+
+        if (!Array.isArray(data) || data.length === 0) {
+            children.innerHTML = `<div class="gestion-arbol-vacio">Sin familias registradas.</div>`;
+            children.dataset.loaded = "1";
+            return;
+        }
+
+        const famHtml = data.map(rf => {
+            const idRegistro = Number(rf.id_registro);
+            const fam = rf.familia || "-";
+            const sub = rf.subfamilia || "-";
+            const recinto = rf.recinto || "-";
+            const responsable = rf.responsable || "-";
+            const lev = fmtFechaISO(rf.fecha_levantamiento);
+            const estado = rf.estado_tarea || "Pendiente";
+
+            return `
+                <div class="fam-item" data-id-registro="${idRegistro}">
+                    <div class="fam-head">
+                        <div class="fam-left" data-fam-toggle>
+                            <button type="button" class="pv-btn" aria-label="Ver tareas">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div>
+                                <div class="t">${fam} · ${sub} · ${recinto}</div>
+                                <div class="s">Registro #${idRegistro} · ${responsable} · ${lev} · ${estado}</div>
+                            </div>
+                        </div>
+                        <div class="pv-actions">
+                            <button type="button" class="pv-btn" data-fam-edit>
+                                <i class="fas fa-pen"></i> Editar
+                            </button>
+                            <button type="button" class="pv-btn danger" data-fam-delete>
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="fam-children" data-fam-children>
+                        <div class="gestion-arbol-vacio">Cargando tareas...</div>
+                    </div>
+                </div>
+            `;
+        }).join("");
+
+        children.innerHTML = `<div class="fam-list">${famHtml}</div>`;
+        children.dataset.loaded = "1";
+    } catch (error) {
+        console.error("Error cargando familias gestion:", error);
+        children.innerHTML = `<div class="gestion-arbol-vacio">Error cargando familias.</div>`;
+        children.dataset.loaded = "1";
+    }
+}
+
+async function toggleFamilia(famEl, idRegistro) {
+    const isOpen = famEl.classList.toggle("open");
+    if (!isOpen) return;
+
+    const children = famEl.querySelector("[data-fam-children]");
+    if (!children) return;
+    await cargarTareasFamiliaGestion(children, idRegistro);
+}
+
+async function cargarTareasFamiliaGestion(children, idRegistro) {
+    if (!children) return;
+    if (children.dataset.loaded === "1") return;
+    children.innerHTML = `<div class="gestion-arbol-vacio">Cargando tareas...</div>`;
+
+    try {
+        const res = await fetch(`/api/registros-familia/${idRegistro}/tareas`);
+        if (!res.ok) throw new Error("No se pudieron cargar tareas");
+        const data = await res.json();
+
+        if (!Array.isArray(data) || data.length === 0) {
+            children.innerHTML = `<div class="gestion-arbol-vacio">Sin tareas registradas.</div>`;
+            children.dataset.loaded = "1";
+            return;
+        }
+
+        const tareas = agruparTareasGestion(data);
+
+        const tasksHtml = tareas.map(t => {
+            const rango = `${fmtFechaISO(t.fecha_inicio)} → ${fmtFechaISO(t.fecha_termino || t.fecha_inicio)}`;
+            const desc = t.descripcion_tarea || "-";
+            const ejecutantes = (t.ejecutantes && t.ejecutantes.length) ? t.ejecutantes.join(" · ") : "Sin ejecutante";
+            return `
+                <div class="task-item" data-id-tarea="${t.id_tarea}">
+                    <div class="task-main">
+                        <div class="top">
+                            <div class="t">${desc}</div>
+                            <div class="m">${rango}</div>
+                        </div>
+                        <div class="m">${ejecutantes}</div>
+                    </div>
+                    <div class="task-actions">
+                        <button type="button" class="pv-btn" data-task-edit title="Editar (desde el formulario)">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                        <button type="button" class="pv-btn danger" data-task-delete title="Eliminar tarea">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join("");
+
+        children.innerHTML = `<div class="task-list">${tasksHtml}</div>`;
+        children.dataset.loaded = "1";
+    } catch (error) {
+        console.error("Error tareas gestion:", error);
+        children.innerHTML = `<div class="gestion-arbol-vacio">Error cargando tareas.</div>`;
+        children.dataset.loaded = "1";
+    }
+}
+
+async function eliminarTareaGestion(idTarea, idRegistro) {
+    const id = Number(idTarea);
+    if (!Number.isFinite(id) || id <= 0) return;
+    const ok = confirm(`¿Eliminar la tarea #${id}?`);
+    if (!ok) return;
+
+    try {
+        const res = await fetch(`/api/tareas/${id}`, { method: "DELETE" });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(data?.error || "No se pudo eliminar la tarea");
+
+        // Refrescar solo las tareas de la familia abierta
+        const famEl = document.querySelector(`.fam-item[data-id-registro='${Number(idRegistro)}']`);
+        const children = famEl?.querySelector("[data-fam-children]");
+        if (children) children.dataset.loaded = "0";
+        if (famEl?.classList.contains("open") && children) {
+            await cargarTareasFamiliaGestion(children, Number(idRegistro));
+        }
+
+        cargarIndicadoresPostventa();
+        actualizarIndicadoresFlujo();
+        cargarTareasCalendarioIntegrado();
+
+        if (typeof mostrarAlertaCentro === "function") {
+            mostrarAlertaCentro("Tarea eliminada", "Se eliminó la tarea correctamente.", "ok");
+        }
+    } catch (error) {
+        console.error("Error eliminando tarea:", error);
+        alert(error.message || "No se pudo eliminar la tarea.");
+    }
+}
+
+async function eliminarRegistroFamiliaGestion(idRegistro, idPostventa) {
+    const id = Number(idRegistro);
+    if (!Number.isFinite(id) || id <= 0) return;
+    const confirma = confirm(`¿Eliminar el registro de familia #${id}? Esta acción no se puede deshacer.`);
+    if (!confirma) return;
+
+    try {
+        const delRes = await fetch(`/api/registros-familia/${id}`, { method: "DELETE" });
+        const delData = await delRes.json().catch(() => null);
+        if (!delRes.ok) throw new Error(delData?.error || "No se pudo eliminar la familia");
+
+        await refrescarPostventaEnArbol(idPostventa);
+
+        await cargarPostventasRecientes(postventaActiva, false);
+        cargarIndicadoresPostventa();
+        actualizarIndicadoresFlujo();
+        cargarTareasCalendarioIntegrado();
+    } catch (error) {
+        console.error("Error eliminando familia:", error);
+        alert(error.message || "No se pudo eliminar la familia.");
+    }
+}
+
+async function refrescarPostventaEnArbol(idPostventa) {
+    const id = Number(idPostventa);
+    if (!Number.isFinite(id) || id <= 0) return cargarGestionArbol();
+    const card = document.querySelector(`.pv-card[data-id-postventa='${id}']`);
+    const children = card?.querySelector("[data-pv-children]");
+    if (!card || !children) return cargarGestionArbol();
+    card.classList.add("open");
+    children.dataset.loaded = "0";
+    await cargarFamiliasPostventaGestion(children, id);
+}
+
+async function eliminarPostventaPorId(idPostventa) {
+    const id = Number(idPostventa);
+    if (!Number.isFinite(id) || id <= 0) return;
+    const confirma = confirm(`¿Eliminar la postventa #${id} completa? Se eliminarán todas sus familias y tareas.`);
+    if (!confirma) return;
+
+    try {
+        const res = await fetch(`/api/postventas/${id}`, { method: "DELETE" });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(data?.error || "No se pudo eliminar la postventa.");
+
+        // Si era la activa, resetea cabeceras/selección
+        if (postventaActiva && Number(postventaActiva) === id) {
+            postventaActiva = null;
+            historialFamilias = [];
+            resetearFormularioPostventa();
+            bloquearCamposCabecera(false);
+            renderizarUltimosRegistros();
+            limpiarAnclajePostventa();
+            actualizarDetalleSeleccionada({ estado: "-", familias: 0 });
+        }
+
+        await cargarGestionArbol();
+        await cargarPostventasRecientes(postventaActiva, false);
+        cargarIndicadoresPostventa();
+        actualizarIndicadoresFlujo();
+        cargarTareasCalendarioIntegrado();
+
+        if (typeof mostrarAlertaCentro === "function") {
+            mostrarAlertaCentro("Postventa eliminada correctamente");
+        }
+    } catch (error) {
+        console.error("Error eliminando postventa:", error);
+        alert(error.message || "No se pudo eliminar la postventa.");
+    }
+}
+
+async function editarRegistroFamiliaDesdeGestion(idRegistro) {
+    const id = Number(idRegistro);
+    if (!Number.isFinite(id) || id <= 0) return;
+
+    try {
+        const [resDet, resTareas] = await Promise.all([
+            fetch(`/api/registros-familia/${id}/detalle`),
+            fetch(`/api/registros-familia/${id}/tareas`)
+        ]);
+        const det = await resDet.json();
+        const tareas = await resTareas.json();
+        if (!resDet.ok) throw new Error(det?.error || "No se pudo cargar el registro");
+        if (!resTareas.ok) throw new Error(tareas?.error || "No se pudieron cargar tareas");
+
+        registroFamiliaEditId = id;
+        registroFamiliaEditPostventa = Number(det.id_postventa);
+
+        // Cambia a modo familias
+        setModoGestionRegistros(false);
+
+        // Asegura que quede anclada la postventa del registro editado
+        postventaActiva = Number(det.id_postventa);
+
+        // Carga detalle (cliente/proyecto/inmueble) para consistencia visual
+        try {
+            const detallePV = await cargarDetallePostventaSeleccionada(postventaActiva);
+            actualizarDetalleSeleccionada({
+                estado: detallePV?.estado_ticket || "-",
+                familias: detallePV?.total_familias || 0
+            });
+        } catch (_) { /* noop */ }
+
+        // Completa formulario de familia
+        document.getElementById("reg_origen").value = String(det.origen || "");
+        document.getElementById("select_familia").value = String(det.id_familia || "");
+        await cargarSubfamilias();
+        document.getElementById("select_subfamilia").value = String(det.id_subfamilia || "");
+        document.getElementById("reg_recinto").value = det.recinto || "";
+        document.getElementById("reg_comentarios_cliente").value = det.comentarios_previos || "";
+        document.getElementById("reg_fecha_levantamiento").value = det.fecha_levantamiento ? fmtFechaISO(det.fecha_levantamiento) : "";
+        document.getElementById("reg_fecha_visita").value = det.fecha_visita ? fmtFechaISO(det.fecha_visita) : "";
+        document.getElementById("reg_responsable").value = String(det.id_responsable || "");
+        document.getElementById("fecha_firma_acta").value = det.fecha_firma_acta ? fmtFechaISO(det.fecha_firma_acta) : "";
+        document.getElementById("etiqueta_accion").value = String(det.etiqueta_accion || "");
+        actualizarColorEtiquetaAccion?.();
+
+        // Carga tabla de tareas
+        const tbody = document.getElementById("body_ejecutantes");
+        if (tbody) tbody.innerHTML = "";
+        (Array.isArray(tareas) ? tareas : []).forEach(t => {
+            if (!tbody) return;
+            const idEj = t.id_ejecutante || "";
+            const nombre = t.nombre_ejecutante || "Ejecutante";
+            const especialidad = t.especialidad || "Sin especialidad";
+            const inicio = fmtFechaISO(t.fecha_inicio);
+            const termino = fmtFechaISO(t.fecha_termino || t.fecha_inicio);
+            const desc = t.descripcion_tarea || "-";
+
+            const fila = document.createElement("tr");
+            fila.classList.add("fila-tarea");
+            fila.innerHTML = `
+                <td data-id="${idEj}">
+                    <div class="ejecutante-con-etiqueta">
+                        <span class="ejecutante-nombre">${nombre}</span>
+                        <span class="tag-especialidad">${especialidad}</span>
+                    </div>
+                </td>
+                <td>${inicio}</td>
+                <td>${termino}</td>
+                <td>${desc}</td>
+                <td><button onclick="this.parentElement.parentElement.remove()">X</button></td>
+            `;
+            tbody.appendChild(fila);
+        });
+
+        // UI edición
+        const btnGuardar = document.querySelector(".btn-guardar-familia");
+        if (btnGuardar) {
+            btnGuardar.innerHTML = '<i class="fas fa-pen"></i> Actualizar familia';
+        }
+        const btnCancelar = document.getElementById("btn_cancelar_edicion_familia");
+        if (btnCancelar) btnCancelar.style.display = "";
+
+        const moduloFamilia = document.getElementById("modulo_registro_familia");
+        if (moduloFamilia) moduloFamilia.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (error) {
+        console.error("Error edición familia:", error);
+        alert(error.message || "No se pudo cargar para edición.");
+    }
 }
 
 async function cargarRegistrosGestionPostventa(idPostventa) {
@@ -259,10 +824,12 @@ function setModoGestionRegistros(activo) {
 
     const panel = document.getElementById("panel_gestion_registros");
     const modulos = [
+        document.getElementById("modulo_selector_postventa"),
         document.getElementById("modulo_identificacion_inmueble"),
         document.getElementById("modulo_datos_postventa"),
         document.getElementById("modulo_registro_familia"),
-        document.getElementById("modulo_resumen_postventa")
+        document.getElementById("modulo_resumen_postventa"),
+        document.getElementById("modulo_calendario_embebido")
     ];
     const btnGestion = document.getElementById("btn_gestion_registros");
 
@@ -277,6 +844,14 @@ function setModoGestionRegistros(activo) {
     }
 
     if (modoGestionRegistros && panel) {
+        const elEstado = document.getElementById("estado_panel_gestion");
+        if (elEstado) {
+            elEstado.textContent = "Histórico";
+            elEstado.classList.remove("estado-postventa-modulo--sin");
+            elEstado.classList.add("estado-postventa-modulo--ok");
+        }
+        inicializarGestionArbol();
+        cargarGestionArbol();
         panel.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 }
@@ -418,8 +993,15 @@ async function actualizarEstadoTareaRegistro(idRegistro, estadoTarea) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ estado_tarea: estadoTarea })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "No se pudo actualizar el estado.");
+
+        const contentType = res.headers.get("content-type") || "";
+        const data = contentType.includes("application/json") ? await res.json() : null;
+        if (!res.ok) {
+            const msg = data?.error
+                ? String(data.error)
+                : `No se pudo actualizar el estado (HTTP ${res.status}).`;
+            throw new Error(msg);
+        }
 
         historialFamilias = historialFamilias.map(item => (
             Number(item.id_registro) === Number(idRegistro)
@@ -823,6 +1405,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnEliminarPostventa = document.getElementById("btn_eliminar_postventa");
     if (btnEliminarPostventa) btnEliminarPostventa.addEventListener("click", eliminarPostventaActiva);
 
+    const btnCancelarEd = document.getElementById("btn_cancelar_edicion_familia");
+    if (btnCancelarEd) {
+        btnCancelarEd.addEventListener("click", () => {
+            registroFamiliaEditId = null;
+            registroFamiliaEditPostventa = null;
+            const btnGuardar = document.querySelector(".btn-guardar-familia");
+            if (btnGuardar) btnGuardar.innerHTML = '<i class="fas fa-save"></i> Agregar familia a la Postventa';
+            btnCancelarEd.style.display = "none";
+            limpiarFormularioFamilia();
+        });
+    }
+
     const btnGestionFamilias = document.getElementById("btn_gestion_familias");
     if (btnGestionFamilias) {
         btnGestionFamilias.addEventListener("click", () => {
@@ -833,7 +1427,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     actualizarEstadoPanelGestion("Ninguna");
-    renderizarGestionVacia();
+    setGestionArbolMensaje("Listado de postventas. Selecciona una para ver familias y tareas.");
     setModoGestionRegistros(false);
 });
 //------------------------------------CARGA DE DATOS------------------//
@@ -848,6 +1442,14 @@ async function cargarProyectos() {
         data.forEach(p => {
             select.innerHTML += `<option value="${p.id_proyecto}">${p.nombre_proyecto}</option>`;
         });
+
+        const selectGestion = document.getElementById("gestion_filtro_proyecto");
+        if (selectGestion) {
+            selectGestion.innerHTML = '<option value="">Todos</option>';
+            data.forEach(p => {
+                selectGestion.innerHTML += `<option value="${p.id_proyecto}">${p.nombre_proyecto}</option>`;
+            });
+        }
 
     } catch (error) {
         console.error("Error cargando proyectos:", error);
@@ -1140,14 +1742,19 @@ function confirmarNuevaFila() {
 // GUARDAR FAMILIA COMPLETA
 async function guardarFamiliaCompleta() {
     // 1. Validar que exista una postventa activa
-    if (!postventaActiva) {
+    const esEdicion = Boolean(registroFamiliaEditId);
+    const idPostventaTarget = Number(registroFamiliaEditPostventa || postventaActiva);
+
+    if (!idPostventaTarget) {
         alert("Error: No hay una Postventa anclada. Genere una primero.");
         return;
     }
 
+    postventaActiva = idPostventaTarget;
+
     // 2. Recolectar datos (Asegurando que no vayan NULL a columnas obligatorias)
     const registro = {
-        id_postventa: postventaActiva,
+        id_postventa: idPostventaTarget,
         id_familia: document.getElementById("select_familia").value,
         id_subfamilia: document.getElementById("select_subfamilia").value,
         id_responsable: document.getElementById("reg_responsable").value,
@@ -1156,11 +1763,10 @@ async function guardarFamiliaCompleta() {
         recinto: document.getElementById("reg_recinto").value,
         comentarios_previos: document.getElementById("reg_comentarios_cliente").value,
         fecha_firma_acta: document.getElementById("fecha_firma_acta").value || null,
-        
-        // CORRECCIÃ“N CLAVE: Usamos la fecha del acta o la de hoy 
-        // para que 'fecha_levantamiento' nunca sea NULL y no rompa la DB
-        fecha_levantamiento: document.getElementById("fecha_firma_acta").value || new Date().toISOString().split('T')[0],
-        fecha_visita: document.getElementById("fecha_firma_acta").value || new Date().toISOString().split('T')[0]
+
+        // fechas del formulario (fecha_visita es opcional)
+        fecha_levantamiento: document.getElementById("reg_fecha_levantamiento").value || new Date().toISOString().split('T')[0],
+        fecha_visita: document.getElementById("reg_fecha_visita").value || null
     };
 
     if (!registro.etiqueta_accion) {
@@ -1188,8 +1794,11 @@ async function guardarFamiliaCompleta() {
     }
 
     try {
-        const response = await fetch("/api/guardar-familia-completa", {
-            method: "POST",
+        const endpoint = esEdicion
+            ? `/api/registros-familia/${registroFamiliaEditId}`
+            : "/api/guardar-familia-completa";
+        const response = await fetch(endpoint, {
+            method: esEdicion ? "PUT" : "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ registro, tareas })
         });
@@ -1212,14 +1821,16 @@ async function guardarFamiliaCompleta() {
         const recintoTxt = document.getElementById("reg_recinto").value || "-";
         const fechaLevTxt = registro.fecha_levantamiento || "-";
 
-        historialFamilias.unshift({
-            familia: familiaTxt,
-            subfamilia: subfamiliaTxt,
-            recinto: recintoTxt,
-            levantamiento: fechaLevTxt,
-            responsable: responsableTxt,
-            cargo_responsable: cargoResponsableTxt
-        });
+        if (!esEdicion) {
+            historialFamilias.unshift({
+                familia: familiaTxt,
+                subfamilia: subfamiliaTxt,
+                recinto: recintoTxt,
+                levantamiento: fechaLevTxt,
+                responsable: responsableTxt,
+                cargo_responsable: cargoResponsableTxt
+            });
+        }
         await cargarFamiliasRecientesDePostventa(postventaActiva);
         await cargarRegistrosGestionPostventa(postventaActiva);
         const detallePostventa = await cargarDetallePostventaSeleccionada(postventaActiva);
@@ -1241,22 +1852,14 @@ async function guardarFamiliaCompleta() {
         if (toastFamiliaTimeout) clearTimeout(toastFamiliaTimeout);
         toastFamiliaTimeout = mostrarToast(
             "toast_familia",
-            `Familia agregada: ${familiaTxt} · ${recintoTxt}`,
+            esEdicion
+                ? `Familia actualizada: ${familiaTxt} · ${recintoTxt}`
+                : `Familia agregada: ${familiaTxt} · ${recintoTxt}`,
             { ms: 3000 }
         );
 
-        // Limpiar campos de la secciÃ³n familia
-        document.querySelectorAll('.input-familia').forEach(i => i.value = "");
-        
-        // Limpiar tabla de tareas
-        const tabla = document.getElementById("body_ejecutantes");
-        if (tabla) tabla.innerHTML = "";
-
-        const selectEtiqueta = document.getElementById("etiqueta_accion");
-        if (selectEtiqueta) {
-            selectEtiqueta.value = "";
-            actualizarColorEtiquetaAccion();
-        }
+        // Dejar el módulo listo para registrar una nueva familia desde 0 (sin desanclar postventa)
+        limpiarFormularioFamilia();
 
         console.log("Guardado exitoso con ID:", data.id_registro);
 
@@ -1264,6 +1867,67 @@ async function guardarFamiliaCompleta() {
         console.error("Error al guardar:", error);
         alert("No se pudo guardar: " + error.message);
     }
+}
+
+function limpiarFormularioFamilia() {
+    // Sale de modo edición si estaba activo
+    registroFamiliaEditId = null;
+    registroFamiliaEditPostventa = null;
+    const btnGuardar = document.querySelector(".btn-guardar-familia");
+    if (btnGuardar) btnGuardar.innerHTML = '<i class="fas fa-save"></i> Agregar familia a la Postventa';
+    const btnCancelar = document.getElementById("btn_cancelar_edicion_familia");
+    if (btnCancelar) btnCancelar.style.display = "none";
+
+    const setSelectPlaceholder = (id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.selectedIndex = 0;
+        // Si el primer option no tiene value, dejamos value en "" para consistencia.
+        el.value = el.value || "";
+    };
+
+    const setValue = (id, val = "") => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    };
+
+    // Campos "Detalles de la familia"
+    setSelectPlaceholder("reg_origen");
+    setSelectPlaceholder("select_familia");
+
+    // Subfamilias: vuelve al placeholder
+    const sub = document.getElementById("select_subfamilia");
+    if (sub) {
+        sub.innerHTML = '<option value="" disabled selected>Seleccionar subfamilia...</option>';
+    }
+
+    setValue("reg_recinto", "");
+
+    // Campos "Detalles del trabajo"
+    setValue("reg_comentarios_cliente", "");
+    setValue("reg_fecha_levantamiento", "");
+    setValue("reg_fecha_visita", "");
+    setSelectPlaceholder("reg_responsable");
+    setValue("reg_observaciones_internas", "");
+    setValue("fecha_firma_acta", "");
+
+    const etiqueta = document.getElementById("etiqueta_accion");
+    if (etiqueta) {
+        etiqueta.selectedIndex = 0;
+        etiqueta.value = "";
+        if (typeof actualizarColorEtiquetaAccion === "function") {
+            actualizarColorEtiquetaAccion();
+        }
+    }
+
+    // Planificación: limpia tabla y fila de ingreso
+    const tabla = document.getElementById("body_ejecutantes");
+    if (tabla) tabla.innerHTML = "";
+
+    setSelectPlaceholder("input_sel_ejecutante");
+    setValue("input_f_inicio", "");
+    setValue("input_f_termino", "");
+    setValue("input_f_tarea", "");
 }
 
 function calendarioIntegradoDisponible() {

@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
+const path = require("path");
 
 const app = express();
 
@@ -11,7 +12,34 @@ const app = express();
 // ======================================================
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
+
+// Landing: que lo primero sea el login
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "login.html"));
+});
+
+// Static: no servir index.html automáticamente en "/"
+// (para que "/" siempre muestre login.html)
+app.use(express.static(__dirname, { index: false }));
+
+// Auth (login)
+try {
+    app.use("/api/auth", require("./routes/auth.routes"));
+} catch (e) {
+    console.warn("Auth no cargado:", e.message);
+}
+
+// ======================================================
+// MODULOS: USUARIOS + AUDITORIA (JWT + RBAC)
+// ======================================================
+// Nota: estas rutas requieren JWT válido y rol admin.
+try {
+    app.use("/api/usuarios", require("./routes/usuarios.routes"));
+    app.use("/api/auditoria", require("./routes/auditoria.routes"));
+} catch (e) {
+    // Si faltan deps (bcrypt/jsonwebtoken) o archivos, evitamos romper el server base.
+    console.warn("Usuarios/Auditoría no cargados:", e.message);
+}
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -344,6 +372,76 @@ app.get('/api/postventas/recientes', async (req, res) => {
     }
 });
 
+// Listado histórico de postventas (para gestión/borrado), con filtros.
+// Query params:
+// - id_proyecto (opcional)
+// - estado (opcional: "Abierta" | "Cerrada")
+// - q (opcional: busca por id_postventa, cliente, proyecto, identificador)
+// - limit (opcional, max 500)
+app.get('/api/postventas/listado', async (req, res) => {
+    try {
+        const idProyecto = req.query.id_proyecto ? Number(req.query.id_proyecto) : null;
+        const estado = req.query.estado ? String(req.query.estado).trim() : null;
+        const q = req.query.q ? String(req.query.q).trim() : null;
+        const limit = Math.max(1, Math.min(Number(req.query.limit || 200), 500));
+
+        const where = [];
+        const params = [];
+
+        if (idProyecto && Number.isFinite(idProyecto)) {
+            params.push(idProyecto);
+            where.push(`p.id_proyecto = $${params.length}`);
+        }
+
+        if (estado) {
+            params.push(estado);
+            where.push(`pv.estado = $${params.length}`);
+        }
+
+        if (q) {
+            params.push(`%${q}%`);
+            where.push(`(
+                pv.id_postventa::text ILIKE $${params.length}
+                OR p.nombre_proyecto ILIKE $${params.length}
+                OR i.numero_identificador::text ILIKE $${params.length}
+                OR c.nombre_completo ILIKE $${params.length}
+            )`);
+        }
+
+        params.push(limit);
+        const clausulaWhere = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+        const result = await pool.query(
+            `SELECT
+                pv.id_postventa,
+                pv.fecha_apertura,
+                pv.estado,
+                p.id_proyecto,
+                p.nombre_proyecto,
+                i.numero_identificador,
+                c.nombre_completo AS cliente,
+                (
+                    SELECT COUNT(*)::int
+                    FROM registros_familias rf
+                    WHERE rf.id_postventa = pv.id_postventa
+                ) AS total_familias
+             FROM postventas pv
+             JOIN inmuebles i ON i.id_inmueble = pv.id_inmueble
+             JOIN proyectos p ON p.id_proyecto = i.id_proyecto
+             JOIN clientes c ON c.id_cliente = pv.id_cliente
+             ${clausulaWhere}
+             ORDER BY pv.id_postventa DESC
+             LIMIT $${params.length}`,
+            params
+        );
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error listado postventas:', error);
+        res.status(500).json({ error: 'Error al listar postventas' });
+    }
+});
+
 app.get('/api/postventas/:id_postventa/detalle', async (req, res) => {
     try {
         const { id_postventa } = req.params;
@@ -385,14 +483,33 @@ app.get('/api/postventas/:id_postventa/familias-recientes', async (req, res) => 
     try {
         const { id_postventa } = req.params;
         const limite = Math.max(1, Math.min(Number(req.query.limit || 5), 20));
+
+        // Soporta BD con o sin columna `estado_tarea` (en algunas instalaciones no existe).
+        // Si no existe, se deriva de `fecha_firma_acta`.
+        const col = await pool.query(
+            `SELECT 1
+             FROM information_schema.columns
+             WHERE table_schema = 'public'
+               AND table_name = 'registros_familias'
+               AND column_name = 'estado_tarea'
+             LIMIT 1`
+        );
+        const tieneEstadoTarea = col.rowCount > 0;
+
+        const selectEstado = tieneEstadoTarea
+            ? `COALESCE(rf.estado_tarea, 'Pendiente') AS estado_tarea`
+            : `CASE WHEN rf.fecha_firma_acta IS NOT NULL THEN 'Finalizado' ELSE 'Pendiente' END AS estado_tarea`;
+
         const result = await pool.query(
             `SELECT
+                rf.id_registro,
                 f.nombre_familia AS familia,
                 sf.nombre_subfamilia AS subfamilia,
                 rf.recinto,
                 rf.fecha_levantamiento AS levantamiento,
                 r.nombre_responsable AS responsable,
-                r.cargo AS cargo_responsable
+                r.cargo AS cargo_responsable,
+                ${selectEstado}
              FROM registros_familias rf
              LEFT JOIN familias f ON f.id_familia = rf.id_familia
              LEFT JOIN subfamilias sf ON sf.id_subfamilia = rf.id_subfamilia
@@ -413,6 +530,21 @@ app.get('/api/postventas/:id_postventa/familias-recientes', async (req, res) => 
 app.get('/api/postventas/:id_postventa/registros', async (req, res) => {
     try {
         const { id_postventa } = req.params;
+
+        const col = await pool.query(
+            `SELECT 1
+             FROM information_schema.columns
+             WHERE table_schema = 'public'
+               AND table_name = 'registros_familias'
+               AND column_name = 'estado_tarea'
+             LIMIT 1`
+        );
+        const tieneEstadoTarea = col.rowCount > 0;
+
+        const selectEstado = tieneEstadoTarea
+            ? `COALESCE(rf.estado_tarea, 'Pendiente') AS estado_tarea`
+            : `CASE WHEN rf.fecha_firma_acta IS NOT NULL THEN 'Finalizado' ELSE 'Pendiente' END AS estado_tarea`;
+
         const result = await pool.query(
             `SELECT
                 rf.id_registro,
@@ -421,7 +553,8 @@ app.get('/api/postventas/:id_postventa/registros', async (req, res) => {
                 rf.recinto,
                 rf.fecha_levantamiento,
                 r.nombre_responsable AS responsable,
-                r.cargo AS cargo_responsable
+                r.cargo AS cargo_responsable,
+                ${selectEstado}
              FROM registros_familias rf
              LEFT JOIN familias f ON f.id_familia = rf.id_familia
              LEFT JOIN subfamilias sf ON sf.id_subfamilia = rf.id_subfamilia
@@ -435,6 +568,214 @@ app.get('/api/postventas/:id_postventa/registros', async (req, res) => {
     } catch (error) {
         console.error('Error obteniendo registros por postventa:', error);
         res.status(500).json({ error: 'Error al obtener registros de la postventa' });
+    }
+});
+
+// ======================================================
+// GESTION (REGISTROS -> TAREAS)
+// ======================================================
+
+// Devuelve detalle del registro de familia (para editar)
+app.get('/api/registros-familia/:id_registro/detalle', async (req, res) => {
+    try {
+        const id_registro = Number(req.params.id_registro);
+        if (!Number.isFinite(id_registro) || id_registro <= 0) {
+            return res.status(400).json({ error: 'ID inválido' });
+        }
+
+        const result = await pool.query(
+            `SELECT
+                rf.id_registro,
+                rf.id_postventa,
+                rf.id_familia,
+                rf.id_subfamilia,
+                rf.id_responsable,
+                rf.origen,
+                rf.etiqueta_accion,
+                rf.recinto,
+                rf.comentarios_previos,
+                rf.fecha_levantamiento,
+                rf.fecha_visita,
+                rf.fecha_firma_acta
+             FROM registros_familias rf
+             WHERE rf.id_registro = $1`,
+            [id_registro]
+        );
+
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Registro no encontrado' });
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error detalle registro familia:', error);
+        res.status(500).json({ error: 'Error al obtener detalle del registro' });
+    }
+});
+
+// Lista tareas de un registro de familia
+app.get('/api/registros-familia/:id_registro/tareas', async (req, res) => {
+    try {
+        const id_registro = Number(req.params.id_registro);
+        if (!Number.isFinite(id_registro) || id_registro <= 0) {
+            return res.status(400).json({ error: 'ID inválido' });
+        }
+
+        const result = await pool.query(
+            `SELECT
+                t.id_tarea,
+                t.descripcion_tarea,
+                t.fecha_inicio,
+                t.fecha_termino,
+                te.id_ejecutante,
+                e.nombre_ejecutante,
+                e.especialidad
+             FROM tareas t
+             LEFT JOIN tareas_ejecutantes te ON te.id_tarea = t.id_tarea
+             LEFT JOIN ejecutantes e ON e.id_ejecutante = te.id_ejecutante
+             WHERE t.id_registro_familia = $1
+             ORDER BY t.fecha_inicio ASC, t.id_tarea ASC`,
+            [id_registro]
+        );
+
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error tareas por registro familia:', error);
+        res.status(500).json({ error: 'Error al obtener tareas del registro' });
+    }
+});
+
+// Elimina una tarea individual (y su relación con ejecutantes)
+app.delete("/api/tareas/:id_tarea", async (req, res) => {
+    const id_tarea = Number(req.params.id_tarea);
+    if (!Number.isFinite(id_tarea) || id_tarea <= 0) {
+        return res.status(400).json({ error: "ID inválido" });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query("BEGIN");
+
+        const info = await client.query(
+            `SELECT id_tarea, id_registro_familia
+             FROM tareas
+             WHERE id_tarea = $1`,
+            [id_tarea]
+        );
+
+        if (info.rowCount === 0) {
+            await client.query("ROLLBACK");
+            return res.status(404).json({ error: "Tarea no encontrada" });
+        }
+
+        const id_registro = Number(info.rows[0].id_registro_familia);
+
+        await client.query(`DELETE FROM tareas_ejecutantes WHERE id_tarea = $1`, [id_tarea]);
+        await client.query(`DELETE FROM tareas WHERE id_tarea = $1`, [id_tarea]);
+
+        await client.query("COMMIT");
+        res.json({ success: true, tarea: { id_tarea, id_registro } });
+    } catch (error) {
+        await client.query("ROLLBACK");
+        console.error("Error eliminando tarea:", error);
+        res.status(500).json({ error: "Error al eliminar tarea" });
+    } finally {
+        client.release();
+    }
+});
+
+// Actualiza un registro de familia y sus tareas (reemplaza tareas existentes)
+app.put('/api/registros-familia/:id_registro', async (req, res) => {
+    const id_registro = Number(req.params.id_registro);
+    const { registro, tareas } = req.body || {};
+
+    if (!Number.isFinite(id_registro) || id_registro <= 0) {
+        return res.status(400).json({ error: 'ID inválido' });
+    }
+
+    if (!registro?.id_postventa || !registro?.id_familia) {
+        return res.status(400).json({ error: 'Datos incompletos del registro' });
+    }
+
+    if (!registro?.etiqueta_accion) {
+        return res.status(400).json({ error: 'Etiqueta acción es obligatoria' });
+    }
+
+    if (!Array.isArray(tareas) || tareas.length === 0) {
+        return res.status(400).json({ error: 'Debe agregar al menos una tarea' });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const up = await client.query(
+            `UPDATE registros_familias
+             SET id_familia = $1,
+                 id_subfamilia = $2,
+                 id_responsable = $3,
+                 origen = $4,
+                 etiqueta_accion = $5,
+                 recinto = $6,
+                 comentarios_previos = $7,
+                 fecha_levantamiento = $8,
+                 fecha_visita = $9,
+                 fecha_firma_acta = $10
+             WHERE id_registro = $11
+               AND id_postventa = $12
+             RETURNING id_registro`,
+            [
+                registro.id_familia,
+                registro.id_subfamilia,
+                registro.id_responsable,
+                registro.origen,
+                registro.etiqueta_accion,
+                registro.recinto,
+                registro.comentarios_previos,
+                registro.fecha_levantamiento,
+                registro.fecha_visita,
+                registro.fecha_firma_acta || null,
+                id_registro,
+                registro.id_postventa
+            ]
+        );
+
+        if (up.rowCount === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Registro no encontrado (o no pertenece a la postventa)' });
+        }
+
+        // Reemplazar tareas: borrar y reinsertar
+        await client.query(
+            `DELETE FROM tareas_ejecutantes
+             WHERE id_tarea IN (
+                SELECT id_tarea FROM tareas WHERE id_registro_familia = $1
+             )`,
+            [id_registro]
+        );
+
+        await client.query(`DELETE FROM tareas WHERE id_registro_familia = $1`, [id_registro]);
+
+        for (const t of tareas) {
+            const resTarea = await client.query(
+                `INSERT INTO tareas (id_registro_familia, descripcion_tarea, fecha_inicio, fecha_termino)
+                 VALUES ($1,$2,$3,$4)
+                 RETURNING id_tarea`,
+                [id_registro, t.descripcion, t.inicio, t.termino]
+            );
+
+            const id_tarea = resTarea.rows[0].id_tarea;
+            await client.query(
+                `INSERT INTO tareas_ejecutantes (id_tarea, id_ejecutante) VALUES ($1,$2)`,
+                [id_tarea, t.id_ejecutante]
+            );
+        }
+
+        await client.query('COMMIT');
+        res.json({ success: true, id_registro });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error actualizando registro familia:', error);
+        res.status(500).json({ error: 'Error al actualizar registro completo' });
+    } finally {
+        client.release();
     }
 });
 
@@ -551,6 +892,131 @@ app.get('/api/historico/registros', async (req, res) => {
     } catch (error) {
         console.error('Error histórico registros:', error);
         res.status(500).json({ error: 'Error al obtener registros históricos' });
+    }
+});
+
+// ======================================================
+// REGISTROS FAMILIA: ESTADO (PENDIENTE / FINALIZADO)
+// ======================================================
+
+function normalizarEstadoRegistro(valor) {
+    return (valor === "Finalizado" || valor === "Finalizada") ? "Finalizado" : "Pendiente";
+}
+
+async function registrosFamiliasTieneEstadoTarea(client) {
+    // Cache simple en memoria para evitar consultar information_schema en cada request.
+    if (registrosFamiliasTieneEstadoTarea._cache !== undefined) return registrosFamiliasTieneEstadoTarea._cache;
+    const q = await client.query(
+        `SELECT 1
+         FROM information_schema.columns
+         WHERE table_schema = 'public'
+           AND table_name = 'registros_familias'
+           AND column_name = 'estado_tarea'
+         LIMIT 1`
+    );
+    registrosFamiliasTieneEstadoTarea._cache = q.rowCount > 0;
+    return registrosFamiliasTieneEstadoTarea._cache;
+}
+
+app.put('/api/registros-familia/:id_registro/estado-tarea', async (req, res) => {
+    const id_registro = Number(req.params.id_registro);
+    const estado_tarea = normalizarEstadoRegistro(req.body?.estado_tarea);
+
+    if (!Number.isFinite(id_registro) || id_registro <= 0) {
+        return res.status(400).json({ error: 'ID de registro inválido' });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const tieneCol = await registrosFamiliasTieneEstadoTarea(client);
+        let row;
+
+        if (tieneCol) {
+            const up = await client.query(
+                `UPDATE registros_familias
+                 SET estado_tarea = $1
+                 WHERE id_registro = $2
+                 RETURNING id_registro, id_postventa, estado_tarea, fecha_firma_acta`,
+                [estado_tarea, id_registro]
+            );
+            if (up.rowCount === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'Registro no encontrado' });
+            }
+            row = up.rows[0];
+        } else {
+            const sel = await client.query(
+                `SELECT id_registro, id_postventa, fecha_firma_acta
+                 FROM registros_familias
+                 WHERE id_registro = $1`,
+                [id_registro]
+            );
+            if (sel.rowCount === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'Registro no encontrado' });
+            }
+            row = { ...sel.rows[0], estado_tarea };
+
+            // Sin columna de estado, evitamos marcar finalizado si no hay firma acta.
+            if (estado_tarea === "Finalizado" && !row.fecha_firma_acta) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ error: 'Para finalizar, ingrese la Fecha firma acta (cierre).' });
+            }
+        }
+
+        const id_postventa = Number(row.id_postventa);
+        if (!Number.isFinite(id_postventa) || id_postventa <= 0) {
+            await client.query('ROLLBACK');
+            return res.status(500).json({ error: 'Registro sin postventa asociada' });
+        }
+
+        // Recalcula estado de la postventa en base a registros finalizados.
+        const condFinal = (await registrosFamiliasTieneEstadoTarea(client))
+            ? `COALESCE(rf.estado_tarea, 'Pendiente') = 'Finalizado'`
+            : `rf.fecha_firma_acta IS NOT NULL`;
+
+        const counts = await client.query(
+            `SELECT
+                COUNT(*)::int AS total_familias,
+                SUM(CASE WHEN ${condFinal} THEN 1 ELSE 0 END)::int AS finalizadas
+             FROM registros_familias rf
+             WHERE rf.id_postventa = $1`,
+            [id_postventa]
+        );
+
+        const total_familias = Number(counts.rows[0]?.total_familias || 0);
+        const finalizadas = Number(counts.rows[0]?.finalizadas || 0);
+        const nuevo_estado = (total_familias > 0 && finalizadas === total_familias) ? 'Cerrada' : 'Abierta';
+
+        await client.query(
+            `UPDATE postventas
+             SET estado = $1
+             WHERE id_postventa = $2`,
+            [nuevo_estado, id_postventa]
+        );
+
+        await client.query('COMMIT');
+
+        res.json({
+            success: true,
+            registro: {
+                id_registro: Number(row.id_registro),
+                estado_tarea
+            },
+            postventa: {
+                id_postventa,
+                estado: nuevo_estado,
+                total_familias
+            }
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error actualizando estado_tarea registro_familias:', error);
+        res.status(500).json({ error: 'Error al actualizar el estado del registro' });
+    } finally {
+        client.release();
     }
 });
 

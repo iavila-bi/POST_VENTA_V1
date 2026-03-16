@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login | Postventa</title>
+    <link rel="stylesheet" href="estilo.css" />
+    <style>
+        /* Reusa variables de estilo.css (paleta azul/gris/blanco) */
+        body {
+            overflow: hidden; /* consistente con estilo.css */
+        }
+
+        .login-bg {
+            min-height: 100vh;
+            width: 100vw;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            position: relative;
+        }
+
+        .login-bg::before {
+            content: "";
+            position: absolute;
+            inset: -30% -20%;
+            background:
+                radial-gradient(circle at 18% 10%, rgba(37, 99, 235, 0.18), transparent 52%),
+                radial-gradient(circle at 80% 18%, rgba(14, 165, 233, 0.12), transparent 55%),
+                radial-gradient(circle at 50% 100%, rgba(37, 99, 235, 0.10), transparent 55%);
+            filter: blur(1px);
+            pointer-events: none;
+        }
+
+        .login-shell {
+            width: min(960px, 96%);
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 18px;
+            position: relative;
+            z-index: 1;
+        }
+
+        @media (max-width: 860px) {
+            .login-shell {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .login-hero {
+            border-radius: 22px;
+            border: 1px solid rgba(198, 210, 228, 0.9);
+            background:
+                radial-gradient(circle at 18% 0%, rgba(37, 99, 235, 0.18), transparent 52%),
+                radial-gradient(circle at 88% 18%, rgba(14, 165, 233, 0.12), transparent 56%),
+                linear-gradient(180deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.62) 100%);
+            box-shadow: var(--shadow);
+            padding: 26px 26px 24px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .login-hero::after {
+            content: "";
+            position: absolute;
+            right: -120px;
+            top: -120px;
+            width: 360px;
+            height: 360px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.22), transparent 62%);
+            transform: rotate(12deg);
+            pointer-events: none;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(37, 99, 235, 0.18);
+            background: rgba(37, 99, 235, 0.08);
+            color: #0b2a46;
+            font-weight: 850;
+            font-size: var(--fs-sm);
+            letter-spacing: -0.01em;
+        }
+
+        .brand .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 99px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            box-shadow: 0 10px 18px rgba(37, 99, 235, 0.24);
+        }
+
+        .login-hero h1 {
+            margin-top: 14px;
+            font-size: clamp(1.6rem, 1.1rem + 1.4vw, 2.35rem);
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            line-height: 1.12;
+            color: var(--ink);
+        }
+
+        .login-hero p {
+            margin-top: 10px;
+            max-width: 56ch;
+            color: var(--muted);
+            font-size: var(--fs-sm);
+            line-height: 1.55;
+        }
+
+        .bullets {
+            margin-top: 16px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .bullet {
+            display: grid;
+            grid-template-columns: 34px 1fr;
+            gap: 10px;
+            align-items: start;
+            padding: 10px 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(198, 210, 228, 0.7);
+            background: rgba(255, 255, 255, 0.55);
+        }
+
+        .bullet .icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            background: rgba(37, 99, 235, 0.10);
+            border: 1px solid rgba(37, 99, 235, 0.16);
+            color: #1d4ed8;
+            font-weight: 900;
+        }
+
+        .bullet .t {
+            font-size: var(--fs-sm);
+            font-weight: 850;
+            color: var(--ink);
+            letter-spacing: -0.01em;
+        }
+
+        .bullet .s {
+            margin-top: 2px;
+            font-size: var(--fs-xs);
+            color: var(--muted2);
+            line-height: 1.45;
+        }
+
+        .login-card {
+            border-radius: 22px;
+            border: 1px solid rgba(198, 210, 228, 0.9);
+            background: rgba(255, 255, 255, 0.86);
+            box-shadow: var(--shadow);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .login-card::before {
+            content: "";
+            position: absolute;
+            inset: -50% -30%;
+            background:
+                radial-gradient(circle at 18% 25%, rgba(37, 99, 235, 0.10), transparent 50%),
+                radial-gradient(circle at 84% 20%, rgba(14, 165, 233, 0.08), transparent 55%);
+            pointer-events: none;
+        }
+
+        .login-card h2 {
+            position: relative;
+            z-index: 1;
+            font-size: var(--fs-xl);
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            color: var(--ink);
+        }
+
+        .login-card .sub {
+            position: relative;
+            z-index: 1;
+            margin-top: 6px;
+            color: var(--muted2);
+            font-size: var(--fs-sm);
+            line-height: 1.5;
+        }
+
+        form {
+            position: relative;
+            z-index: 1;
+            margin-top: 14px;
+            display: grid;
+            gap: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: var(--fs-xs);
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--muted2);
+        }
+
+        input {
+            width: 100%;
+            min-height: 44px;
+            padding: 10px 12px;
+            border-radius: 14px;
+            border: 1px solid rgba(198, 210, 228, 0.95);
+            background: rgba(255, 255, 255, 0.92);
+            color: var(--ink);
+            outline: none;
+            font-size: var(--fs-md);
+        }
+
+        input:focus {
+            border-color: rgba(37, 99, 235, 0.55);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+        }
+
+        .btn-login {
+            margin-top: 6px;
+            min-height: 46px;
+            border-radius: 999px;
+            border: 1px solid rgba(37, 99, 235, 0.35);
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: #fff;
+            font-size: var(--fs-sm);
+            font-weight: 900;
+            letter-spacing: -0.01em;
+            cursor: pointer;
+            box-shadow: 0 16px 28px rgba(37, 99, 235, 0.18);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 22px 44px rgba(37, 99, 235, 0.22);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .msg {
+            margin-top: 8px;
+            font-size: var(--fs-sm);
+            color: var(--muted);
+            line-height: 1.45;
+            min-height: 1.45em;
+        }
+
+        .msg.err {
+            color: #b91c1c;
+        }
+
+        .hint {
+            margin-top: 10px;
+            font-size: var(--fs-xs);
+            color: var(--muted2);
+        }
+
+        .hint code {
+            font-weight: 800;
+        }
+    </style>
+</head>
+<body>
+    <main class="login-bg">
+        <section class="login-shell">
+            <div class="login-hero">
+                <div class="brand">
+                    <span class="dot"></span>
+                    Patagual Postventa
+                </div>
+                <h1>Inicia sesión para gestionar postventas con trazabilidad.</h1>
+                <p>
+                    Accede al panel operativo, registro por familia, planificación y módulos administrativos.
+                </p>
+                <div class="bullets">
+                    <div class="bullet">
+                        <div class="icon">A</div>
+                        <div>
+                            <div class="t">Acceso por roles</div>
+                            <div class="s">viewer, editor y admin (admin gestiona usuarios y auditoría).</div>
+                        </div>
+                    </div>
+                    <div class="bullet">
+                        <div class="icon">T</div>
+                        <div>
+                            <div class="t">Trazabilidad</div>
+                            <div class="s">Auditoría de acciones clave para control operativo.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="login-card">
+                <h2>Login</h2>
+                <div class="sub">Ingresa con tu <strong>username</strong> o <strong>email</strong>.</div>
+
+                <form id="form_login">
+                    <div>
+                        <label>Usuario o Email</label>
+                        <input id="login_user" autocomplete="username" required />
+                    </div>
+                    <div>
+                        <label>Password</label>
+                        <input id="login_password" type="password" autocomplete="current-password" required />
+                    </div>
+                    <button class="btn-login" type="submit">Entrar</button>
+                    <div id="login_msg" class="msg"></div>
+                </form>
+
+                <div class="hint">
+                    Si ya tienes sesión, se te redirige automáticamente al menú.
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Si ya existe token, entra directo al menú
+        const existing = localStorage.getItem("token");
+        if (existing) {
+            window.location.href = "index.html";
+        }
+
+        async function login(user, password) {
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user, password })
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok) {
+                throw new Error(data?.error || `Error (HTTP ${res.status})`);
+            }
+            return data;
+        }
+
+        function setMsg(text, isError = false) {
+            const el = document.getElementById("login_msg");
+            el.textContent = text || "";
+            el.classList.toggle("err", Boolean(isError));
+        }
+
+        document.getElementById("form_login").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            setMsg("");
+            const user = document.getElementById("login_user").value.trim();
+            const password = document.getElementById("login_password").value;
+            try {
+                const data = await login(user, password);
+                localStorage.setItem("token", data.token);
+                localStorage.setItem("user", JSON.stringify(data.user));
+                window.location.href = "index.html";
+            } catch (err) {
+                setMsg(err.message || "No se pudo iniciar sesión", true);
+            }
+        });
+    </script>
+</body>
+</html>
+

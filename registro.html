@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="estilo_registro.css">
+    <link rel="stylesheet" href="auth_ui.css">
 </head>
 <body class="bg-dashboard">
 <div id="banner_anclaje" hidden></div>
@@ -44,7 +45,26 @@
         </div>
     </header>
 
-    <section class="selector-postventa-card">
+    <section class="indicadores-kpi">
+        <article class="kpi-card">
+            <p class="kpi-label"><i class="fas fa-house kpi-icon" aria-hidden="true"></i> Total casas con PV</p>
+            <p id="kpi_total_casas" class="kpi-value">0</p>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-label"><i class="fas fa-layer-group kpi-icon" aria-hidden="true"></i> Total familias acumuladas</p>
+            <p id="kpi_total_familias" class="kpi-value">0</p>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-label"><i class="fas fa-chart-line kpi-icon" aria-hidden="true"></i> Promedio familias por casa</p>
+            <p id="kpi_prom_familias_casa" class="kpi-value">0.0</p>
+        </article>
+        <article class="kpi-card">
+            <p class="kpi-label"><i class="fas fa-list-check kpi-icon" aria-hidden="true"></i> Promedio tareas por familia</p>
+            <p id="kpi_prom_tareas_familia" class="kpi-value">0.0</p>
+        </article>
+    </section>
+
+    <section id="modulo_selector_postventa" class="selector-postventa-card">
         <div class="selector-postventa-head">
             <div>
                 <h3>Registro de Postventa</h3>
@@ -65,25 +85,6 @@
         </div>
     </section>
 
-    <section class="indicadores-kpi">
-        <article class="kpi-card">
-            <p class="kpi-label"><i class="fas fa-house kpi-icon" aria-hidden="true"></i> Total casas con PV</p>
-            <p id="kpi_total_casas" class="kpi-value">0</p>
-        </article>
-        <article class="kpi-card">
-            <p class="kpi-label"><i class="fas fa-layer-group kpi-icon" aria-hidden="true"></i> Total familias acumuladas</p>
-            <p id="kpi_total_familias" class="kpi-value">0</p>
-        </article>
-        <article class="kpi-card">
-            <p class="kpi-label"><i class="fas fa-chart-line kpi-icon" aria-hidden="true"></i> Promedio familias por casa</p>
-            <p id="kpi_prom_familias_casa" class="kpi-value">0.0</p>
-        </article>
-        <article class="kpi-card">
-            <p class="kpi-label"><i class="fas fa-list-check kpi-icon" aria-hidden="true"></i> Promedio tareas por familia</p>
-            <p id="kpi_prom_tareas_familia" class="kpi-value">0.0</p>
-        </article>
-    </section>
-
     <section id="panel_gestion_registros" class="tarjeta-modulo panel-gestion-registros" hidden>
         <div class="cabecera-modulo">
             <h3 class="titulo-seccion"><i class="fas fa-clipboard-list"></i> Gestión de Registros</h3>
@@ -91,31 +92,14 @@
                 No hay postventa seleccionada
             </div>
         </div>
-        <p class="gestion-ayuda">Aquí puedes eliminar familias específicas o eliminar la postventa completa seleccionada.</p>
-        <div class="tabla-responsive">
-            <table class="tabla-registros tabla-gestion-registros">
-                <thead>
-                    <tr>
-                        <th>ID Registro</th>
-                        <th>Familia</th>
-                        <th>Subfamilia</th>
-                        <th>Recinto</th>
-                        <th>Levantamiento</th>
-                        <th>Responsable</th>
-                        <th>Acción</th>
-                    </tr>
-                </thead>
-                <tbody id="tbody_gestion_registros">
-                    <tr><td colspan="7">Seleccione una postventa para gestionar registros.</td></tr>
-                </tbody>
-            </table>
+        <p class="gestion-ayuda">Explora todas las postventas registradas. Abre una postventa para ver sus familias y luego sus tareas (con opciones para editar/eliminar).</p>
+
+        <div id="gestion_arbol" class="gestion-arbol">
+            <div class="gestion-arbol-vacio">Cargando postventas...</div>
         </div>
         <div class="gestion-acciones-finales">
             <button type="button" id="btn_gestion_familias" class="btn-secundario">
                 <i class="fas fa-arrow-left"></i> Gestión de familias
-            </button>
-            <button type="button" id="btn_eliminar_postventa" class="btn-eliminar-postventa" disabled>
-                <i class="fas fa-trash"></i> Eliminar Postventa Completa
             </button>
         </div>
     </section>
@@ -202,85 +186,100 @@
                 No hay postventa seleccionada
             </div>
         </div>
-        <div class="grid-primarios-familia">
-            <div class="grupo-input">
-                <label>Origen *</label>
-                <select id="reg_origen">
-                    <option value="" disabled selected>Seleccionar origen...</option>
-                    <option value="Correo">Correo</option>
-                    <option value="Entidad Patrocinante">Entidad Patrocinante</option>
-                    <option value="Jocelin">Jocelin</option>
-                    <option value="MDA">MDA</option>
-                    <option value="Nuevas / Entrega">Nuevas / Entrega</option>
-                    <option value="Serviu">Serviu</option>
-                    <option value="Terreno">Terreno</option>
-                </select>
+
+        <section class="bloque-formulario">
+            <header class="bloque-formulario-head">
+                <h4>Detalles de la familia</h4>
+                <p>Origen y clasificación de la solicitud.</p>
+            </header>
+
+            <div class="grid-primarios-familia">
+                <div class="grupo-input">
+                    <label>Origen *</label>
+                    <select id="reg_origen">
+                        <option value="" disabled selected>Seleccionar origen...</option>
+                        <option value="Correo">Correo</option>
+                        <option value="Entidad Patrocinante">Entidad Patrocinante</option>
+                        <option value="Jocelin">Jocelin</option>
+                        <option value="MDA">MDA</option>
+                        <option value="Nuevas / Entrega">Nuevas / Entrega</option>
+                        <option value="Serviu">Serviu</option>
+                        <option value="Terreno">Terreno</option>
+                    </select>
+                </div>
+
+                <div class="grupo-input">
+                    <label>Familia *</label>
+                    <select id="select_familia" onchange="cargarSubfamilias()">
+                        <option value="">Cargando familias...</option>
+                    </select>
+                </div>
+
+                <div class="grupo-input">
+                    <label>Subfamilia *</label>
+                    <select id="select_subfamilia">
+                        <option value="">Seleccionar subfamilia...</option>
+                    </select>
+                </div>
+
+                <div class="grupo-input">
+                    <label>Recinto *</label>
+                    <input type="text" id="reg_recinto" placeholder="Ej: Ba&ntilde;o, Cocina, Dormitorio 1">
+                </div>
+            </div>
+        </section>
+
+        <section class="bloque-formulario">
+            <header class="bloque-formulario-head">
+                <h4>Detalles del trabajo</h4>
+                <p>Contexto del cliente, fechas y responsable asignado.</p>
+            </header>
+
+            <div class="grid-campos-doble">
+                <div class="grupo-input field-full">
+                    <label>Comentarios del Cliente *</label>
+                    <textarea id="reg_comentarios_cliente" rows="1" placeholder="Informaci&oacute;n previa del cliente..."></textarea>
+                </div>
+
+                <div class="grupo-input">
+                    <label>Fecha Levantamiento *</label>
+                    <input type="date" id="reg_fecha_levantamiento">
+                </div>
+
+                <div class="grupo-input">
+                    <label>Fecha Visita</label>
+                    <input type="date" id="reg_fecha_visita">
+                </div>
+
+                <div class="grupo-input">
+                    <label>Responsable *</label>
+                    <select id="reg_responsable">
+                        <option value="">Cargando responsables...</option>
+                    </select>
+                </div>
+
+                <div class="grupo-input field-full">
+                    <label>Acciones realizadas / Observaciones</label>
+                    <textarea id="reg_observaciones_internas" rows="2" placeholder="Notas t&eacute;cnicas o acciones tomadas..."></textarea>
+                </div>
             </div>
 
-            <div class="grupo-input">
-                <label>Familia *</label>
-                <select id="select_familia" onchange="cargarSubfamilias()">
-                    <option value="">Cargando familias...</option>
-                </select>
-            </div>
+            <div class="fila-firma-etiqueta">
+                <div class="grupo-input" style="margin-bottom: 15px;">
+                    <label class="label-azul-fuerte">Fecha Firma Acta (Cierre)</label>
+                    <input type="date" id="fecha_firma_acta" class="input-plan-azul">
+                </div>
 
-            <div class="grupo-input">
-                <label>Subfamilia *</label>
-                <select id="select_subfamilia">
-                    <option value="">Seleccionar subfamilia...</option>
-                </select>
+                <div class="grupo-input" style="margin-bottom: 15px;">
+                    <label class="label-azul-fuerte">Etiqueta Acci&oacute;n *</label>
+                    <select id="etiqueta_accion" class="input-plan-azul etiqueta-accion-select" onchange="actualizarColorEtiquetaAccion()" required>
+                        <option value="" disabled selected>Seleccionar...</option>
+                        <option value="APLICA">APLICA</option>
+                        <option value="NO APLICA">NO APLICA</option>
+                    </select>
+                </div>
             </div>
-
-            <div class="grupo-input">
-                <label>Recinto *</label>
-                <input type="text" id="reg_recinto" placeholder="Ej: Ba&ntilde;o, Cocina, Dormitorio 1">
-            </div>
-        </div>
-
-        <div class="grid-campos-doble">
-            <div class="grupo-input field-full">
-                <label>Comentarios del Cliente *</label>
-                <textarea id="reg_comentarios_cliente" rows="1" placeholder="Informaci&oacute;n previa del cliente..."></textarea>
-            </div>
-
-            <div class="grupo-input">
-                <label>Fecha Levantamiento *</label>
-                <input type="date" id="reg_fecha_levantamiento">
-            </div>
-
-            <div class="grupo-input">
-                <label>Fecha Visita (Opcional)</label>
-                <input type="date" id="reg_fecha_visita">
-            </div>
-
-            <div class="grupo-input">
-                <label>Responsable *</label>
-                <select id="reg_responsable">
-                    <option value="">Cargando responsables...</option>
-                </select>
-            </div>
-
-            <div class="grupo-input field-full">
-                <label>Acciones realizadas / Observaciones</label>
-                <textarea id="reg_observaciones_internas" rows="2" placeholder="Notas t&eacute;cnicas o acciones tomadas..."></textarea>
-            </div>
-        </div>
-
-        <div class="fila-firma-etiqueta">
-            <div class="grupo-input" style="margin-bottom: 15px;">
-                <label class="label-azul-fuerte">Fecha Firma Acta (Cierre)</label>
-                <input type="date" id="fecha_firma_acta" class="input-plan-azul">
-            </div>
-
-            <div class="grupo-input" style="margin-bottom: 15px;">
-                <label class="label-azul-fuerte">Etiqueta Acci&oacute;n *</label>
-                <select id="etiqueta_accion" class="input-plan-azul etiqueta-accion-select" onchange="actualizarColorEtiquetaAccion()" required>
-                    <option value="" disabled selected>Seleccionar...</option>
-                    <option value="APLICA">APLICA</option>
-                    <option value="NO APLICA">NO APLICA</option>
-                </select>
-            </div>
-        </div>
+        </section>
 
         <div class="tarjeta-modulo seccion-planificacion-azul">
             <h3 class="titulo-seccion"><i class="fas fa-tasks"></i> Ejecutantes y planificaci&oacute;n *</h3>
@@ -321,17 +320,20 @@
             <button type="button" class="btn-guardar-familia" onclick="guardarFamiliaCompleta()">
                 <i class="fas fa-save"></i> Agregar familia a la Postventa
             </button>
+            <button type="button" id="btn_cancelar_edicion_familia" class="btn-secundario" style="display:none;">
+                <i class="fas fa-xmark"></i> Cancelar edición
+            </button>
         </div>
-    </div>
 
-    <div id="modulo_resumen_postventa" class="tarjeta-modulo tarjeta-resumen-postventa">
         <div class="historial-anclaje">
             <p class="label-ancladas">FAMILIAS ANCLADAS A ESTA POSTVENTA:</p>
             <div id="lista_recientes_chips" class="flex-chips">
                 <span class="sin-registros">Esperando primer registro...</span>
             </div>
         </div>
+    </div>
 
+    <div id="modulo_resumen_postventa" class="tarjeta-modulo tarjeta-resumen-postventa">
         <h3 class="titulo-seccion"><i class="fas fa-list"></i> &Uacute;ltimos Registros</h3>
         <div class="tabla-responsive">
             <table class="tabla-registros">
@@ -397,6 +399,7 @@
     </section>
 </div>
 
+<script src="auth_ui.js"></script>
 <script src="logica_registro.js"></script>
 
 <div id="toast_familia" class="toast-exito-verde">
