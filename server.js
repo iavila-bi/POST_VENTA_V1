@@ -445,6 +445,12 @@ app.get('/api/postventas/listado', async (req, res) => {
 app.get('/api/postventas/:id_postventa/detalle', async (req, res) => {
     try {
         const { id_postventa } = req.params;
+
+        const tieneEstadoInmueble = await inmueblesTieneEstadoInmueble(pool);
+        const selectEstadoInmueble = tieneEstadoInmueble
+            ? `i.estado_inmueble`
+            : `NULL::text AS estado_inmueble`;
+
         const result = await pool.query(
             `SELECT
                 pv.id_postventa,
@@ -453,6 +459,7 @@ app.get('/api/postventas/:id_postventa/detalle', async (req, res) => {
                 i.id_proyecto,
                 p.nombre_proyecto,
                 i.numero_identificador,
+                ${selectEstadoInmueble},
                 c.nombre_completo AS cliente,
                 c.numero_contacto,
                 (
@@ -568,6 +575,91 @@ app.get('/api/postventas/:id_postventa/registros', async (req, res) => {
     } catch (error) {
         console.error('Error obteniendo registros por postventa:', error);
         res.status(500).json({ error: 'Error al obtener registros de la postventa' });
+    }
+});
+
+async function inmueblesTieneEstadoInmueble(client) {
+    if (inmueblesTieneEstadoInmueble._cache !== undefined) return inmueblesTieneEstadoInmueble._cache;
+    const q = await client.query(
+        `SELECT 1
+         FROM information_schema.columns
+         WHERE table_schema = 'public'
+           AND table_name = 'inmuebles'
+           AND column_name = 'estado_inmueble'
+         LIMIT 1`
+    );
+    inmueblesTieneEstadoInmueble._cache = q.rowCount > 0;
+    return inmueblesTieneEstadoInmueble._cache;
+}
+
+// Editar postventa (sin salir del modal)
+// Permite actualizar: id_inmueble, estado (ticket), nombre/telefono de cliente
+// Opcional: estado_inmueble (si existe la columna en inmuebles)
+app.put("/api/postventas/:id_postventa", async (req, res) => {
+    const id_postventa = Number(req.params.id_postventa);
+    const { id_inmueble, estado_ticket, nombre_cliente, numero_contacto, estado_inmueble } = req.body || {};
+
+    if (!Number.isFinite(id_postventa) || id_postventa <= 0) {
+        return res.status(400).json({ error: "ID inválido" });
+    }
+
+    if (!id_inmueble || !estado_ticket || !nombre_cliente) {
+        return res.status(400).json({ error: "Datos incompletos" });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query("BEGIN");
+
+        const pv = await client.query(
+            `SELECT id_postventa, id_cliente
+             FROM postventas
+             WHERE id_postventa = $1`,
+            [id_postventa]
+        );
+        if (pv.rowCount === 0) {
+            await client.query("ROLLBACK");
+            return res.status(404).json({ error: "Postventa no encontrada" });
+        }
+
+        const id_cliente = pv.rows[0].id_cliente;
+
+        await client.query(
+            `UPDATE clientes
+             SET nombre_completo = $1,
+                 numero_contacto = $2
+             WHERE id_cliente = $3`,
+            [nombre_cliente, numero_contacto || null, id_cliente]
+        );
+
+        await client.query(
+            `UPDATE postventas
+             SET id_inmueble = $1,
+                 estado = $2
+             WHERE id_postventa = $3`,
+            [id_inmueble, estado_ticket, id_postventa]
+        );
+
+        if (estado_inmueble !== undefined && estado_inmueble !== null) {
+            const tieneCol = await inmueblesTieneEstadoInmueble(client);
+            if (tieneCol) {
+                await client.query(
+                    `UPDATE inmuebles
+                     SET estado_inmueble = $1
+                     WHERE id_inmueble = $2`,
+                    [estado_inmueble, id_inmueble]
+                );
+            }
+        }
+
+        await client.query("COMMIT");
+        res.json({ success: true, id_postventa });
+    } catch (error) {
+        await client.query("ROLLBACK");
+        console.error("Error editando postventa:", error);
+        res.status(500).json({ error: "Error al editar postventa" });
+    } finally {
+        client.release();
     }
 });
 
@@ -807,7 +899,12 @@ app.get('/api/historico/registros', async (req, res) => {
             id_responsable,
             fecha_desde,
             fecha_hasta,
-            q
+            q,
+            identificador,
+            cliente,
+            subfamilia,
+            recinto,
+            estado_familia
         } = req.query;
 
         const where = [];
@@ -856,6 +953,37 @@ app.get('/api/historico/registros', async (req, res) => {
             )`);
         }
 
+        // Filtros por columna (tabla dinámica)
+        if (identificador && String(identificador).trim()) {
+            params.push(`%${String(identificador).trim()}%`);
+            where.push(`i.numero_identificador::text ILIKE $${params.length}`);
+        }
+
+        if (cliente && String(cliente).trim()) {
+            params.push(`%${String(cliente).trim()}%`);
+            where.push(`c.nombre_completo ILIKE $${params.length}`);
+        }
+
+        if (subfamilia && String(subfamilia).trim()) {
+            params.push(`%${String(subfamilia).trim()}%`);
+            where.push(`sf.nombre_subfamilia ILIKE $${params.length}`);
+        }
+
+        if (recinto && String(recinto).trim()) {
+            params.push(`%${String(recinto).trim()}%`);
+            where.push(`rf.recinto ILIKE $${params.length}`);
+        }
+
+        const tieneColEstado = await registrosFamiliasTieneEstadoTarea(pool);
+        const exprEstado = tieneColEstado
+            ? `COALESCE(rf.estado_tarea, 'Pendiente')`
+            : `CASE WHEN rf.fecha_firma_acta IS NOT NULL THEN 'Finalizado' ELSE 'Pendiente' END`;
+
+        if (estado_familia && String(estado_familia).trim()) {
+            params.push(String(estado_familia).trim());
+            where.push(`${exprEstado} = $${params.length}`);
+        }
+
         const clausulaWhere = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
         const result = await pool.query(
@@ -874,7 +1002,8 @@ app.get('/api/historico/registros', async (req, res) => {
                 rf.etiqueta_accion,
                 rf.fecha_levantamiento,
                 rf.fecha_visita,
-                rf.fecha_firma_acta
+                rf.fecha_firma_acta,
+                ${exprEstado} AS estado_familia
              FROM registros_familias rf
              JOIN postventas pv ON pv.id_postventa = rf.id_postventa
              JOIN inmuebles i ON i.id_inmueble = pv.id_inmueble

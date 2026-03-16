@@ -173,6 +173,15 @@ function fmtFechaISO(valor) {
     return String(valor).split("T")[0];
 }
 
+function escapeHtml(s) {
+    return String(s ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
 function setGestionArbolMensaje(texto) {
     const host = document.getElementById("gestion_arbol");
     if (!host) return;
@@ -195,12 +204,10 @@ function inicializarGestionArbol() {
     host.addEventListener("click", async (e) => {
         const projToggle = e.target.closest("[data-proj-toggle]");
         const pvToggle = e.target.closest("[data-pv-toggle]");
-        const pvDelete = e.target.closest("[data-pv-delete]");
+        const pvManage = e.target.closest("[data-pv-manage]");
         const famToggle = e.target.closest("[data-fam-toggle]");
-        const famDelete = e.target.closest("[data-fam-delete]");
-        const famEdit = e.target.closest("[data-fam-edit]");
-        const taskDelete = e.target.closest("[data-task-delete]");
-        const taskEdit = e.target.closest("[data-task-edit]");
+        const famManage = e.target.closest("[data-fam-manage]");
+        const taskManage = e.target.closest("[data-task-manage]");
 
         if (projToggle) {
             const card = projToggle.closest(".proj-card");
@@ -218,11 +225,19 @@ function inicializarGestionArbol() {
             return;
         }
 
-        if (pvDelete) {
-            const card = pvDelete.closest(".pv-card");
+        if (pvManage) {
+            const card = pvManage.closest(".pv-card");
             const id = Number(card?.dataset?.idPostventa);
             if (!Number.isFinite(id) || id <= 0) return;
-            await eliminarPostventaPorId(id);
+            abrirModalGestion({
+                tipo: "postventa",
+                id_postventa: id,
+                proyecto: card?.dataset?.proyecto || "",
+                casa: card?.dataset?.casa || "",
+                cliente: card?.dataset?.cliente || "",
+                estado: card?.dataset?.estado || "",
+                apertura: card?.dataset?.apertura || ""
+            });
             return;
         }
 
@@ -234,42 +249,46 @@ function inicializarGestionArbol() {
             return;
         }
 
-        if (famDelete) {
-            const fam = famDelete.closest(".fam-item");
+        if (famManage) {
+            const fam = famManage.closest(".fam-item");
             const idRegistro = Number(fam?.dataset?.idRegistro);
-            const idPostventa = Number(fam?.closest(".pv-card")?.dataset?.idPostventa);
             if (!Number.isFinite(idRegistro) || idRegistro <= 0) return;
-            await eliminarRegistroFamiliaGestion(idRegistro, idPostventa);
+            const pvCard = fam?.closest(".pv-card");
+            abrirModalGestion({
+                tipo: "familia",
+                id_registro: idRegistro,
+                id_postventa: Number(pvCard?.dataset?.idPostventa),
+                familia: fam?.dataset?.familia || "",
+                subfamilia: fam?.dataset?.subfamilia || "",
+                recinto: fam?.dataset?.recinto || "",
+                proyecto: pvCard?.dataset?.proyecto || "",
+                casa: pvCard?.dataset?.casa || "",
+                cliente: pvCard?.dataset?.cliente || ""
+            });
             return;
         }
 
-        if (famEdit) {
-            const fam = famEdit.closest(".fam-item");
-            const idRegistro = Number(fam?.dataset?.idRegistro);
-            if (!Number.isFinite(idRegistro) || idRegistro <= 0) return;
-            await editarRegistroFamiliaDesdeGestion(idRegistro);
-            return;
-        }
-
-        if (taskEdit) {
-            // Edición de tareas: se gestiona desde el formulario completo del registro familia.
-            const fam = taskEdit.closest(".fam-item");
-            const idRegistro = Number(fam?.dataset?.idRegistro);
-            if (!Number.isFinite(idRegistro) || idRegistro <= 0) return;
-            await editarRegistroFamiliaDesdeGestion(idRegistro);
-            // Intentar llevar al usuario directo a la sección de tareas.
-            document.getElementById("tabla_ejecutantes_plan")?.scrollIntoView({ behavior: "smooth", block: "start" });
-            return;
-        }
-
-        if (taskDelete) {
-            const task = taskDelete.closest(".task-item");
-            const fam = taskDelete.closest(".fam-item");
+        if (taskManage) {
+            const task = taskManage.closest(".task-item");
+            const fam = taskManage.closest(".fam-item");
+            const pvCard = taskManage.closest(".pv-card");
             const idTarea = Number(task?.dataset?.idTarea);
             const idRegistro = Number(fam?.dataset?.idRegistro);
             if (!Number.isFinite(idTarea) || idTarea <= 0) return;
             if (!Number.isFinite(idRegistro) || idRegistro <= 0) return;
-            await eliminarTareaGestion(idTarea, idRegistro);
+            abrirModalGestion({
+                tipo: "tarea",
+                id_tarea: idTarea,
+                id_registro: idRegistro,
+                id_postventa: Number(pvCard?.dataset?.idPostventa),
+                tarea: task?.querySelector(".t")?.textContent || "",
+                familia: fam?.dataset?.familia || "",
+                subfamilia: fam?.dataset?.subfamilia || "",
+                recinto: fam?.dataset?.recinto || "",
+                proyecto: pvCard?.dataset?.proyecto || "",
+                casa: pvCard?.dataset?.casa || "",
+                cliente: pvCard?.dataset?.cliente || ""
+            });
             return;
         }
     });
@@ -351,7 +370,14 @@ async function cargarGestionArbol() {
                 const badge = `${estado} · ${familias} familias · ${apertura}`;
 
                 return `
-                    <div class="pv-card" data-id-postventa="${id}" data-id-proyecto="${Number(pv.id_proyecto) || 0}">
+                    <div class="pv-card"
+                         data-id-postventa="${id}"
+                         data-id-proyecto="${Number(pv.id_proyecto) || 0}"
+                         data-proyecto="${escapeHtml(proyecto)}"
+                         data-casa="${escapeHtml(String(casa))}"
+                         data-cliente="${escapeHtml(cliente)}"
+                         data-estado="${escapeHtml(estado)}"
+                         data-apertura="${escapeHtml(apertura)}">
                         <div class="pv-head">
                             <div class="pv-left" data-pv-toggle>
                                 <button type="button" class="pv-btn" aria-label="Ver familias">
@@ -363,8 +389,8 @@ async function cargarGestionArbol() {
                                 </div>
                             </div>
                             <div class="pv-actions">
-                                <button type="button" class="pv-btn danger" data-pv-delete>
-                                    <i class="fas fa-trash"></i> Eliminar
+                                <button type="button" class="pv-btn manage" data-pv-manage>
+                                    Gestionar
                                 </button>
                             </div>
                         </div>
@@ -410,6 +436,1009 @@ function toggleProyecto(card) {
     card.classList.toggle("open");
 }
 
+// ======================================================
+// Modal de gestión (GESTIONAR)
+// ======================================================
+
+let gestionModalInit = false;
+let gestionModalPayload = null;
+
+function initModalGestion() {
+    if (gestionModalInit) return;
+    gestionModalInit = true;
+
+    const backdrop = document.getElementById("gestion_modal_backdrop");
+    const btnClose = document.getElementById("gestion_modal_close");
+    const btnCancel = document.getElementById("gestion_modal_cancel");
+    if (!backdrop) return;
+
+    const cerrar = () => cerrarModalGestion();
+    btnClose?.addEventListener("click", cerrar);
+    btnCancel?.addEventListener("click", cerrar);
+
+    // Click fuera del modal
+    backdrop.addEventListener("click", (e) => {
+        if (e.target === backdrop) cerrar();
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") cerrar();
+    });
+}
+
+function abrirModalGestion(payload) {
+    initModalGestion();
+
+    const backdrop = document.getElementById("gestion_modal_backdrop");
+    const title = document.getElementById("gestion_modal_title");
+    const subtitle = document.getElementById("gestion_modal_subtitle");
+    const body = document.getElementById("gestion_modal_body");
+    if (!backdrop || !title || !subtitle || !body) return;
+
+    gestionModalPayload = payload || null;
+
+    const tipo = payload?.tipo || "";
+    if (tipo === "postventa") title.textContent = "Gestión de postventa";
+    else if (tipo === "familia") title.textContent = "Gestión de registro (familia)";
+    else if (tipo === "tarea") title.textContent = "Gestión de tarea";
+    else title.textContent = "Gestión";
+
+    const linea = [
+        payload?.proyecto ? payload.proyecto : null,
+        payload?.casa ? `Casa ${payload.casa}` : null,
+        payload?.cliente ? payload.cliente : null
+    ].filter(Boolean).join(" · ");
+    subtitle.textContent = linea || "-";
+
+    body.innerHTML = construirHtmlModalGestion(payload);
+
+    // Wire acciones del modal
+    wireModalGestion(payload);
+
+    backdrop.hidden = false;
+    document.body.style.overflow = "hidden";
+}
+
+function cerrarModalGestion() {
+    const backdrop = document.getElementById("gestion_modal_backdrop");
+    if (!backdrop || backdrop.hidden) return;
+    const modal = backdrop.querySelector(".pv-modal");
+    modal?.classList.remove("pv-modal--xl");
+    backdrop.hidden = true;
+    document.body.style.overflow = "";
+    gestionModalPayload = null;
+}
+
+function construirHtmlModalGestion(p) {
+    const tipo = p?.tipo || "";
+
+    if (tipo === "postventa") {
+        const id = Number(p.id_postventa);
+        const estado = p.estado ? `Estado: ${p.estado}` : "";
+        const apertura = p.apertura ? `Apertura: ${p.apertura}` : "";
+        return `
+            <div class="pv-modal-box">
+                <h4>Acciones</h4>
+                <p>Gestiona la postventa #${id}. ${escapeHtml([estado, apertura].filter(Boolean).join(" · "))}</p>
+                <div class="pv-modal-row">
+                    <button type="button" class="pv-btn" id="gm_edit_pv">
+                        <i class="fas fa-pen"></i> Editar postventa
+                    </button>
+                    <button type="button" class="pv-btn" id="gm_open_pv">
+                        <i class="fas fa-arrow-up-right-from-square"></i> Abrir en formulario
+                    </button>
+                </div>
+            </div>
+
+            <div class="pv-modal-box danger">
+                <h4>Eliminar postventa completa</h4>
+                <p>Esto eliminará la postventa, todas sus familias y tareas asociadas.</p>
+                <div class="pv-modal-confirm">
+                    <input id="gm_confirm_input" type="text" placeholder="Escribe: ELIMINAR POSTVENTA" autocomplete="off">
+                    <button type="button" class="pv-btn danger" id="gm_delete_btn" disabled>
+                        <i class="fas fa-trash"></i> Eliminar postventa
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    if (tipo === "familia") {
+        const idReg = Number(p.id_registro);
+        const idPv = Number(p.id_postventa);
+        const lineaFam = [p.familia, p.subfamilia, p.recinto].filter(Boolean).join(" / ");
+        return `
+            <div class="pv-modal-box">
+                <h4>Acciones</h4>
+                <p>Registro #${idReg}${lineaFam ? ` · ${escapeHtml(lineaFam)}` : ""}</p>
+                <div class="pv-modal-row">
+                    <button type="button" class="pv-btn" id="gm_edit_reg">
+                        <i class="fas fa-pen"></i> Editar registro
+                    </button>
+                    <button type="button" class="pv-btn" id="gm_open_pv">
+                        <i class="fas fa-arrow-up-right-from-square"></i> Abrir postventa #${idPv}
+                    </button>
+                </div>
+            </div>
+
+            <div class="pv-modal-box warn">
+                <h4>Eliminar familia</h4>
+                <p>Esto eliminará la familia (registro) y sus tareas asociadas.</p>
+                <div class="pv-modal-confirm">
+                    <input id="gm_confirm_input_fam" type="text" placeholder="Escribe: ELIMINAR FAMILIA" autocomplete="off">
+                    <button type="button" class="pv-btn danger" id="gm_delete_fam_btn" disabled>
+                        <i class="fas fa-trash"></i> Eliminar familia
+                    </button>
+                </div>
+            </div>
+
+            <div class="pv-modal-box danger">
+                <h4>Eliminar postventa completa</h4>
+                <p>Elimina la postventa #${idPv} y todas sus familias y tareas.</p>
+                <div class="pv-modal-confirm">
+                    <input id="gm_confirm_input_pv" type="text" placeholder="Escribe: ELIMINAR POSTVENTA" autocomplete="off">
+                    <button type="button" class="pv-btn danger" id="gm_delete_pv_btn" disabled>
+                        <i class="fas fa-trash"></i> Eliminar postventa
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    if (tipo === "tarea") {
+        const idT = Number(p.id_tarea);
+        const idReg = Number(p.id_registro);
+        const tarea = p.tarea ? escapeHtml(p.tarea) : "Tarea";
+        return `
+            <div class="pv-modal-box">
+                <h4>Acciones</h4>
+                <p>Tarea #${idT} · ${tarea}</p>
+                <div class="pv-modal-row">
+                    <button type="button" class="pv-btn" id="gm_edit_reg">
+                        <i class="fas fa-pen"></i> Editar registro
+                    </button>
+                </div>
+            </div>
+
+            <div class="pv-modal-box danger">
+                <h4>Eliminar tarea</h4>
+                <p>Esto eliminará la tarea y su asignación de ejecutante.</p>
+                <div class="pv-modal-confirm">
+                    <input id="gm_confirm_input" type="text" placeholder="Escribe: ELIMINAR TAREA" autocomplete="off">
+                    <button type="button" class="pv-btn danger" id="gm_delete_btn" disabled>
+                        <i class="fas fa-trash"></i> Eliminar tarea
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    return `<div class="pv-modal-box"><h4>Sin acciones</h4><p>No hay acciones disponibles para este elemento.</p></div>`;
+}
+
+function wireConfirm(inputEl, btnEl, frase, onOk) {
+    if (!inputEl || !btnEl) return;
+    const objetivo = String(frase).trim().toUpperCase();
+    const sync = () => {
+        const val = String(inputEl.value || "").trim().toUpperCase();
+        btnEl.disabled = val !== objetivo;
+    };
+    inputEl.addEventListener("input", sync);
+    sync();
+    btnEl.addEventListener("click", onOk);
+}
+
+function wireModalGestion(p) {
+    const tipo = p?.tipo || "";
+    const btnOpenPv = document.getElementById("gm_open_pv");
+    const btnEditReg = document.getElementById("gm_edit_reg");
+    const btnEditPv = document.getElementById("gm_edit_pv");
+
+    btnOpenPv?.addEventListener("click", async () => {
+        const idPv = Number(p.id_postventa);
+        if (!Number.isFinite(idPv) || idPv <= 0) return;
+        cerrarModalGestion();
+        await abrirPostventaEnFormularioDesdeGestion(idPv);
+    });
+
+    btnEditPv?.addEventListener("click", async () => {
+        const idPv = Number(p.id_postventa);
+        if (!Number.isFinite(idPv) || idPv <= 0) return;
+        await abrirModalEditarPostventa(idPv);
+    });
+
+    btnEditReg?.addEventListener("click", async () => {
+        const idReg = Number(p.id_registro || p.id_registro_familia || p.id_registro);
+        if (!Number.isFinite(idReg) || idReg <= 0) return;
+        await abrirModalEditarRegistro(idReg, {
+            modo: (tipo === "tarea" ? "tarea" : "familia"),
+            foco: (tipo === "tarea" ? "tareas" : null)
+        });
+    });
+
+    if (tipo === "postventa") {
+        const input = document.getElementById("gm_confirm_input");
+        const btn = document.getElementById("gm_delete_btn");
+        wireConfirm(input, btn, "ELIMINAR POSTVENTA", async () => {
+            cerrarModalGestion();
+            await eliminarPostventaPorId(Number(p.id_postventa), { skipConfirm: true });
+        });
+    }
+
+    if (tipo === "familia") {
+        const inputFam = document.getElementById("gm_confirm_input_fam");
+        const btnFam = document.getElementById("gm_delete_fam_btn");
+        wireConfirm(inputFam, btnFam, "ELIMINAR FAMILIA", async () => {
+            cerrarModalGestion();
+            await eliminarRegistroFamiliaGestion(Number(p.id_registro), Number(p.id_postventa), { skipConfirm: true });
+        });
+
+        const inputPv = document.getElementById("gm_confirm_input_pv");
+        const btnPv = document.getElementById("gm_delete_pv_btn");
+        wireConfirm(inputPv, btnPv, "ELIMINAR POSTVENTA", async () => {
+            cerrarModalGestion();
+            await eliminarPostventaPorId(Number(p.id_postventa), { skipConfirm: true });
+        });
+    }
+
+    if (tipo === "tarea") {
+        const input = document.getElementById("gm_confirm_input");
+        const btn = document.getElementById("gm_delete_btn");
+        wireConfirm(input, btn, "ELIMINAR TAREA", async () => {
+            cerrarModalGestion();
+            await eliminarTareaGestion(Number(p.id_tarea), Number(p.id_registro), { skipConfirm: true });
+        });
+    }
+}
+
+async function abrirModalEditarRegistro(idRegistro, opts = {}) {
+    initModalGestion();
+
+    const backdrop = document.getElementById("gestion_modal_backdrop");
+    const modal = backdrop?.querySelector(".pv-modal");
+    const title = document.getElementById("gestion_modal_title");
+    const subtitle = document.getElementById("gestion_modal_subtitle");
+    const body = document.getElementById("gestion_modal_body");
+    if (!backdrop || !modal || !title || !subtitle || !body) return;
+
+    const id = Number(idRegistro);
+    if (!Number.isFinite(id) || id <= 0) return;
+
+    // Modal grande para edición
+    modal.classList.add("pv-modal--xl");
+
+    title.textContent = "Modificar registro";
+    subtitle.textContent = "Cargando datos...";
+    body.innerHTML = `<div class="pv-modal-box"><p>Cargando información del registro...</p></div>`;
+
+    backdrop.hidden = false;
+    document.body.style.overflow = "hidden";
+
+    try {
+        const [resDet, resTareas, resFamilias, resResp, resEjec] = await Promise.all([
+            fetch(`/api/registros-familia/${id}/detalle`),
+            fetch(`/api/registros-familia/${id}/tareas`),
+            fetch(`/api/familias`),
+            fetch(`/api/responsables`),
+            fetch(`/api/ejecutantes`)
+        ]);
+
+        const det = await resDet.json().catch(() => null);
+        const tareasRaw = await resTareas.json().catch(() => []);
+        const familias = await resFamilias.json().catch(() => []);
+        const responsables = await resResp.json().catch(() => []);
+        const ejecutantes = await resEjec.json().catch(() => []);
+
+        if (!resDet.ok) throw new Error(det?.error || "No se pudo cargar el registro");
+        if (!resTareas.ok) throw new Error("No se pudieron cargar tareas");
+
+        const idPostventa = Number(det?.id_postventa);
+        if (!Number.isFinite(idPostventa) || idPostventa <= 0) throw new Error("Postventa inválida");
+
+        const resPv = await fetch(`/api/postventas/${idPostventa}/detalle`);
+        const pv = await resPv.json().catch(() => null);
+        if (!resPv.ok) throw new Error(pv?.error || "No se pudo cargar la postventa");
+
+        const resSub = await fetch(`/api/familias/${Number(det.id_familia)}/subfamilias`);
+        const subfamilias = await resSub.json().catch(() => []);
+
+        const proyecto = pv?.nombre_proyecto || "-";
+        const casa = pv?.numero_identificador || "-";
+        const cliente = pv?.cliente || "-";
+        subtitle.textContent = `${proyecto} · Casa ${casa} · ${cliente}`;
+
+        body.innerHTML = construirHtmlModalEditarRegistro({
+            id_registro: id,
+            modo: opts?.modo || "familia",
+            det,
+            pv,
+            familias: Array.isArray(familias) ? familias : [],
+            subfamilias: Array.isArray(subfamilias) ? subfamilias : [],
+            responsables: Array.isArray(responsables) ? responsables : [],
+            ejecutantes: Array.isArray(ejecutantes) ? ejecutantes : [],
+            tareasRaw: Array.isArray(tareasRaw) ? tareasRaw : []
+        });
+
+        wireModalEditarRegistro({
+            id_registro: id,
+            id_postventa: idPostventa,
+            foco: opts?.foco || null
+        });
+    } catch (error) {
+        console.error("Error abriendo editor modal:", error);
+        subtitle.textContent = "Error";
+        body.innerHTML = `<div class="pv-modal-box danger"><h4>Error</h4><p>${escapeHtml(error.message || "No se pudo abrir el editor.")}</p></div>`;
+    }
+}
+
+async function abrirModalEditarPostventa(idPostventa) {
+    initModalGestion();
+
+    const backdrop = document.getElementById("gestion_modal_backdrop");
+    const modal = backdrop?.querySelector(".pv-modal");
+    const title = document.getElementById("gestion_modal_title");
+    const subtitle = document.getElementById("gestion_modal_subtitle");
+    const body = document.getElementById("gestion_modal_body");
+    if (!backdrop || !modal || !title || !subtitle || !body) return;
+
+    const id = Number(idPostventa);
+    if (!Number.isFinite(id) || id <= 0) return;
+
+    modal.classList.add("pv-modal--xl");
+    title.textContent = "Editar postventa";
+    subtitle.textContent = "Cargando datos...";
+    body.innerHTML = `<div class="pv-modal-box"><p>Cargando información de la postventa...</p></div>`;
+
+    backdrop.hidden = false;
+    document.body.style.overflow = "hidden";
+
+    try {
+        const resPv = await fetch(`/api/postventas/${id}/detalle`);
+        const pv = await resPv.json().catch(() => null);
+        if (!resPv.ok) throw new Error(pv?.error || "No se pudo cargar la postventa");
+
+        const idProyecto = Number(pv?.id_proyecto);
+        const idInmueble = Number(pv?.id_inmueble);
+
+        const [resProy, resInm, resDetInm] = await Promise.all([
+            fetch("/api/proyectos"),
+            Number.isFinite(idProyecto) && idProyecto > 0 ? fetch(`/api/proyectos/${idProyecto}/inmuebles`) : Promise.resolve({ ok: true, json: async () => [] }),
+            Number.isFinite(idInmueble) && idInmueble > 0 ? fetch(`/api/inmuebles/detalle/${idInmueble}`) : Promise.resolve({ ok: true, json: async () => ({}) })
+        ]);
+
+        const proyectos = await resProy.json().catch(() => []);
+        const inmuebles = await resInm.json().catch(() => []);
+        const detInm = await resDetInm.json().catch(() => ({}));
+
+        if (!resProy.ok) throw new Error("No se pudieron cargar proyectos");
+        if (!resInm.ok) throw new Error("No se pudieron cargar identificadores");
+        if (!resDetInm.ok) throw new Error("No se pudo cargar el detalle del inmueble");
+
+        subtitle.textContent = `${pv?.nombre_proyecto || "-"} · Casa ${pv?.numero_identificador || "-"} · ${pv?.cliente || "-"}`;
+
+        body.innerHTML = construirHtmlModalEditarPostventa({
+            id_postventa: id,
+            pv,
+            proyectos: Array.isArray(proyectos) ? proyectos : [],
+            inmuebles: Array.isArray(inmuebles) ? inmuebles : [],
+            detInm: detInm || {}
+        });
+
+        wireModalEditarPostventa({
+            id_postventa: id,
+            id_proyecto: idProyecto,
+            id_inmueble: idInmueble
+        });
+    } catch (error) {
+        console.error("Error abrir editar postventa:", error);
+        subtitle.textContent = "Error";
+        body.innerHTML = `<div class="pv-modal-box danger"><h4>Error</h4><p>${escapeHtml(error.message || "No se pudo abrir el editor de postventa.")}</p></div>`;
+    }
+}
+
+function construirHtmlModalEditarPostventa(ctx) {
+    const pv = ctx.pv || {};
+    const det = ctx.detInm || {};
+
+    const proyOptions = `<option value="" disabled>Seleccione proyecto...</option>` +
+        construirOptions(ctx.proyectos, "id_proyecto", (it) => it.nombre_proyecto || "-", pv.id_proyecto);
+
+    const inmOptions = `<option value="" disabled>Seleccione identificador...</option>` +
+        (Array.isArray(ctx.inmuebles) ? ctx.inmuebles : []).map(it => {
+            const v = String(it.id_inmueble ?? "");
+            const selected = String(pv.id_inmueble) === v ? " selected" : "";
+            const label = it.numero_identificador ?? v;
+            return `<option value="${escapeHtml(v)}"${selected}>${escapeHtml(String(label))}</option>`;
+        }).join("");
+
+    const estadoTicket = String(pv.estado_ticket || "");
+    const estadoTicketOptions = `
+        <option value="" disabled>Seleccione estado</option>
+        <option value="Abierta"${estadoTicket === "Abierta" ? " selected" : ""}>Abierta</option>
+        <option value="Cerrada"${estadoTicket === "Cerrada" ? " selected" : ""}>Cerrada</option>
+    `;
+
+    // estado_inmueble puede o no existir en BD, lo guardamos si existe
+    const estadoInmueble = String(pv.estado_inmueble || "");
+    const estadoInmOptions = `
+        <option value="" disabled>Seleccione estado...</option>
+        <option value="En Stock"${estadoInmueble === "En Stock" ? " selected" : ""}>En Stock</option>
+        <option value="En preparación"${estadoInmueble === "En preparación" ? " selected" : ""}>En preparación</option>
+        <option value="Entregada"${estadoInmueble === "Entregada" ? " selected" : ""}>Entregada</option>
+    `;
+
+    return `
+        <div class="pv-edit-grid">
+            <section class="pv-edit-col">
+                <div class="pv-modal-box">
+                    <h4>1. Identificación del inmueble</h4>
+                    <div class="pv-edit-fields">
+                        <div class="pv-edit-field">
+                            <label>Proyecto *</label>
+                            <select class="pv-edit-input" id="gp_id_proyecto">${proyOptions}</select>
+                        </div>
+                        <div class="pv-edit-field">
+                            <label>Identificador *</label>
+                            <select class="pv-edit-input" id="gp_id_inmueble">${inmOptions}</select>
+                        </div>
+                        <div class="pv-edit-field">
+                            <label>Casa/Depto</label>
+                            <input class="pv-edit-input" type="text" id="gp_casa_depto" value="${escapeHtml(det.casa_o_depto || "")}" readonly>
+                        </div>
+                        <div class="pv-edit-field">
+                            <label>Modelo</label>
+                            <input class="pv-edit-input" type="text" id="gp_modelo" value="${escapeHtml(det.modelo || "")}" readonly>
+                        </div>
+                        <div class="pv-edit-field">
+                            <label>Orientación</label>
+                            <input class="pv-edit-input" type="text" id="gp_orientacion" value="${escapeHtml(det.orientacion || "")}" readonly>
+                        </div>
+                        <div class="pv-edit-field">
+                            <label>Fecha de entrega</label>
+                            <input class="pv-edit-input" type="date" id="gp_fecha_entrega" value="${escapeHtml(det.fecha_entrega ? fmtFechaISO(det.fecha_entrega) : "")}" readonly>
+                        </div>
+                        <div class="pv-edit-field pv-edit-field--full">
+                            <label>Estado del inmueble *</label>
+                            <select class="pv-edit-input" id="gp_estado_inmueble">${estadoInmOptions}</select>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="pv-edit-col">
+                <div class="pv-modal-box">
+                    <h4>2. Datos de la Postventa</h4>
+                    <div class="pv-edit-fields">
+                        <div class="pv-edit-field">
+                            <label>Estado del Ticket *</label>
+                            <select class="pv-edit-input" id="gp_estado_ticket">${estadoTicketOptions}</select>
+                        </div>
+                        <div class="pv-edit-field">
+                            <label>Nombre del Cliente *</label>
+                            <input class="pv-edit-input" type="text" id="gp_nombre_cliente" value="${escapeHtml(pv.cliente || "")}">
+                        </div>
+                        <div class="pv-edit-field pv-edit-field--full">
+                            <label>Contacto</label>
+                            <input class="pv-edit-input" type="tel" id="gp_numero_contacto" value="${escapeHtml(pv.numero_contacto || "")}" placeholder="Ej: +56 912345678">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pv-edit-actions">
+                    <button type="button" class="btn-principal" id="gp_save_postventa">
+                        <i class="fas fa-save"></i> Guardar cambios
+                    </button>
+                </div>
+            </section>
+        </div>
+    `;
+}
+
+function wireModalEditarPostventa(ctx) {
+    const idPostventa = Number(ctx.id_postventa);
+    const selProy = document.getElementById("gp_id_proyecto");
+    const selInm = document.getElementById("gp_id_inmueble");
+    const btnSave = document.getElementById("gp_save_postventa");
+
+    const cargarInmueblesProyecto = async (idProyecto) => {
+        if (!selInm) return;
+        selInm.innerHTML = `<option value="" disabled selected>Cargando...</option>`;
+        const res = await fetch(`/api/proyectos/${idProyecto}/inmuebles`);
+        const data = await res.json().catch(() => []);
+        if (!res.ok) throw new Error("No se pudieron cargar inmuebles");
+        selInm.innerHTML = `<option value="" disabled selected>Seleccione identificador...</option>` +
+            (Array.isArray(data) ? data : []).map(it => {
+                const label = it.numero_identificador ?? it.id_inmueble;
+                return `<option value="${escapeHtml(it.id_inmueble)}">${escapeHtml(String(label))}</option>`;
+            }).join("");
+    };
+
+    const cargarDetalleInmueble = async (idInmueble) => {
+        const res = await fetch(`/api/inmuebles/detalle/${idInmueble}`);
+        const det = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error("No se pudo cargar detalle inmueble");
+        document.getElementById("gp_casa_depto").value = det.casa_o_depto || "";
+        document.getElementById("gp_modelo").value = det.modelo || "";
+        document.getElementById("gp_orientacion").value = det.orientacion || "";
+        document.getElementById("gp_fecha_entrega").value = det.fecha_entrega ? fmtFechaISO(det.fecha_entrega) : "";
+    };
+
+    selProy?.addEventListener("change", async () => {
+        const idp = Number(selProy.value);
+        if (!Number.isFinite(idp) || idp <= 0) return;
+        try {
+            await cargarInmueblesProyecto(idp);
+        } catch (e) {
+            console.error(e);
+            alert(e.message || "No se pudieron cargar inmuebles.");
+        }
+    });
+
+    selInm?.addEventListener("change", async () => {
+        const idInm = Number(selInm.value);
+        if (!Number.isFinite(idInm) || idInm <= 0) return;
+        try {
+            await cargarDetalleInmueble(idInm);
+        } catch (e) {
+            console.error(e);
+            alert(e.message || "No se pudo cargar el detalle del inmueble.");
+        }
+    });
+
+    btnSave?.addEventListener("click", async () => {
+        const id_inmueble = Number(selInm?.value || 0);
+        const estado_ticket = document.getElementById("gp_estado_ticket")?.value || "";
+        const nombre_cliente = String(document.getElementById("gp_nombre_cliente")?.value || "").trim();
+        const numero_contacto = String(document.getElementById("gp_numero_contacto")?.value || "").trim();
+        const estado_inmueble = document.getElementById("gp_estado_inmueble")?.value || null;
+
+        if (!id_inmueble) return alert("Identificador es obligatorio.");
+        if (!estado_ticket) return alert("Estado del ticket es obligatorio.");
+        if (!nombre_cliente) return alert("Nombre del cliente es obligatorio.");
+
+        try {
+            const res = await fetch(`/api/postventas/${idPostventa}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id_inmueble, estado_ticket, nombre_cliente, numero_contacto, estado_inmueble })
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok) throw new Error(data?.error || "No se pudo guardar la postventa.");
+
+            cerrarModalGestion();
+            await cargarGestionArbol();
+            await cargarPostventasRecientes(postventaActiva, false);
+            cargarIndicadoresPostventa();
+            actualizarIndicadoresFlujo();
+            cargarTareasCalendarioIntegrado();
+
+            if (typeof mostrarAlertaCentro === "function") {
+                mostrarAlertaCentro("Postventa actualizada", "Los cambios se guardaron correctamente.", "ok");
+            }
+        } catch (e) {
+            console.error(e);
+            alert(e.message || "No se pudo guardar.");
+        }
+    });
+}
+
+function agruparTareasParaEditor(rows) {
+    // rows puede venir duplicado si hay múltiples ejecutantes por tarea
+    const map = new Map();
+    for (const r of (Array.isArray(rows) ? rows : [])) {
+        const id = Number(r.id_tarea);
+        if (!Number.isFinite(id) || id <= 0) continue;
+        const cur = map.get(id) || {
+            id_tarea: id,
+            descripcion: r.descripcion_tarea || "",
+            inicio: fmtFechaISO(r.fecha_inicio),
+            termino: fmtFechaISO(r.fecha_termino || r.fecha_inicio),
+            ejecutantes: []
+        };
+        if (r.id_ejecutante) {
+            cur.ejecutantes.push({
+                id_ejecutante: Number(r.id_ejecutante),
+                nombre: r.nombre_ejecutante || "",
+                especialidad: r.especialidad || ""
+            });
+        }
+        map.set(id, cur);
+    }
+    const tareas = Array.from(map.values()).sort((a, b) => a.id_tarea - b.id_tarea);
+    // Si una tarea no trae ejecutantes (raro), deja 1 ejecutante vacío para editarla
+    for (const t of tareas) {
+        if (!t.ejecutantes.length) t.ejecutantes.push({ id_ejecutante: 0, nombre: "", especialidad: "" });
+    }
+    return tareas;
+}
+
+function construirOptions(items, valueKey, labelFn, selectedValue) {
+    const sel = String(selectedValue ?? "");
+    return (Array.isArray(items) ? items : []).map(it => {
+        const v = String(it?.[valueKey] ?? "");
+        const label = labelFn(it);
+        const selected = (v && v === sel) ? " selected" : "";
+        return `<option value="${escapeHtml(v)}"${selected}>${escapeHtml(label)}</option>`;
+    }).join("");
+}
+
+function construirHtmlModalEditarRegistro(ctx) {
+    const det = ctx.det || {};
+    const pv = ctx.pv || {};
+    const modo = String(ctx.modo || "familia");
+
+    const tareas = agruparTareasParaEditor(ctx.tareasRaw);
+
+    const opcionesOrigen = [
+        "Correo",
+        "Entidad Patrocinante",
+        "Jocelin",
+        "MDA",
+        "Nuevas / Entrega",
+        "Serviu",
+        "Terreno"
+    ];
+
+    const origenOptions = `<option value="" disabled>Seleccionar origen...</option>` + opcionesOrigen.map(o => {
+        const s = String(det.origen || "") === o ? " selected" : "";
+        return `<option value="${escapeHtml(o)}"${s}>${escapeHtml(o)}</option>`;
+    }).join("");
+
+    const familiasOptions = `<option value="" disabled>Seleccione familia...</option>` +
+        construirOptions(ctx.familias, "id_familia", (it) => it.nombre_familia || "-", det.id_familia);
+
+    const subOptions = `<option value="" disabled>Seleccione subfamilia...</option>` +
+        construirOptions(ctx.subfamilias, "id_subfamilia", (it) => it.nombre_subfamilia || "-", det.id_subfamilia);
+
+    const respOptions = `<option value="" disabled>Seleccione responsable...</option>` +
+        construirOptions(ctx.responsables, "id_responsable", (it) => (it.nombre_responsable ? `${it.nombre_responsable}${it.cargo ? ` (${it.cargo})` : ""}` : "-"), det.id_responsable);
+
+    const etiqueta = String(det.etiqueta_accion || "");
+    const etiquetaOptions = `
+        <option value="" disabled>Seleccionar...</option>
+        <option value="APLICA"${etiqueta === "APLICA" ? " selected" : ""}>APLICA</option>
+        <option value="NO APLICA"${etiqueta === "NO APLICA" ? " selected" : ""}>NO APLICA</option>
+    `;
+
+    const tareasHtml = (tareas.length ? tareas : [{ id_tarea: 0, descripcion: "", inicio: "", termino: "", ejecutantes: [{ id_ejecutante: 0 }] }])
+        .flatMap(t => t.ejecutantes.map(ej => ({
+            id_tarea: t.id_tarea,
+            descripcion: t.descripcion,
+            inicio: t.inicio,
+            termino: t.termino,
+            id_ejecutante: ej.id_ejecutante || 0
+        })))
+        .map(row => {
+            const ejecOptions = `<option value="" disabled>Ejecutante...</option>` +
+                construirOptions(ctx.ejecutantes, "id_ejecutante", (it) => (it.nombre_ejecutante ? `${it.nombre_ejecutante}${it.especialidad ? ` (${it.especialidad})` : ""}` : "-"), row.id_ejecutante || "");
+
+            return `
+                <div class="pv-edit-task-row" data-gm-task-row data-id-tarea="${escapeHtml(String(row.id_tarea || 0))}">
+                    <div class="pv-edit-cell">
+                        <span class="pv-edit-cell-label">Ejecutante</span>
+                        <select class="pv-edit-input" data-gm-ejecutante>${ejecOptions}</select>
+                    </div>
+                    <div class="pv-edit-cell">
+                        <span class="pv-edit-cell-label">Inicio</span>
+                        <input class="pv-edit-input" type="date" data-gm-inicio value="${escapeHtml(row.inicio || "")}">
+                    </div>
+                    <div class="pv-edit-cell">
+                        <span class="pv-edit-cell-label">Término</span>
+                        <input class="pv-edit-input" type="date" data-gm-termino value="${escapeHtml(row.termino || "")}">
+                    </div>
+                    <div class="pv-edit-cell">
+                        <span class="pv-edit-cell-label">Tarea</span>
+                        <input class="pv-edit-input" type="text" data-gm-desc placeholder="Descripción" value="${escapeHtml(row.descripcion || "")}">
+                    </div>
+                    <div class="pv-edit-cell pv-edit-cell--action">
+                        <span class="pv-edit-cell-label">Acción</span>
+                        <button type="button" class="pv-btn danger pv-edit-task-del" data-gm-del-row title="Quitar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join("");
+
+    // Para edición de familia/tarea: NO mostramos el apartado Postventa (solo en "Editar postventa").
+    const headerChips = `
+        <div class="pv-modal-box pv-edit-summary">
+            <h4>Resumen</h4>
+            <div class="pv-edit-summary-chips">
+                <span class="pv-chip">Postventa #${escapeHtml(String(pv.id_postventa || ""))}</span>
+                <span class="pv-chip">${escapeHtml(pv.nombre_proyecto || "-")}</span>
+                <span class="pv-chip">Casa ${escapeHtml(String(pv.numero_identificador || "-"))}</span>
+                <span class="pv-chip">${escapeHtml(pv.cliente || "-")}</span>
+            </div>
+        </div>
+    `;
+
+    const familiaBox = `
+        <div class="pv-modal-box">
+            <h4>Familia</h4>
+            <div class="pv-edit-fields">
+                <div class="pv-edit-field">
+                    <label>Origen *</label>
+                    <select class="pv-edit-input" id="gm_origen">${origenOptions}</select>
+                </div>
+                <div class="pv-edit-field">
+                    <label>Familia *</label>
+                    <select class="pv-edit-input" id="gm_familia">${familiasOptions}</select>
+                </div>
+                <div class="pv-edit-field">
+                    <label>Subfamilia *</label>
+                    <select class="pv-edit-input" id="gm_subfamilia">${subOptions}</select>
+                </div>
+                <div class="pv-edit-field">
+                    <label>Recinto *</label>
+                    <input class="pv-edit-input" type="text" id="gm_recinto" value="${escapeHtml(det.recinto || "")}">
+                </div>
+                <div class="pv-edit-field pv-edit-field--full">
+                    <label>Comentarios previos</label>
+                    <input class="pv-edit-input" type="text" id="gm_comentarios" value="${escapeHtml(det.comentarios_previos || "")}">
+                </div>
+                <div class="pv-edit-field">
+                    <label>Fecha levantamiento *</label>
+                    <input class="pv-edit-input" type="date" id="gm_f_lev" value="${escapeHtml(det.fecha_levantamiento ? fmtFechaISO(det.fecha_levantamiento) : "")}">
+                </div>
+                <div class="pv-edit-field">
+                    <label>Fecha visita</label>
+                    <input class="pv-edit-input" type="date" id="gm_f_vis" value="${escapeHtml(det.fecha_visita ? fmtFechaISO(det.fecha_visita) : "")}">
+                </div>
+                <div class="pv-edit-field">
+                    <label>Responsable *</label>
+                    <select class="pv-edit-input" id="gm_responsable">${respOptions}</select>
+                </div>
+                <div class="pv-edit-field">
+                    <label>Etiqueta Acción *</label>
+                    <select class="pv-edit-input" id="gm_etiqueta">${etiquetaOptions}</select>
+                </div>
+                <div class="pv-edit-field">
+                    <label>Fecha firma acta</label>
+                    <input class="pv-edit-input" type="date" id="gm_f_acta" value="${escapeHtml(det.fecha_firma_acta ? fmtFechaISO(det.fecha_firma_acta) : "")}">
+                </div>
+            </div>
+        </div>
+    `;
+
+    const tareasBox = `
+        <div class="pv-modal-box" id="gm_box_tareas">
+            <div class="pv-edit-tareas-head">
+                <h4>Ejecutantes y planificación</h4>
+                <button type="button" class="pv-btn" id="gm_add_task">
+                    <i class="fas fa-plus"></i> Agregar ejecutante
+                </button>
+            </div>
+            <div class="pv-edit-task-list" id="gm_task_list">
+                <div class="pv-edit-task-row pv-edit-task-row--head">
+                    <div>Ejecutante</div><div>Inicio</div><div>Término</div><div>Tarea</div><div></div>
+                </div>
+                ${tareasHtml}
+            </div>
+        </div>
+    `;
+
+    const acciones = `
+        <div class="pv-edit-actions">
+            <button type="button" class="btn-principal" id="gm_save_registro">
+                <i class="fas fa-save"></i> Guardar cambios
+            </button>
+        </div>
+    `;
+
+    // Modo tarea: mostramos solo tareas + guardar (sin caja de familia)
+    if (modo === "tarea") {
+        return `
+            <div class="pv-edit-grid pv-edit-grid--one">
+                ${headerChips}
+                ${tareasBox}
+                ${acciones}
+            </div>
+        `;
+    }
+
+    // Modo familia (default): familia + tareas + guardar
+    return `
+        <div class="pv-edit-grid pv-edit-grid--one">
+            ${headerChips}
+            ${familiaBox}
+            ${tareasBox}
+            ${acciones}
+        </div>
+    `;
+}
+
+function wireModalEditarRegistro(ctx) {
+    const idRegistro = Number(ctx.id_registro);
+    const idPostventa = Number(ctx.id_postventa);
+
+    const selFam = document.getElementById("gm_familia");
+    const selSub = document.getElementById("gm_subfamilia");
+    const btnAdd = document.getElementById("gm_add_task");
+    const list = document.getElementById("gm_task_list");
+    const btnSave = document.getElementById("gm_save_registro");
+
+    selFam?.addEventListener("change", async () => {
+        const idFam = Number(selFam.value);
+        if (!Number.isFinite(idFam) || idFam <= 0 || !selSub) return;
+        selSub.innerHTML = `<option value="" disabled selected>Cargando...</option>`;
+        try {
+            const res = await fetch(`/api/familias/${idFam}/subfamilias`);
+            const data = await res.json().catch(() => []);
+            if (!res.ok) throw new Error("No se pudieron cargar subfamilias");
+            const opts = `<option value="" disabled selected>Seleccione subfamilia...</option>` +
+                (Array.isArray(data) ? data : []).map(sf => `<option value="${escapeHtml(sf.id_subfamilia)}">${escapeHtml(sf.nombre_subfamilia || "-")}</option>`).join("");
+            selSub.innerHTML = opts;
+        } catch (e) {
+            console.error(e);
+            selSub.innerHTML = `<option value="" disabled selected>Error</option>`;
+        }
+    });
+
+    list?.addEventListener("click", (e) => {
+        const del = e.target.closest("[data-gm-del-row]");
+        if (!del) return;
+        const row = del.closest("[data-gm-task-row]");
+        row?.remove();
+    });
+
+    btnAdd?.addEventListener("click", () => {
+        if (!list) return;
+        const ejecSel = document.querySelector("[data-gm-task-row] select[data-gm-ejecutante]");
+        const options = ejecSel ? ejecSel.innerHTML : `<option value=\"\" disabled selected>Ejecutante...</option>`;
+        const row = document.createElement("div");
+        row.className = "pv-edit-task-row";
+        row.setAttribute("data-gm-task-row", "");
+        row.setAttribute("data-id-tarea", "0");
+        row.innerHTML = `
+            <div class="pv-edit-cell">
+                <span class="pv-edit-cell-label">Ejecutante</span>
+                <select class="pv-edit-input" data-gm-ejecutante>${options}</select>
+            </div>
+            <div class="pv-edit-cell">
+                <span class="pv-edit-cell-label">Inicio</span>
+                <input class="pv-edit-input" type="date" data-gm-inicio value="">
+            </div>
+            <div class="pv-edit-cell">
+                <span class="pv-edit-cell-label">Término</span>
+                <input class="pv-edit-input" type="date" data-gm-termino value="">
+            </div>
+            <div class="pv-edit-cell">
+                <span class="pv-edit-cell-label">Tarea</span>
+                <input class="pv-edit-input" type="text" data-gm-desc placeholder="Descripción" value="">
+            </div>
+            <div class="pv-edit-cell pv-edit-cell--action">
+                <span class="pv-edit-cell-label">Acción</span>
+                <button type="button" class="pv-btn danger pv-edit-task-del" data-gm-del-row title="Quitar">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        list.appendChild(row);
+    });
+
+    btnSave?.addEventListener("click", async () => {
+        const origen = document.getElementById("gm_origen")?.value || "";
+        const idFamilia = Number(document.getElementById("gm_familia")?.value || 0);
+        const idSubfamilia = Number(document.getElementById("gm_subfamilia")?.value || 0);
+        const recinto = String(document.getElementById("gm_recinto")?.value || "").trim();
+        const comentarios = String(document.getElementById("gm_comentarios")?.value || "").trim();
+        const fLev = document.getElementById("gm_f_lev")?.value || "";
+        const fVis = document.getElementById("gm_f_vis")?.value || "";
+        const idResp = Number(document.getElementById("gm_responsable")?.value || 0);
+        const etiqueta = String(document.getElementById("gm_etiqueta")?.value || "");
+        const fActa = document.getElementById("gm_f_acta")?.value || "";
+
+        if (!origen) return alert("Origen es obligatorio.");
+        if (!idFamilia) return alert("Familia es obligatoria.");
+        if (!idSubfamilia) return alert("Subfamilia es obligatoria.");
+        if (!recinto) return alert("Recinto es obligatorio.");
+        if (!fLev) return alert("Fecha levantamiento es obligatoria.");
+        if (!idResp) return alert("Responsable es obligatorio.");
+        if (!etiqueta) return alert("Etiqueta acción es obligatoria.");
+
+        const rows = Array.from(document.querySelectorAll("[data-gm-task-row]"));
+        const tareas = rows.map(r => {
+            const idEj = Number(r.querySelector("[data-gm-ejecutante]")?.value || 0);
+            const inicio = r.querySelector("[data-gm-inicio]")?.value || "";
+            const termino = r.querySelector("[data-gm-termino]")?.value || "";
+            const desc = String(r.querySelector("[data-gm-desc]")?.value || "").trim();
+            return { id_ejecutante: idEj, inicio, termino, descripcion: desc };
+        }).filter(t => t.id_ejecutante && t.inicio && t.descripcion);
+
+        if (!tareas.length) return alert("Debes dejar al menos una tarea con ejecutante, fecha inicio y descripción.");
+
+        try {
+            const payload = {
+                registro: {
+                    id_postventa: idPostventa,
+                    id_familia: idFamilia,
+                    id_subfamilia: idSubfamilia,
+                    id_responsable: idResp,
+                    origen,
+                    etiqueta_accion: etiqueta,
+                    recinto,
+                    comentarios_previos: comentarios,
+                    fecha_levantamiento: fLev,
+                    fecha_visita: fVis || null,
+                    fecha_firma_acta: fActa || null
+                },
+                tareas
+            };
+
+            const res = await fetch(`/api/registros-familia/${idRegistro}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok) throw new Error(data?.error || "No se pudo actualizar el registro.");
+
+            cerrarModalGestion();
+            await refrescarPostventaEnArbol(idPostventa);
+            cargarIndicadoresPostventa();
+            actualizarIndicadoresFlujo();
+            cargarTareasCalendarioIntegrado();
+
+            if (typeof mostrarAlertaCentro === "function") {
+                mostrarAlertaCentro("Registro actualizado", "Los cambios se guardaron correctamente.", "ok");
+            }
+        } catch (error) {
+            console.error(error);
+            alert(error.message || "No se pudo guardar.");
+        }
+    });
+
+    if (ctx.foco === "tareas") {
+        setTimeout(() => document.getElementById("gm_box_tareas")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    }
+}
+
+async function abrirPostventaEnFormularioDesdeGestion(idPostventa) {
+    const id = Number(idPostventa);
+    if (!Number.isFinite(id) || id <= 0) return;
+
+    try {
+        const res = await fetch(`/api/postventas/${id}/detalle`);
+        const det = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(det?.error || "No se pudo cargar la postventa");
+
+        // Salir de gestión y seleccionar la postventa (aunque sea histórica)
+        setModoGestionRegistros(false);
+
+        const select = document.getElementById("select_postventa_existente");
+        if (!select) throw new Error("No se encontró el selector de postventas");
+
+        let opt = Array.from(select.options).find(o => o.value === String(id));
+        if (!opt) {
+            opt = document.createElement("option");
+            opt.value = String(id);
+            select.appendChild(opt);
+        }
+
+        const proyecto = det?.nombre_proyecto || opt.dataset.proyecto || "-";
+        const identificador = det?.numero_identificador || opt.dataset.identificador || "-";
+        const cliente = det?.cliente || opt.dataset.cliente || "-";
+        const estado = det?.estado_ticket || opt.dataset.estado || "-";
+        const familias = String(det?.total_familias ?? opt.dataset.familias ?? 0);
+
+        opt.dataset.proyecto = proyecto;
+        opt.dataset.identificador = identificador;
+        opt.dataset.cliente = cliente;
+        opt.dataset.estado = estado;
+        opt.dataset.familias = familias;
+        opt.textContent = `#${id} - ${proyecto} - ${identificador} - Familias: ${familias}`;
+
+        select.value = String(id);
+        await seleccionarPostventaExistente();
+
+        document.getElementById("modulo_selector_postventa")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (error) {
+        console.error("Error abrir postventa desde gestión:", error);
+        alert(error.message || "No se pudo abrir la postventa en el formulario.");
+    }
+}
+
 async function togglePostventa(card, idPostventa) {
     const isOpen = card.classList.toggle("open");
     if (!isOpen) return;
@@ -446,7 +1475,11 @@ async function cargarFamiliasPostventaGestion(children, idPostventa) {
             const estado = rf.estado_tarea || "Pendiente";
 
             return `
-                <div class="fam-item" data-id-registro="${idRegistro}">
+                <div class="fam-item"
+                     data-id-registro="${idRegistro}"
+                     data-familia="${escapeHtml(fam)}"
+                     data-subfamilia="${escapeHtml(sub)}"
+                     data-recinto="${escapeHtml(recinto)}">
                     <div class="fam-head">
                         <div class="fam-left" data-fam-toggle>
                             <button type="button" class="pv-btn" aria-label="Ver tareas">
@@ -458,11 +1491,8 @@ async function cargarFamiliasPostventaGestion(children, idPostventa) {
                             </div>
                         </div>
                         <div class="pv-actions">
-                            <button type="button" class="pv-btn" data-fam-edit>
-                                <i class="fas fa-pen"></i> Editar
-                            </button>
-                            <button type="button" class="pv-btn danger" data-fam-delete>
-                                <i class="fas fa-trash"></i> Eliminar
+                            <button type="button" class="pv-btn manage" data-fam-manage>
+                                Gestionar
                             </button>
                         </div>
                     </div>
@@ -523,11 +1553,8 @@ async function cargarTareasFamiliaGestion(children, idRegistro) {
                         <div class="m">${ejecutantes}</div>
                     </div>
                     <div class="task-actions">
-                        <button type="button" class="pv-btn" data-task-edit title="Editar (desde el formulario)">
-                            <i class="fas fa-pen"></i>
-                        </button>
-                        <button type="button" class="pv-btn danger" data-task-delete title="Eliminar tarea">
-                            <i class="fas fa-trash"></i>
+                        <button type="button" class="pv-btn manage" data-task-manage title="Gestionar tarea">
+                            Gestionar
                         </button>
                     </div>
                 </div>
@@ -543,11 +1570,13 @@ async function cargarTareasFamiliaGestion(children, idRegistro) {
     }
 }
 
-async function eliminarTareaGestion(idTarea, idRegistro) {
+async function eliminarTareaGestion(idTarea, idRegistro, opts = {}) {
     const id = Number(idTarea);
     if (!Number.isFinite(id) || id <= 0) return;
-    const ok = confirm(`¿Eliminar la tarea #${id}?`);
-    if (!ok) return;
+    if (!opts?.skipConfirm) {
+        const ok = confirm(`¿Eliminar la tarea #${id}?`);
+        if (!ok) return;
+    }
 
     try {
         const res = await fetch(`/api/tareas/${id}`, { method: "DELETE" });
@@ -575,11 +1604,13 @@ async function eliminarTareaGestion(idTarea, idRegistro) {
     }
 }
 
-async function eliminarRegistroFamiliaGestion(idRegistro, idPostventa) {
+async function eliminarRegistroFamiliaGestion(idRegistro, idPostventa, opts = {}) {
     const id = Number(idRegistro);
     if (!Number.isFinite(id) || id <= 0) return;
-    const confirma = confirm(`¿Eliminar el registro de familia #${id}? Esta acción no se puede deshacer.`);
-    if (!confirma) return;
+    if (!opts?.skipConfirm) {
+        const confirma = confirm(`¿Eliminar el registro de familia #${id}? Esta acción no se puede deshacer.`);
+        if (!confirma) return;
+    }
 
     try {
         const delRes = await fetch(`/api/registros-familia/${id}`, { method: "DELETE" });
@@ -604,16 +1635,20 @@ async function refrescarPostventaEnArbol(idPostventa) {
     const card = document.querySelector(`.pv-card[data-id-postventa='${id}']`);
     const children = card?.querySelector("[data-pv-children]");
     if (!card || !children) return cargarGestionArbol();
+    const proj = card.closest(".proj-card");
+    if (proj) proj.classList.add("open");
     card.classList.add("open");
     children.dataset.loaded = "0";
     await cargarFamiliasPostventaGestion(children, id);
 }
 
-async function eliminarPostventaPorId(idPostventa) {
+async function eliminarPostventaPorId(idPostventa, opts = {}) {
     const id = Number(idPostventa);
     if (!Number.isFinite(id) || id <= 0) return;
-    const confirma = confirm(`¿Eliminar la postventa #${id} completa? Se eliminarán todas sus familias y tareas.`);
-    if (!confirma) return;
+    if (!opts?.skipConfirm) {
+        const confirma = confirm(`¿Eliminar la postventa #${id} completa? Se eliminarán todas sus familias y tareas.`);
+        if (!confirma) return;
+    }
 
     try {
         const res = await fetch(`/api/postventas/${id}`, { method: "DELETE" });
@@ -817,6 +1852,275 @@ async function cargarRegistrosGestionPostventa(idPostventa) {
 
 function alternarPanelGestionRegistros() {
     setModoGestionRegistros(!modoGestionRegistros);
+}
+
+let modoReporteria = false;
+function setModoReporteria(activo) {
+    modoReporteria = Boolean(activo);
+
+    const panelReport = document.getElementById("panel_reporteria");
+    if (panelReport) panelReport.hidden = !modoReporteria;
+
+    // En reportes ocultamos todos los módulos operativos (pero mantenemos header + KPIs)
+    const modulosOperativos = [
+        document.getElementById("modulo_selector_postventa"),
+        document.getElementById("modulo_identificacion_inmueble"),
+        document.getElementById("modulo_datos_postventa"),
+        document.getElementById("modulo_registro_familia"),
+        document.getElementById("modulo_resumen_postventa"),
+        document.getElementById("modulo_calendario_embebido"),
+        document.getElementById("panel_gestion_registros")
+    ];
+    modulosOperativos.forEach(m => { if (m) m.hidden = modoReporteria; });
+
+    if (modoReporteria && modoGestionRegistros) {
+        setModoGestionRegistros(false);
+    }
+
+    const btnPlan = document.getElementById("btn_tab_planificacion");
+    const btnRep = document.getElementById("btn_tab_reporteria");
+    if (btnPlan) {
+        btnPlan.classList.toggle("is-active", !modoReporteria);
+        btnPlan.setAttribute("aria-selected", (!modoReporteria).toString());
+    }
+    if (btnRep) {
+        btnRep.classList.toggle("is-active", modoReporteria);
+        btnRep.setAttribute("aria-selected", (modoReporteria).toString());
+    }
+
+    // Por defecto, reporteria abre "Gestión de registros"
+    if (modoReporteria) {
+        setVistaReporteria("gestion");
+    }
+}
+
+let gestionPanelMount = null;
+function ensureGestionPanelMount() {
+    if (gestionPanelMount) return gestionPanelMount;
+    const panel = document.getElementById("panel_gestion_registros");
+    if (!panel) return null;
+    const placeholder = document.createComment("panel_gestion_registros_mount");
+    const parent = panel.parentNode;
+    if (!parent) return null;
+    parent.insertBefore(placeholder, panel);
+    gestionPanelMount = { panel, parent, placeholder };
+    return gestionPanelMount;
+}
+
+function mountGestionPanelTo(container) {
+    const m = ensureGestionPanelMount();
+    if (!m || !container) return;
+    if (m.panel.parentNode !== container) container.appendChild(m.panel);
+    m.panel.hidden = false;
+
+    // Contexto: dentro de Reportería no dependemos de "postventa seleccionada"
+    m.panel.dataset.contexto = "reporteria";
+    const elEstado = document.getElementById("estado_panel_gestion");
+    if (elEstado) {
+        elEstado.textContent = "Histórico";
+        elEstado.classList.remove("estado-postventa-modulo--sin");
+        elEstado.classList.add("estado-postventa-modulo--ok");
+    }
+}
+
+function restoreGestionPanel() {
+    const m = gestionPanelMount;
+    if (!m) return;
+    if (m.panel.parentNode !== m.parent) {
+        m.parent.insertBefore(m.panel, m.placeholder.nextSibling);
+    }
+    if (m.panel) delete m.panel.dataset.contexto;
+}
+
+function setVistaReporteria(vista) {
+    const v = String(vista || "gestion");
+    const views = {
+        gestion: document.getElementById("rep_view_gestion"),
+        historico: document.getElementById("rep_view_historico"),
+        cierre: document.getElementById("rep_view_cierre"),
+        usuarios: document.getElementById("rep_view_usuarios"),
+        auditoria: document.getElementById("rep_view_auditoria")
+    };
+
+    Object.entries(views).forEach(([k, el]) => {
+        if (!el) return;
+        el.hidden = (k !== v);
+    });
+
+    // Marca tab activa
+    document.querySelectorAll(".panel-reporteria .report-tab").forEach(btn => {
+        const key = btn.getAttribute("data-rep-view") || "";
+        btn.classList.toggle("is-active", key === v);
+    });
+
+    // Gestión de registros dentro de reportes: montamos el panel existente
+    if (v === "gestion") {
+        const host = views.gestion;
+        mountGestionPanelTo(host);
+        inicializarGestionArbol();
+        cargarGestionArbol();
+    } else if (v === "historico") {
+        initHistoricoEmbebido();
+    } else {
+        // Si nos vamos a otra vista, dejamos el panel montado en reportería pero oculto para no romper listeners
+        const panel = document.getElementById("panel_gestion_registros");
+        if (panel) panel.hidden = true;
+    }
+}
+
+// ======================================================
+// Reportería: Histórico embebido (sin salir de registro.html)
+// ======================================================
+
+let historicoEmbebidoInit = false;
+
+function repHistGet(id) {
+    return document.getElementById(id);
+}
+
+function repHistSetOptions(selectId, rows, mapLabel, mapValue) {
+    const select = repHistGet(selectId);
+    if (!select) return;
+    const base = select.options[0] ? select.options[0].outerHTML : '<option value="">Todos</option>';
+    select.innerHTML = base;
+    (Array.isArray(rows) ? rows : []).forEach(row => {
+        const op = document.createElement("option");
+        op.value = mapValue(row);
+        op.textContent = mapLabel(row);
+        select.appendChild(op);
+    });
+}
+
+function repHistFiltros() {
+    return {
+        id_proyecto: repHistGet("rep_hist_filtro_proyecto")?.value || "",
+        cliente: repHistGet("rep_hist_filtro_cliente")?.value.trim() || "",
+        id_familia: repHistGet("rep_hist_filtro_familia")?.value || "",
+        estado_familia: repHistGet("rep_hist_filtro_estado")?.value || ""
+    };
+}
+
+function repHistQuery(paramsObj) {
+    const qs = new URLSearchParams();
+    Object.entries(paramsObj).forEach(([k, v]) => {
+        if (v !== "") qs.append(k, v);
+    });
+    return qs.toString();
+}
+
+function repHistFmtFecha(valor) {
+    if (!valor) return "-";
+    return fmtFechaISO(valor);
+}
+
+function repHistRenderTabla(rows) {
+    const tbody = repHistGet("rep_hist_tbody");
+    const total = repHistGet("rep_hist_total");
+    if (!tbody) return;
+
+    const list = Array.isArray(rows) ? rows : [];
+    if (total) total.textContent = `${list.length} resultados`;
+
+    if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="8">Sin resultados para los filtros seleccionados.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = list.map(r => {
+        return `
+            <tr>
+                <td>#${r.id_postventa}</td>
+                <td>${escapeHtml(r.nombre_proyecto || "-")}</td>
+                <td>${escapeHtml(r.numero_identificador || "-")}</td>
+                <td>${escapeHtml(r.cliente || "-")}</td>
+                <td>${escapeHtml(r.familia || "-")}</td>
+                <td>${escapeHtml(r.subfamilia || "-")}</td>
+                <td>${escapeHtml(r.recinto || "-")}</td>
+                <td>${escapeHtml(r.estado_familia || "-")}</td>
+            </tr>
+        `;
+    }).join("");
+}
+
+async function repHistBuscar() {
+    const filtros = repHistFiltros();
+    const query = repHistQuery(filtros);
+    const url = query ? `/api/historico/registros?${query}` : "/api/historico/registros";
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("No se pudo cargar el histórico");
+    const data = await res.json();
+    repHistRenderTabla(data);
+}
+
+function repHistLimpiar() {
+    [
+        "rep_hist_filtro_proyecto",
+        "rep_hist_filtro_cliente",
+        "rep_hist_filtro_familia",
+        "rep_hist_filtro_estado"
+    ].forEach(id => {
+        const el = repHistGet(id);
+        if (el) el.value = "";
+    });
+}
+
+async function initHistoricoEmbebido() {
+    if (historicoEmbebidoInit) return;
+    historicoEmbebidoInit = true;
+
+    try {
+        const [proyectosRes, familiasRes] = await Promise.all([
+            fetch("/api/proyectos"),
+            fetch("/api/familias")
+        ]);
+        const [proyectos, familias] = await Promise.all([
+            proyectosRes.json(),
+            familiasRes.json()
+        ]);
+
+        repHistSetOptions("rep_hist_filtro_proyecto", proyectos, p => p.nombre_proyecto, p => p.id_proyecto);
+        repHistSetOptions("rep_hist_filtro_familia", familias, f => f.nombre_familia, f => f.id_familia);
+
+        await repHistBuscar();
+    } catch (error) {
+        console.error("Error inicializando histórico embebido:", error);
+        const tbody = repHistGet("rep_hist_tbody");
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8">No se pudieron cargar datos del histórico.</td></tr>';
+    }
+
+    repHistGet("rep_hist_btn_limpiar")?.addEventListener("click", () => {
+        repHistLimpiar();
+        repHistBuscar().catch(() => null);
+    });
+
+    const debounce = (fn, ms = 250) => {
+        let t = null;
+        return (...args) => {
+            clearTimeout(t);
+            t = setTimeout(() => fn(...args), ms);
+        };
+    };
+    const buscarDeb = debounce(() => repHistBuscar().catch(() => null), 250);
+
+    [
+        "rep_hist_filtro_proyecto",
+        "rep_hist_filtro_familia",
+        "rep_hist_filtro_estado"
+    ].forEach(id => {
+        repHistGet(id)?.addEventListener("change", buscarDeb);
+    });
+
+    [
+        "rep_hist_filtro_cliente"
+    ].forEach(id => {
+        repHistGet(id)?.addEventListener("input", buscarDeb);
+        repHistGet(id)?.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                repHistBuscar().catch(() => null);
+            }
+        });
+    });
 }
 
 function setModoGestionRegistros(activo) {
@@ -1426,9 +2730,24 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Tabs superiores: Planificación / Reportería
+    const btnTabPlan = document.getElementById("btn_tab_planificacion");
+    const btnTabRep = document.getElementById("btn_tab_reporteria");
+    if (btnTabPlan) btnTabPlan.addEventListener("click", () => setModoReporteria(false));
+    if (btnTabRep) btnTabRep.addEventListener("click", () => setModoReporteria(true));
+
+    // Tabs internos (Reportería)
+    document.querySelectorAll(".panel-reporteria .report-tab[data-rep-view]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const v = btn.getAttribute("data-rep-view") || "gestion";
+            setVistaReporteria(v);
+        });
+    });
+
     actualizarEstadoPanelGestion("Ninguna");
     setGestionArbolMensaje("Listado de postventas. Selecciona una para ver familias y tareas.");
     setModoGestionRegistros(false);
+    setModoReporteria(false);
 });
 //------------------------------------CARGA DE DATOS------------------//
 async function cargarProyectos() {

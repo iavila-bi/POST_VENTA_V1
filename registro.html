@@ -24,6 +24,18 @@
             <i class="fas fa-chevron-left"></i> Volver al Men&uacute;
         </a>
 
+        <div class="header-actions-right">
+            <div class="header-tabs-top" role="tablist" aria-label="Navegación superior">
+                <button type="button" id="btn_tab_planificacion" class="top-tab is-active" role="tab" aria-selected="true">
+                    Planificación
+                </button>
+                <button type="button" id="btn_tab_reporteria" class="top-tab" role="tab" aria-selected="false">
+                    Reportería
+                </button>
+            </div>
+            <div class="user-profile"></div>
+        </div>
+
         <div class="titulo-central">
             <p class="app-kicker">APP POSTVENTA</p>
             <h1>Apertura de Postventa</h1>
@@ -62,6 +74,106 @@
             <p class="kpi-label"><i class="fas fa-list-check kpi-icon" aria-hidden="true"></i> Promedio tareas por familia</p>
             <p id="kpi_prom_tareas_familia" class="kpi-value">0.0</p>
         </article>
+    </section>
+
+    <section id="panel_reporteria" class="tarjeta-modulo panel-reporteria" hidden>
+        <div class="report-head">
+            <div>
+                <h3 class="titulo-seccion"><i class="fas fa-chart-pie"></i> Panel de reportes</h3>
+                <p class="report-sub">Métricas y accesos rápidos a módulos operativos.</p>
+            </div>
+            <div class="report-tabs">
+                <button type="button" class="report-tab is-active" id="rep_btn_gestion_registros" data-rep-view="gestion">
+                    Gestión de registros
+                </button>
+                <button type="button" class="report-tab" data-rep-view="historico">Histórico</button>
+                <button type="button" class="report-tab" data-rep-view="cierre">Gestión de cierre</button>
+                <button type="button" class="report-tab" data-rep-view="usuarios" data-admin-only>Gestión de usuarios</button>
+                <button type="button" class="report-tab" data-rep-view="auditoria" data-admin-only>Auditoría</button>
+            </div>
+        </div>
+        <div class="report-body">
+            <div id="rep_view_gestion" class="rep-view"></div>
+            <div id="rep_view_historico" class="rep-view" hidden>
+                <section class="rep-hist-grid">
+                    <div class="rep-hist-tabla">
+                        <div class="rep-hist-topline">
+                            <h4 class="rep-hist-title">Histórico de Registros</h4>
+                            <div class="rep-hist-top-actions">
+                                <span id="rep_hist_total" class="rep-hist-total">0 resultados</span>
+                                <button type="button" id="rep_hist_btn_limpiar" class="pv-btn">Limpiar</button>
+                            </div>
+                        </div>
+                        <div class="rep-hist-filtrosbar">
+                            <div class="rep-hist-field">
+                                <label>Proyecto</label>
+                                <select id="rep_hist_filtro_proyecto">
+                                    <option value="">Todos</option>
+                                </select>
+                            </div>
+                            <div class="rep-hist-field">
+                                <label>Cliente</label>
+                                <input id="rep_hist_filtro_cliente" type="text" placeholder="Buscar por cliente...">
+                            </div>
+                            <div class="rep-hist-field">
+                                <label>Familia</label>
+                                <select id="rep_hist_filtro_familia">
+                                    <option value="">Todas</option>
+                                </select>
+                            </div>
+                            <div class="rep-hist-field">
+                                <label>Estado familia</label>
+                                <select id="rep_hist_filtro_estado">
+                                    <option value="">Todos</option>
+                                    <option value="Pendiente">Pendiente</option>
+                                    <option value="Finalizado">Finalizado</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="tabla-responsive">
+                            <table class="rep-hist-table">
+                                <thead>
+                                    <tr>
+                                        <th>Postventa</th>
+                                        <th>Proyecto</th>
+                                        <th>Identificador</th>
+                                        <th>Cliente</th>
+                                        <th>Familia</th>
+                                        <th>Subfamilia</th>
+                                        <th>Recinto</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rep_hist_tbody">
+                                    <tr><td colspan="8">Cargando registros...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            <div id="rep_view_cierre" class="rep-view" hidden>
+                <div class="report-placeholder">
+                    <h4>Gestión de cierre</h4>
+                    <p>Este módulo se gestiona en la página de Cierre de actas.</p>
+                    <a class="report-link" href="cierre_actas.html">Abrir Gestión de cierre</a>
+                </div>
+            </div>
+            <div id="rep_view_usuarios" class="rep-view" hidden data-admin-only>
+                <div class="report-placeholder">
+                    <h4>Gestión de usuarios</h4>
+                    <p>Acceso exclusivo para administradores.</p>
+                    <a class="report-link" href="usuarios.html">Abrir Gestión de usuarios</a>
+                </div>
+            </div>
+            <div id="rep_view_auditoria" class="rep-view" hidden data-admin-only>
+                <div class="report-placeholder">
+                    <h4>Auditoría</h4>
+                    <p>Acceso exclusivo para administradores.</p>
+                    <a class="report-link" href="auditoria.html">Abrir Auditoría</a>
+                </div>
+            </div>
+        </div>
     </section>
 
     <section id="modulo_selector_postventa" class="selector-postventa-card">
@@ -401,6 +513,27 @@
 
 <script src="auth_ui.js"></script>
 <script src="logica_registro.js"></script>
+
+<!-- Modal de gestión (Proyecto -> Postventa -> Familia -> Tareas) -->
+<div id="gestion_modal_backdrop" class="pv-modal-backdrop" hidden>
+    <div class="pv-modal" role="dialog" aria-modal="true" aria-labelledby="gestion_modal_title">
+        <div class="pv-modal-head">
+            <div>
+                <h3 id="gestion_modal_title" class="pv-modal-title">Gestión</h3>
+                <p id="gestion_modal_subtitle" class="pv-modal-subtitle">-</p>
+            </div>
+            <button type="button" id="gestion_modal_close" class="pv-modal-close" aria-label="Cerrar">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+
+        <div id="gestion_modal_body" class="pv-modal-body"></div>
+
+        <div class="pv-modal-foot">
+            <button type="button" id="gestion_modal_cancel" class="btn-secundario">Cerrar</button>
+        </div>
+    </div>
+</div>
 
 <div id="toast_familia" class="toast-exito-verde">
     <i class="fas fa-check-circle"></i>
