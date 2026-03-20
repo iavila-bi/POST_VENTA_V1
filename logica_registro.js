@@ -1855,7 +1855,7 @@ function alternarPanelGestionRegistros() {
 }
 
 let modoReporteria = false;
-function setModoReporteria(activo) {
+function setModoReporteria(activo, vistaInicial = null) {
     modoReporteria = Boolean(activo);
 
     const panelReport = document.getElementById("panel_reporteria");
@@ -1868,8 +1868,7 @@ function setModoReporteria(activo) {
         document.getElementById("modulo_datos_postventa"),
         document.getElementById("modulo_registro_familia"),
         document.getElementById("modulo_resumen_postventa"),
-        document.getElementById("modulo_calendario_embebido"),
-        document.getElementById("panel_gestion_registros")
+        document.getElementById("modulo_calendario_embebido")
     ];
     modulosOperativos.forEach(m => { if (m) m.hidden = modoReporteria; });
 
@@ -1890,7 +1889,12 @@ function setModoReporteria(activo) {
 
     // Por defecto, reporteria abre "Gestión de registros"
     if (modoReporteria) {
-        setVistaReporteria("gestion");
+        setVistaReporteria(vistaInicial || "gestion");
+    } else {
+        // En planificación, este panel no debe mostrarse nunca.
+        restoreGestionPanel();
+        const panelGestion = document.getElementById("panel_gestion_registros");
+        if (panelGestion) panelGestion.hidden = true;
     }
 }
 
@@ -1961,6 +1965,9 @@ function setVistaReporteria(vista) {
         cargarGestionArbol();
     } else if (v === "historico") {
         initHistoricoEmbebido();
+    } else if (v === "cierre") {
+        initCierreEmbebido();
+        repCierreBuscar().catch(() => null);
     } else {
         // Si nos vamos a otra vista, dejamos el panel montado en reportería pero oculto para no romper listeners
         const panel = document.getElementById("panel_gestion_registros");
@@ -2123,6 +2130,201 @@ async function initHistoricoEmbebido() {
     });
 }
 
+// ======================================================
+// Reportería: Cierre de actas embebido (sin salir de registro.html)
+// ======================================================
+
+let cierreEmbebidoInit = false;
+let cierreEmbebidoDebounce = null;
+
+function repCierreGet(id) {
+    return document.getElementById(id);
+}
+
+function repCierreFmtFecha(valor) {
+    if (!valor) return "-";
+    return fmtFechaISO(valor);
+}
+
+function repCierreFiltros() {
+    return {
+        id_proyecto: repCierreGet("rep_cierre_filtro_proyecto")?.value || "",
+        q: repCierreGet("rep_cierre_filtro_busqueda")?.value.trim() || ""
+    };
+}
+
+function repCierreQuery(paramsObj) {
+    const qs = new URLSearchParams();
+    Object.entries(paramsObj).forEach(([k, v]) => {
+        if (v !== "") qs.append(k, v);
+    });
+    return qs.toString();
+}
+
+function repCierreRenderTabla(rows) {
+    const tbody = repCierreGet("rep_cierre_tbody");
+    const total = repCierreGet("rep_cierre_total");
+    if (!tbody) return;
+
+    const list = Array.isArray(rows) ? rows : [];
+    if (total) total.textContent = `${list.length} pendiente${list.length === 1 ? "" : "s"}`;
+
+    if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="10">No hay familias pendientes de fecha firma de acta.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = list.map(r => {
+        const idRegistro = Number(r.id_registro || 0);
+        return `
+            <tr>
+                <td>${escapeHtml(r.nombre_proyecto || "-")}</td>
+                <td>${escapeHtml(r.numero_identificador || "-")}</td>
+                <td>#${escapeHtml(r.id_postventa ?? "-")}</td>
+                <td>${escapeHtml(r.cliente || "-")}</td>
+                <td>${escapeHtml(r.familia || "-")}</td>
+                <td>${escapeHtml(r.subfamilia || "-")}</td>
+                <td>${escapeHtml(r.recinto || "-")}</td>
+                <td>${escapeHtml(r.responsable || "-")}</td>
+                <td>${repCierreFmtFecha(r.fecha_levantamiento)}</td>
+                <td>
+                    <div class="rep-cierre-accion">
+                        <input type="date" class="rep-cierre-input-firma" id="rep_cierre_firma_${idRegistro}">
+                        <button type="button" class="pv-btn" data-cierre-action="hoy" data-id="${idRegistro}">Hoy</button>
+                        <button type="button" class="pv-btn manage" data-cierre-action="guardar" data-id="${idRegistro}">Guardar cierre</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join("");
+}
+
+async function repCierreCargarProyectos() {
+    const select = repCierreGet("rep_cierre_filtro_proyecto");
+    if (!select) return;
+
+    const res = await fetch("/api/proyectos");
+    if (!res.ok) throw new Error("No se pudieron cargar proyectos");
+    const data = await res.json();
+
+    select.innerHTML = '<option value="">Todos los proyectos</option>';
+    (Array.isArray(data) ? data : []).forEach(p => {
+        select.innerHTML += `<option value="${p.id_proyecto}">${escapeHtml(p.nombre_proyecto || "-")}</option>`;
+    });
+}
+
+async function repCierreBuscar() {
+    const tbody = repCierreGet("rep_cierre_tbody");
+    if (!tbody) return;
+
+    const filtros = repCierreFiltros();
+    const query = repCierreQuery(filtros);
+    const url = query ? `/api/cierre-actas/pendientes?${query}` : "/api/cierre-actas/pendientes";
+
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("No se pudo cargar gestión de cierre");
+        const data = await res.json();
+        repCierreRenderTabla(data);
+    } catch (error) {
+        console.error("Error cargando pendientes de cierre:", error);
+        const total = repCierreGet("rep_cierre_total");
+        if (total) total.textContent = "0 pendientes";
+        tbody.innerHTML = '<tr><td colspan="10">No se pudieron cargar pendientes de cierre.</td></tr>';
+    }
+}
+
+function repCierreLimpiar() {
+    const proyecto = repCierreGet("rep_cierre_filtro_proyecto");
+    const busqueda = repCierreGet("rep_cierre_filtro_busqueda");
+    if (proyecto) proyecto.value = "";
+    if (busqueda) busqueda.value = "";
+}
+
+function repCierreSetHoy(idRegistro) {
+    const input = repCierreGet(`rep_cierre_firma_${Number(idRegistro)}`);
+    if (input) input.value = new Date().toISOString().split("T")[0];
+}
+
+async function repCierreGuardarFirma(idRegistro) {
+    const id = Number(idRegistro);
+    const input = repCierreGet(`rep_cierre_firma_${id}`);
+    const fecha = input?.value || "";
+
+    if (!fecha) {
+        alert("Debes seleccionar la fecha firma de acta.");
+        return;
+    }
+
+    const btnGuardar = document.querySelector(`[data-cierre-action="guardar"][data-id="${id}"]`);
+    if (btnGuardar) btnGuardar.disabled = true;
+
+    try {
+        const res = await fetch(`/api/cierre-actas/${id}/firma-acta`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fecha_firma_acta: fecha })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "No se pudo guardar el cierre.");
+
+        mostrarToast("toast_familia", "Cierre de acta guardado correctamente", { ms: 2200 });
+        await repCierreBuscar();
+        await cargarIndicadoresPostventa();
+    } catch (error) {
+        console.error("Error guardando firma de acta:", error);
+        alert(error.message || "No se pudo guardar la firma de acta.");
+    } finally {
+        if (btnGuardar) btnGuardar.disabled = false;
+    }
+}
+
+async function initCierreEmbebido() {
+    if (cierreEmbebidoInit) return;
+
+    const view = repCierreGet("rep_view_cierre");
+    const tbody = repCierreGet("rep_cierre_tbody");
+    if (!view || !tbody) return;
+
+    cierreEmbebidoInit = true;
+
+    try {
+        await repCierreCargarProyectos();
+    } catch (error) {
+        console.error("Error inicializando cierre embebido:", error);
+        tbody.innerHTML = '<tr><td colspan="10">No se pudieron cargar pendientes de cierre.</td></tr>';
+    }
+
+    repCierreGet("rep_cierre_btn_limpiar")?.addEventListener("click", () => {
+        repCierreLimpiar();
+        repCierreBuscar().catch(() => null);
+    });
+
+    repCierreGet("rep_cierre_filtro_proyecto")?.addEventListener("change", () => {
+        repCierreBuscar().catch(() => null);
+    });
+
+    repCierreGet("rep_cierre_filtro_busqueda")?.addEventListener("input", () => {
+        clearTimeout(cierreEmbebidoDebounce);
+        cierreEmbebidoDebounce = setTimeout(() => {
+            repCierreBuscar().catch(() => null);
+        }, 280);
+    });
+
+    view.addEventListener("click", async (e) => {
+        const btnHoy = e.target.closest('[data-cierre-action="hoy"]');
+        if (btnHoy) {
+            repCierreSetHoy(btnHoy.dataset.id);
+            return;
+        }
+
+        const btnGuardar = e.target.closest('[data-cierre-action="guardar"]');
+        if (btnGuardar) {
+            await repCierreGuardarFirma(btnGuardar.dataset.id);
+        }
+    });
+}
+
 function setModoGestionRegistros(activo) {
     modoGestionRegistros = Boolean(activo);
 
@@ -2158,6 +2360,22 @@ function setModoGestionRegistros(activo) {
         cargarGestionArbol();
         panel.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+}
+
+function aplicarVistaInicialRegistro() {
+    const params = new URLSearchParams(window.location.search);
+    const modo = String(params.get("modo") || "").toLowerCase();
+    const vista = String(params.get("vista") || "").toLowerCase();
+
+    if (modo === "reporteria") {
+        const vistaInicial = ["gestion", "historico", "cierre", "usuarios", "auditoria"].includes(vista)
+            ? vista
+            : null;
+        setModoReporteria(true, vistaInicial);
+        return;
+    }
+
+    setModoReporteria(false);
 }
 
 async function eliminarPostventaActiva() {
@@ -2689,16 +2907,6 @@ document.addEventListener("DOMContentLoaded", () => {
         selectPostventa.addEventListener("change", seleccionarPostventaExistente);
     }
 
-    const btnGestion = document.getElementById("btn_gestion_registros");
-    if (btnGestion) btnGestion.addEventListener("click", alternarPanelGestionRegistros);
-
-    const btnIrHistorico = document.getElementById("btn_ir_historico");
-    if (btnIrHistorico) {
-        btnIrHistorico.addEventListener("click", () => {
-            window.location.href = "historico.html";
-        });
-    }
-
     const btnIrCalendario = document.getElementById("btn_ir_calendario");
     if (btnIrCalendario) {
         btnIrCalendario.addEventListener("click", () => {
@@ -2747,7 +2955,7 @@ document.addEventListener("DOMContentLoaded", () => {
     actualizarEstadoPanelGestion("Ninguna");
     setGestionArbolMensaje("Listado de postventas. Selecciona una para ver familias y tareas.");
     setModoGestionRegistros(false);
-    setModoReporteria(false);
+    aplicarVistaInicialRegistro();
 });
 //------------------------------------CARGA DE DATOS------------------//
 async function cargarProyectos() {

@@ -160,6 +160,9 @@
             host.style.boxShadow = "none";
             const menu = buildMenu({ user });
             menu.classList.remove("auth-menu--fixed");
+            // Dentro del header no debe heredar desplazamientos de la versión fija.
+            menu.style.right = "";
+            menu.style.top = "";
             host.appendChild(menu);
             wireMenu(menu);
             return;

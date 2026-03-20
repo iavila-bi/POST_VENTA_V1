@@ -2906,7 +2906,7 @@ body.bg-dashboard .header-postventa {
 body.bg-dashboard .header-actions-right {
     position: absolute;
     top: 16px;
-    right: 76px; /* deja espacio para el theme toggle fijo (right:16px) */
+    right: 16px;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -2988,6 +2988,11 @@ body.bg-dashboard .panel-reporteria {
 
 /* Respeta el atributo hidden (evita que el panel aparezca en Planificación) */
 body.bg-dashboard .panel-reporteria[hidden] {
+    display: none !important;
+}
+
+/* Refuerzo: gestión de registros no debe mostrarse si está hidden */
+body.bg-dashboard #panel_gestion_registros[hidden] {
     display: none !important;
 }
 
@@ -3290,6 +3295,159 @@ body.bg-dashboard.dark-mode .panel-reporteria .report-link {
     border-color: rgba(147, 197, 253, 0.22);
     background: rgba(37, 99, 235, 0.12);
     color: #e5e7eb;
+}
+
+/* ======================================================
+   Reportería: Cierre de actas embebido (registro.html)
+   ====================================================== */
+
+body.bg-dashboard .rep-cierre-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    align-items: start;
+}
+
+body.bg-dashboard .rep-cierre-tabla {
+    border-radius: 18px;
+    border: 1px solid rgba(198, 210, 228, 0.85);
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: var(--pv-shadow-sm);
+    padding: 14px;
+}
+
+body.bg-dashboard.dark-mode .rep-cierre-tabla {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+body.bg-dashboard .rep-cierre-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+body.bg-dashboard .rep-cierre-title {
+    margin: 0;
+    font-size: var(--fs-md);
+    font-weight: 950;
+    color: var(--pv-heading);
+    letter-spacing: -0.02em;
+}
+
+body.bg-dashboard .rep-cierre-top-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+body.bg-dashboard .rep-cierre-total {
+    margin-left: auto;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(198, 210, 228, 0.85);
+    background: rgba(255, 255, 255, 0.70);
+    font-weight: 900;
+    font-size: var(--fs-sm);
+    color: var(--pv-heading);
+}
+
+body.bg-dashboard.dark-mode .rep-cierre-total {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: #e5e7eb;
+}
+
+body.bg-dashboard .rep-cierre-filtrosbar {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 10px 12px;
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(198, 210, 228, 0.75);
+    background: rgba(248, 250, 252, 0.70);
+    margin-bottom: 12px;
+}
+
+body.bg-dashboard.dark-mode .rep-cierre-filtrosbar {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+@media (max-width: 900px) {
+    body.bg-dashboard .rep-cierre-filtrosbar {
+        grid-template-columns: 1fr;
+    }
+}
+
+body.bg-dashboard .rep-cierre-filtrosbar .rep-cierre-field {
+    display: grid;
+    gap: 6px;
+}
+
+body.bg-dashboard .rep-cierre-filtrosbar .rep-cierre-field label {
+    font-size: var(--fs-xs);
+    font-weight: 850;
+    color: var(--pv-muted2);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+body.bg-dashboard .rep-cierre-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+}
+
+body.bg-dashboard .rep-cierre-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: rgba(248, 250, 252, 0.92);
+    border-bottom: 1px solid rgba(216, 225, 238, 0.75);
+    color: var(--pv-muted2);
+    font-size: var(--fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 10px 10px;
+    white-space: nowrap;
+}
+
+body.bg-dashboard.dark-mode .rep-cierre-table thead th {
+    background: rgba(2, 6, 23, 0.55);
+    border-bottom-color: rgba(255, 255, 255, 0.10);
+    color: #aebbd0;
+}
+
+body.bg-dashboard .rep-cierre-table tbody td {
+    padding: 10px 10px;
+    border-bottom: 1px solid rgba(216, 225, 238, 0.55);
+    color: var(--pv-heading);
+    font-size: var(--fs-sm);
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+body.bg-dashboard.dark-mode .rep-cierre-table tbody td {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+    color: #e5e7eb;
+}
+
+body.bg-dashboard .rep-cierre-accion {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+body.bg-dashboard .rep-cierre-input-firma {
+    min-width: 148px;
+    height: 38px;
+    padding: 0 10px;
 }
 
 body.bg-dashboard .titulo-central {
@@ -4882,4 +5040,65 @@ body.bg-dashboard .task-item .t {
 body.bg-dashboard .task-item .m {
     font-size: var(--fs-xs);
     color: var(--pv-muted2);
+}
+
+/* ======================================================
+   Header superior: usuario + tabs plan/report (ajuste UX)
+   ====================================================== */
+
+body.bg-dashboard .header-actions-right {
+    top: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+body.bg-dashboard .header-actions-right .user-profile {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+}
+
+body.bg-dashboard .header-actions-right .header-tabs-top {
+    padding: 5px;
+}
+
+body.bg-dashboard .top-tab {
+    padding: 12px 20px;
+    font-size: var(--fs-md);
+    font-weight: 800;
+}
+
+@media (max-width: 1100px) {
+    body.bg-dashboard .header-actions-right {
+        position: static;
+        margin-top: 14px;
+        align-items: flex-start;
+        right: auto;
+        top: auto;
+    }
+
+    body.bg-dashboard .header-actions-right .user-profile {
+        justify-content: flex-start;
+    }
+}
+
+/* Unificar posición del toggle con el menú de inicio (lado izquierdo) */
+body.bg-dashboard .theme-toggle {
+    left: 16px !important;
+    right: auto !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+}
+
+body.bg-dashboard .theme-toggle:hover {
+    transform: translateY(-50%) scale(1.04) !important;
+}
+
+body.bg-dashboard.dark-mode .theme-toggle {
+    left: 16px !important;
+    right: auto !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
 }

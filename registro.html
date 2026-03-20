@@ -25,6 +25,7 @@
         </a>
 
         <div class="header-actions-right">
+            <div class="user-profile"></div>
             <div class="header-tabs-top" role="tablist" aria-label="Navegación superior">
                 <button type="button" id="btn_tab_planificacion" class="top-tab is-active" role="tab" aria-selected="true">
                     Planificación
@@ -33,7 +34,6 @@
                     Reportería
                 </button>
             </div>
-            <div class="user-profile"></div>
         </div>
 
         <div class="titulo-central">
@@ -48,12 +48,6 @@
             <span id="chip_inmueble" class="paso-chip"><i class="fas fa-building"></i> Inmueble</span>
             <span id="chip_postventa" class="paso-chip"><i class="fas fa-id-card"></i> Postventa</span>
             <span id="chip_familias" class="paso-chip"><i class="fas fa-tools"></i> Familias</span>
-            <button type="button" id="btn_gestion_registros" class="paso-chip paso-chip-btn">
-                <i class="fas fa-clipboard-list"></i> Gestión de registros
-            </button>
-            <button type="button" id="btn_ir_historico" class="paso-chip paso-chip-btn">
-                <i class="fas fa-history"></i> Histórico
-            </button>
         </div>
     </header>
 
@@ -153,11 +147,50 @@
                 </section>
             </div>
             <div id="rep_view_cierre" class="rep-view" hidden>
-                <div class="report-placeholder">
-                    <h4>Gestión de cierre</h4>
-                    <p>Este módulo se gestiona en la página de Cierre de actas.</p>
-                    <a class="report-link" href="cierre_actas.html">Abrir Gestión de cierre</a>
-                </div>
+                <section class="rep-cierre-grid">
+                    <div class="rep-cierre-tabla">
+                        <div class="rep-cierre-topline">
+                            <h4 class="rep-cierre-title">Gestión de cierre de actas</h4>
+                            <div class="rep-cierre-top-actions">
+                                <span id="rep_cierre_total" class="rep-cierre-total">0 pendientes</span>
+                                <button type="button" id="rep_cierre_btn_limpiar" class="pv-btn">Limpiar</button>
+                            </div>
+                        </div>
+                        <div class="rep-cierre-filtrosbar">
+                            <div class="rep-cierre-field">
+                                <label>Proyecto</label>
+                                <select id="rep_cierre_filtro_proyecto">
+                                    <option value="">Todos los proyectos</option>
+                                </select>
+                            </div>
+                            <div class="rep-cierre-field">
+                                <label>Buscador</label>
+                                <input id="rep_cierre_filtro_busqueda" type="text" placeholder="Cliente, familia, subfamilia, recinto o responsable...">
+                            </div>
+                        </div>
+                        <div class="tabla-responsive">
+                            <table class="rep-cierre-table">
+                                <thead>
+                                    <tr>
+                                        <th>Proyecto</th>
+                                        <th>Identificador</th>
+                                        <th>Postventa</th>
+                                        <th>Cliente</th>
+                                        <th>Familia</th>
+                                        <th>Subfamilia</th>
+                                        <th>Recinto</th>
+                                        <th>Responsable</th>
+                                        <th>Levantamiento</th>
+                                        <th>Firma de acta</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rep_cierre_tbody">
+                                    <tr><td colspan="10">Cargando familias pendientes...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
             </div>
             <div id="rep_view_usuarios" class="rep-view" hidden data-admin-only>
                 <div class="report-placeholder">
