@@ -5102,3 +5102,202 @@ body.bg-dashboard.dark-mode .theme-toggle {
     top: 50% !important;
     transform: translateY(-50%) !important;
 }
+
+/* ======================================================
+   Responsive final hardening (PC / Tablet / Mobile)
+   ====================================================== */
+
+html,
+body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+body.bg-dashboard .contenedor-registro {
+    width: min(1320px, calc(100% - 24px)) !important;
+    margin: 0 auto 20px !important;
+}
+
+/* Tablet / small desktop */
+@media (max-width: 1200px) {
+    body.bg-dashboard .contenedor-registro {
+        width: calc(100% - 18px) !important;
+    }
+
+    body.bg-dashboard .header-postventa {
+        padding: 16px !important;
+    }
+
+    body.bg-dashboard .header-actions-right {
+        position: static !important;
+        margin-top: 10px !important;
+        align-items: flex-start !important;
+        right: auto !important;
+        top: auto !important;
+        gap: 10px !important;
+    }
+
+    body.bg-dashboard .header-actions-right .user-profile {
+        width: auto !important;
+        justify-content: flex-start !important;
+    }
+
+    body.bg-dashboard .header-actions-right .header-tabs-top {
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    body.bg-dashboard .top-tab {
+        padding: 11px 16px !important;
+        font-size: var(--fs-sm) !important;
+        flex: 0 0 auto;
+    }
+
+    body.bg-dashboard .selector-postventa-head {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+
+    body.bg-dashboard .selector-postventa-estado {
+        width: 100% !important;
+        max-width: none !important;
+        justify-self: stretch !important;
+    }
+
+    body.bg-dashboard .indicadores-kpi {
+        grid-template-columns: repeat(2, minmax(180px, 1fr)) !important;
+    }
+
+    body.bg-dashboard #modulo_identificacion_inmueble .grid-campos-doble,
+    body.bg-dashboard #modulo_datos_postventa .grid-campos-doble,
+    body.bg-dashboard #modulo_registro_familia .grid-campos-doble,
+    body.bg-dashboard .grid-campos-doble {
+        grid-template-columns: repeat(2, minmax(180px, 1fr)) !important;
+    }
+
+    body.bg-dashboard .field-full {
+        grid-column: 1 / -1 !important;
+    }
+
+    body.bg-dashboard .fila-firma-etiqueta {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    body.bg-dashboard .contenedor-registro {
+        width: calc(100% - 10px) !important;
+    }
+
+    body.bg-dashboard .header-postventa {
+        padding: 14px !important;
+        border-radius: 16px !important;
+    }
+
+    body.bg-dashboard .btn-volver-top {
+        position: static !important;
+        display: inline-flex !important;
+        margin-bottom: 10px;
+        left: auto !important;
+        top: auto !important;
+    }
+
+    body.bg-dashboard .titulo-central {
+        padding-top: 0 !important;
+    }
+
+    body.bg-dashboard .titulo-central h1 {
+        font-size: clamp(1.7rem, 7vw, 2.2rem) !important;
+    }
+
+    body.bg-dashboard .hero-subtitulo {
+        font-size: var(--fs-sm) !important;
+        line-height: 1.45 !important;
+    }
+
+    body.bg-dashboard .flujo-pasos {
+        gap: 8px !important;
+    }
+
+    body.bg-dashboard .paso-chip,
+    body.bg-dashboard .paso-chip-btn {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    body.bg-dashboard .indicadores-kpi {
+        grid-template-columns: 1fr !important;
+    }
+
+    body.bg-dashboard .kpi-card {
+        min-height: auto !important;
+    }
+
+    body.bg-dashboard #modulo_identificacion_inmueble .grid-campos-doble,
+    body.bg-dashboard #modulo_datos_postventa .grid-campos-doble,
+    body.bg-dashboard #modulo_registro_familia .grid-campos-doble,
+    body.bg-dashboard .grid-campos-doble,
+    body.bg-dashboard .grid-primarios-familia {
+        grid-template-columns: 1fr !important;
+    }
+
+    body.bg-dashboard .rep-hist-filtrosbar,
+    body.bg-dashboard .rep-cierre-filtrosbar {
+        grid-template-columns: 1fr !important;
+    }
+
+    body.bg-dashboard .rep-cierre-accion {
+        display: grid !important;
+        grid-template-columns: 1fr;
+        width: 100%;
+    }
+
+    body.bg-dashboard .rep-cierre-input-firma {
+        width: 100%;
+        min-width: 0 !important;
+    }
+
+    body.bg-dashboard .tabla-responsive {
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    body.bg-dashboard .tabla-registros,
+    body.bg-dashboard #tabla_ejecutantes_plan.tabla-planificacion-final,
+    body.bg-dashboard .rep-hist-table,
+    body.bg-dashboard .rep-cierre-table {
+        min-width: 880px;
+    }
+
+    body.bg-dashboard .pv-modal {
+        width: calc(100vw - 16px) !important;
+        max-height: calc(100vh - 24px) !important;
+        border-radius: 14px !important;
+    }
+
+    body.bg-dashboard .pv-modal-body {
+        padding: 12px !important;
+    }
+
+    body.bg-dashboard .pv-modal-foot {
+        padding: 10px 12px !important;
+    }
+
+    /* Evita que el toggle tape contenidos en móvil */
+    body.bg-dashboard .theme-toggle,
+    body.bg-dashboard.dark-mode .theme-toggle {
+        left: 12px !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: 14px !important;
+        transform: none !important;
+    }
+
+    body.bg-dashboard .theme-toggle:hover {
+        transform: scale(1.04) !important;
+    }
+}
