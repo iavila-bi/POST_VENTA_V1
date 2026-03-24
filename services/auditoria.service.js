@@ -11,12 +11,15 @@ const pool = require("../db");
  * @param {number|null} [params.id_registro] - ID del registro afectado (ej: id_usuario creado/eliminado)
  * @param {string} [params.descripcion] - Texto descriptivo
  */
-async function registrarAuditoria({ id_usuario, accion, tabla, id_registro = null, descripcion = "" }) {
+async function registrarAuditoria(
+    { id_usuario, accion, tabla, id_registro = null, descripcion = "" },
+    executor = pool
+) {
     if (!id_usuario || !accion || !tabla) {
         throw new Error("registrarAuditoria: faltan campos obligatorios (id_usuario, accion, tabla)");
     }
 
-    await pool.query(
+    await executor.query(
         `INSERT INTO auditoria (id_usuario, accion, tabla_afectada, id_registro, descripcion, fecha_accion)
          VALUES ($1, $2, $3, $4, $5, NOW())`,
         [id_usuario, accion, tabla, id_registro, descripcion]
@@ -26,4 +29,3 @@ async function registrarAuditoria({ id_usuario, accion, tabla, id_registro = nul
 module.exports = {
     registrarAuditoria
 };
-

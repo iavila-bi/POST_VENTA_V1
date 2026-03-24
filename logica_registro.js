@@ -1374,6 +1374,16 @@ function wireModalEditarRegistro(ctx) {
             const data = await res.json().catch(() => null);
             if (!res.ok) throw new Error(data?.error || "No se pudo actualizar el registro.");
 
+            // Sincroniza cache local del historico para evitar bloqueos falsos sin recargar.
+            if (repHistRowsMap.has(idRegistro)) {
+                const actual = repHistRowsMap.get(idRegistro) || {};
+                repHistRowsMap.set(idRegistro, {
+                    ...actual,
+                    id_postventa: idPostventa,
+                    fecha_firma_acta: fActa || null
+                });
+            }
+
             cerrarModalGestion();
             await refrescarPostventaEnArbol(idPostventa);
             cargarIndicadoresPostventa();
@@ -1472,7 +1482,7 @@ async function cargarFamiliasPostventaGestion(children, idPostventa) {
             const recinto = rf.recinto || "-";
             const responsable = rf.responsable || "-";
             const lev = fmtFechaISO(rf.fecha_levantamiento);
-            const estado = rf.estado_tarea || "Pendiente";
+            const estado = normalizarEstadoTarea(rf.estado_tarea, "Pendiente");
 
             return `
                 <div class="fam-item"
@@ -1487,7 +1497,7 @@ async function cargarFamiliasPostventaGestion(children, idPostventa) {
                             </button>
                             <div>
                                 <div class="t">${fam} · ${sub} · ${recinto}</div>
-                                <div class="s">Registro #${idRegistro} · ${responsable} · ${lev} · ${estado}</div>
+                                <div class="s">Registro #${idRegistro} · ${responsable} · ${lev} · ${renderEstadoBadge(estado)}</div>
                             </div>
                         </div>
                         <div class="pv-actions">
@@ -1957,6 +1967,11 @@ function setVistaReporteria(vista) {
         btn.classList.toggle("is-active", key === v);
     });
 
+    const panelGestion = document.getElementById("panel_gestion_registros");
+    if (v !== "gestion" && panelGestion) {
+        panelGestion.hidden = true;
+    }
+
     // Gestión de registros dentro de reportes: montamos el panel existente
     if (v === "gestion") {
         const host = views.gestion;
@@ -1968,10 +1983,105 @@ function setVistaReporteria(vista) {
     } else if (v === "cierre") {
         initCierreEmbebido();
         repCierreBuscar().catch(() => null);
+    } else if (v === "auditoria") {
+        initAuditoriaEmbebida();
+        repAudBuscar().catch(() => null);
     } else {
         // Si nos vamos a otra vista, dejamos el panel montado en reportería pero oculto para no romper listeners
-        const panel = document.getElementById("panel_gestion_registros");
-        if (panel) panel.hidden = true;
+        if (panelGestion) panelGestion.hidden = true;
+    }
+}
+
+// ======================================================
+// Reportería: Auditoría embebida (sin salir de registro.html)
+// ======================================================
+
+let auditoriaEmbebidaInit = false;
+
+function repAudGet(id) {
+    return document.getElementById(id);
+}
+
+function repAudTokenHeaders(extra = {}) {
+    const token = localStorage.getItem("token") || "";
+    return token
+        ? { ...extra, Authorization: `Bearer ${token}` }
+        : { ...extra };
+}
+
+function repAudSetMsg(texto = "", error = false) {
+    const el = repAudGet("rep_aud_msg");
+    if (!el) return;
+    el.textContent = texto;
+    el.classList.toggle("error", Boolean(error));
+}
+
+function repAudFmtFecha(valor) {
+    if (!valor) return "-";
+    const d = new Date(valor);
+    if (Number.isNaN(d.getTime())) return String(valor);
+    return d.toLocaleString("es-CL");
+}
+
+function repAudFila(a) {
+    const safe = (v) => (v === null || v === undefined ? "-" : escapeHtml(String(v)));
+    return `
+        <tr>
+            <td><strong>${safe(a.username)}</strong></td>
+            <td><span class="estado-familia-badge estado-familia-badge--proceso">${safe(a.rol)}</span></td>
+            <td>${safe(a.accion)}</td>
+            <td>${safe(a.tabla_afectada)}</td>
+            <td class="rep-aud-desc">${safe(a.descripcion)}</td>
+            <td>${repAudFmtFecha(a.fecha)}</td>
+        </tr>
+    `;
+}
+
+async function repAudBuscar() {
+    const tbody = repAudGet("rep_aud_tbody");
+    const total = repAudGet("rep_aud_total");
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="6">Cargando eventos...</td></tr>';
+    repAudSetMsg("Cargando...");
+
+    const res = await fetch("/api/auditoria", {
+        headers: repAudTokenHeaders()
+    });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+        const msg = data?.error || `No se pudo cargar auditoría (HTTP ${res.status})`;
+        tbody.innerHTML = `<tr><td colspan="6">${escapeHtml(msg)}</td></tr>`;
+        if (total) total.textContent = "0 eventos";
+        repAudSetMsg(msg, true);
+        return;
+    }
+
+    const list = Array.isArray(data) ? data : [];
+    if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="6">Sin eventos de auditoría.</td></tr>';
+        if (total) total.textContent = "0 eventos";
+        repAudSetMsg("Sin eventos para mostrar.");
+        return;
+    }
+
+    tbody.innerHTML = list.map(repAudFila).join("");
+    if (total) total.textContent = `${list.length} eventos`;
+    repAudSetMsg(`${list.length} eventos cargados.`);
+}
+
+function initAuditoriaEmbebida() {
+    if (auditoriaEmbebidaInit) return;
+    auditoriaEmbebidaInit = true;
+
+    const btnRefrescar = repAudGet("rep_aud_btn_refrescar");
+    if (btnRefrescar) {
+        btnRefrescar.addEventListener("click", () => {
+            repAudBuscar().catch((error) => {
+                console.error("Error refrescando auditoría:", error);
+            });
+        });
     }
 }
 
@@ -1980,6 +2090,9 @@ function setVistaReporteria(vista) {
 // ======================================================
 
 let historicoEmbebidoInit = false;
+let repHistEstadoModalInit = false;
+let repHistEstadoModalState = null;
+let repHistRowsMap = new Map();
 
 function repHistGet(id) {
     return document.getElementById(id);
@@ -2002,7 +2115,7 @@ function repHistFiltros() {
     return {
         id_proyecto: repHistGet("rep_hist_filtro_proyecto")?.value || "",
         cliente: repHistGet("rep_hist_filtro_cliente")?.value.trim() || "",
-        id_familia: repHistGet("rep_hist_filtro_familia")?.value || "",
+        identificador: repHistGet("rep_hist_filtro_identificador")?.value.trim() || "",
         estado_familia: repHistGet("rep_hist_filtro_estado")?.value || ""
     };
 }
@@ -2020,12 +2133,52 @@ function repHistFmtFecha(valor) {
     return fmtFechaISO(valor);
 }
 
+async function repHistTieneFirmaActaVigente(idRegistro, rowData = null) {
+    const id = Number(idRegistro);
+    if (!id) return false;
+
+    const local = rowData || repHistRowsMap.get(id) || {};
+    if (!local?.fecha_firma_acta) return false;
+
+    try {
+        const res = await fetch(`/api/registros-familia/${id}/detalle`);
+        const det = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(det?.error || "No se pudo validar firma de acta.");
+
+        const fechaFirma = det?.fecha_firma_acta || null;
+        const actual = repHistRowsMap.get(id) || {};
+        repHistRowsMap.set(id, { ...actual, fecha_firma_acta: fechaFirma });
+
+        return Boolean(fechaFirma);
+    } catch (error) {
+        console.warn("No se pudo validar firma de acta en caliente, usando cache local.", error);
+        return Boolean(local?.fecha_firma_acta);
+    }
+}
+
+function repHistEstadoClass(estado) {
+    const normal = normalizarEstadoTarea(estado, "Pendiente").toLowerCase();
+    return `rep-row-estado-${normal}`;
+}
+
+function repHistEstadoSelect(idRegistro, estado) {
+    const normal = normalizarEstadoTarea(estado, "Pendiente");
+    return `
+        <select class="rep-hist-estado-select" data-id-registro="${Number(idRegistro)}" data-estado-actual="${normal}">
+            <option value="Pendiente" ${normal === "Pendiente" ? "selected" : ""}>Pendiente</option>
+            <option value="Proceso" ${normal === "Proceso" ? "selected" : ""}>Proceso</option>
+            <option value="Finalizado" ${normal === "Finalizado" ? "selected" : ""}>Finalizado</option>
+        </select>
+    `;
+}
+
 function repHistRenderTabla(rows) {
     const tbody = repHistGet("rep_hist_tbody");
     const total = repHistGet("rep_hist_total");
     if (!tbody) return;
 
     const list = Array.isArray(rows) ? rows : [];
+    repHistRowsMap = new Map(list.map(r => [Number(r.id_registro), r]));
     if (total) total.textContent = `${list.length} resultados`;
 
     if (!list.length) {
@@ -2034,19 +2187,234 @@ function repHistRenderTabla(rows) {
     }
 
     tbody.innerHTML = list.map(r => {
+        const estadoNormal = normalizarEstadoTarea(r.estado_familia, "Pendiente");
+        const claseFila = repHistEstadoClass(estadoNormal);
+        const idRegistro = Number(r.id_registro || 0);
         return `
-            <tr>
+            <tr class="${claseFila}" data-id-registro="${idRegistro}">
                 <td>#${r.id_postventa}</td>
                 <td>${escapeHtml(r.nombre_proyecto || "-")}</td>
                 <td>${escapeHtml(r.numero_identificador || "-")}</td>
                 <td>${escapeHtml(r.cliente || "-")}</td>
                 <td>${escapeHtml(r.familia || "-")}</td>
                 <td>${escapeHtml(r.subfamilia || "-")}</td>
-                <td>${escapeHtml(r.recinto || "-")}</td>
-                <td>${escapeHtml(r.estado_familia || "-")}</td>
+                <td>${repHistEstadoSelect(r.id_registro, estadoNormal)}</td>
+                <td>
+                    <button type="button" class="pv-btn manage rep-hist-btn-manage" data-rep-hist-manage="${idRegistro}">
+                        Gestionar
+                    </button>
+                </td>
             </tr>
         `;
     }).join("");
+}
+
+function repHistSetRowEstadoVisual({ filaEl, selectEl, estadoNuevo, estadoPrevio = "Pendiente" }) {
+    if (filaEl) {
+        filaEl.classList.remove(
+            repHistEstadoClass(estadoPrevio),
+            repHistEstadoClass("Pendiente"),
+            repHistEstadoClass("Proceso"),
+            repHistEstadoClass("Finalizado"),
+            "rep-row-estado-transicion",
+            "rep-row-estado-aplicada"
+        );
+        filaEl.classList.add(repHistEstadoClass(estadoNuevo), "rep-row-estado-aplicada");
+        setTimeout(() => filaEl.classList.remove("rep-row-estado-aplicada"), 760);
+        if (normalizarEstadoTarea(estadoNuevo, "Pendiente") === "Finalizado") {
+            resaltarCambioFinalizado(filaEl, "rep-row-finalizado-focus", 3000);
+        }
+    }
+    if (selectEl) {
+        selectEl.value = estadoNuevo;
+        selectEl.dataset.estadoActual = estadoNuevo;
+        selectEl.classList.remove("estado-guardando");
+        selectEl.classList.add("estado-actualizado");
+        selectEl.disabled = false;
+        setTimeout(() => selectEl.classList.remove("estado-actualizado"), 650);
+    }
+}
+
+function repHistOpenFinalizarModal({ idRegistro, idPostventa, cliente, fechaFirmaActual = "", selectEl, filaEl, estadoPrevio }) {
+    const backdrop = repHistGet("rep_hist_estado_modal_backdrop");
+    const txtPostventa = repHistGet("rep_hist_modal_postventa");
+    const txtCliente = repHistGet("rep_hist_modal_cliente");
+    const inputFecha = repHistGet("rep_hist_modal_fecha");
+    if (!backdrop || !txtPostventa || !txtCliente || !inputFecha) return;
+
+    repHistEstadoModalState = {
+        idRegistro: Number(idRegistro),
+        idPostventa: Number(idPostventa),
+        cliente: String(cliente || "-"),
+        selectEl,
+        filaEl,
+        estadoPrevio: normalizarEstadoTarea(estadoPrevio, "Pendiente")
+    };
+
+    txtPostventa.textContent = `#${idPostventa || "-"}`;
+    txtCliente.textContent = cliente || "-";
+    inputFecha.value = fechaFirmaActual ? fmtFechaISO(fechaFirmaActual) : new Date().toISOString().split("T")[0];
+
+    backdrop.hidden = false;
+}
+
+function repHistCloseFinalizarModal() {
+    const backdrop = repHistGet("rep_hist_estado_modal_backdrop");
+    if (backdrop) backdrop.hidden = true;
+    repHistEstadoModalState = null;
+}
+
+async function repHistGuardarFinalizadoConFirma() {
+    if (!repHistEstadoModalState) return;
+
+    const { idRegistro, idPostventa, selectEl, filaEl, estadoPrevio } = repHistEstadoModalState;
+    const inputFecha = repHistGet("rep_hist_modal_fecha");
+    const btnGuardar = repHistGet("rep_hist_modal_guardar");
+    const fecha = inputFecha?.value || "";
+
+    if (!fecha) {
+        alert("Debes seleccionar la fecha firma de acta.");
+        return;
+    }
+
+    try {
+        if (btnGuardar) btnGuardar.disabled = true;
+        if (selectEl) {
+            selectEl.disabled = true;
+            selectEl.classList.add("estado-guardando");
+        }
+        if (filaEl) filaEl.classList.add("rep-row-estado-transicion");
+
+        const res = await fetch(`/api/cierre-actas/${Number(idRegistro)}/firma-acta`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fecha_firma_acta: fecha })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "No se pudo finalizar el registro.");
+
+        const rowData = repHistRowsMap.get(Number(idRegistro)) || {};
+        repHistRowsMap.set(Number(idRegistro), {
+            ...rowData,
+            estado_familia: "Finalizado",
+            fecha_firma_acta: fecha
+        });
+
+        repHistSetRowEstadoVisual({
+            filaEl,
+            selectEl,
+            estadoNuevo: "Finalizado",
+            estadoPrevio
+        });
+
+        if (postventaActiva && Number(postventaActiva) === Number(idPostventa)) {
+            const estadoTicket = document.getElementById("estado_ticket");
+            if (estadoTicket) estadoTicket.value = data?.postventa?.estado || "Abierta";
+            actualizarDetalleSeleccionada({
+                estado: data?.postventa?.estado || "Abierta",
+                familias: Number(data?.postventa?.total_familias || 0)
+            });
+        }
+
+        mostrarToast("toast_familia", `Registro finalizado con firma de acta: ${fmtFechaISO(fecha)}`, { ms: 2200 });
+        cargarIndicadoresPostventa();
+        await cargarPostventasRecientes(postventaActiva, false);
+        repHistCloseFinalizarModal();
+        setTimeout(() => { repHistBuscar().catch(() => null); }, 420);
+    } catch (error) {
+        console.error("Error finalizando desde histórico:", error);
+        if (filaEl) {
+            filaEl.classList.remove("rep-row-estado-transicion", "rep-row-estado-aplicada");
+        }
+        if (selectEl) {
+            selectEl.classList.remove("estado-guardando", "estado-actualizado");
+            selectEl.disabled = false;
+            selectEl.value = estadoPrevio;
+            selectEl.dataset.estadoActual = estadoPrevio;
+        }
+        alert(error.message || "No se pudo finalizar el registro.");
+    } finally {
+        if (btnGuardar) btnGuardar.disabled = false;
+    }
+}
+
+async function repHistActualizarEstado(idRegistro, estadoNuevo, { selectEl = null, filaEl = null, estadoPrevio = "Pendiente" } = {}) {
+    const id = Number(idRegistro);
+    if (!id) return;
+
+    try {
+        if (selectEl) {
+            selectEl.disabled = true;
+            selectEl.classList.add("estado-guardando");
+        }
+        if (filaEl) filaEl.classList.add("rep-row-estado-transicion");
+
+        const res = await fetch(`/api/registros-familia/${id}/estado-tarea`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ estado_tarea: estadoNuevo })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "No se pudo actualizar el estado.");
+
+        const estadoCanonico = normalizarEstadoTarea(data?.registro?.estado_tarea || estadoNuevo, estadoNuevo);
+        const rowData = repHistRowsMap.get(id) || {};
+        repHistRowsMap.set(id, {
+            ...rowData,
+            estado_familia: estadoCanonico
+        });
+
+        repHistSetRowEstadoVisual({
+            filaEl,
+            selectEl,
+            estadoNuevo: estadoCanonico,
+            estadoPrevio
+        });
+
+        if (postventaActiva && Number(postventaActiva) === Number(data?.postventa?.id_postventa || 0)) {
+            const estadoTicket = document.getElementById("estado_ticket");
+            if (estadoTicket) estadoTicket.value = data?.postventa?.estado || "Abierta";
+            actualizarDetalleSeleccionada({
+                estado: data?.postventa?.estado || "Abierta",
+                familias: Number(data?.postventa?.total_familias || 0)
+            });
+        }
+
+        mostrarToast("toast_familia", `Estado actualizado a ${estadoCanonico}`, { ms: 1800 });
+        cargarIndicadoresPostventa();
+        await cargarPostventasRecientes(postventaActiva, false);
+        setTimeout(() => { repHistBuscar().catch(() => null); }, 420);
+    } catch (error) {
+        console.error("Error cambiando estado desde histórico:", error);
+        if (filaEl) filaEl.classList.remove("rep-row-estado-transicion", "rep-row-estado-aplicada");
+        if (selectEl) {
+            selectEl.classList.remove("estado-guardando", "estado-actualizado");
+            selectEl.disabled = false;
+            selectEl.value = estadoPrevio;
+            selectEl.dataset.estadoActual = estadoPrevio;
+        }
+        alert(error.message || "No se pudo actualizar el estado del registro.");
+    }
+}
+
+function initRepHistEstadoModal() {
+    if (repHistEstadoModalInit) return;
+    repHistEstadoModalInit = true;
+
+    const backdrop = repHistGet("rep_hist_estado_modal_backdrop");
+    const btnClose = repHistGet("rep_hist_modal_close");
+    const btnCancel = repHistGet("rep_hist_modal_cancel");
+    const btnGuardar = repHistGet("rep_hist_modal_guardar");
+
+    if (btnClose) btnClose.addEventListener("click", repHistCloseFinalizarModal);
+    if (btnCancel) btnCancel.addEventListener("click", repHistCloseFinalizarModal);
+    if (btnGuardar) btnGuardar.addEventListener("click", () => repHistGuardarFinalizadoConFirma().catch(() => null));
+
+    if (backdrop) {
+        backdrop.addEventListener("click", (event) => {
+            if (event.target === backdrop) repHistCloseFinalizarModal();
+        });
+    }
 }
 
 async function repHistBuscar() {
@@ -2063,7 +2431,7 @@ function repHistLimpiar() {
     [
         "rep_hist_filtro_proyecto",
         "rep_hist_filtro_cliente",
-        "rep_hist_filtro_familia",
+        "rep_hist_filtro_identificador",
         "rep_hist_filtro_estado"
     ].forEach(id => {
         const el = repHistGet(id);
@@ -2074,19 +2442,13 @@ function repHistLimpiar() {
 async function initHistoricoEmbebido() {
     if (historicoEmbebidoInit) return;
     historicoEmbebidoInit = true;
+    initRepHistEstadoModal();
 
     try {
-        const [proyectosRes, familiasRes] = await Promise.all([
-            fetch("/api/proyectos"),
-            fetch("/api/familias")
-        ]);
-        const [proyectos, familias] = await Promise.all([
-            proyectosRes.json(),
-            familiasRes.json()
-        ]);
+        const proyectosRes = await fetch("/api/proyectos");
+        const proyectos = await proyectosRes.json();
 
         repHistSetOptions("rep_hist_filtro_proyecto", proyectos, p => p.nombre_proyecto, p => p.id_proyecto);
-        repHistSetOptions("rep_hist_filtro_familia", familias, f => f.nombre_familia, f => f.id_familia);
 
         await repHistBuscar();
     } catch (error) {
@@ -2111,14 +2473,14 @@ async function initHistoricoEmbebido() {
 
     [
         "rep_hist_filtro_proyecto",
-        "rep_hist_filtro_familia",
         "rep_hist_filtro_estado"
     ].forEach(id => {
         repHistGet(id)?.addEventListener("change", buscarDeb);
     });
 
     [
-        "rep_hist_filtro_cliente"
+        "rep_hist_filtro_cliente",
+        "rep_hist_filtro_identificador"
     ].forEach(id => {
         repHistGet(id)?.addEventListener("input", buscarDeb);
         repHistGet(id)?.addEventListener("keydown", (e) => {
@@ -2127,6 +2489,77 @@ async function initHistoricoEmbebido() {
                 repHistBuscar().catch(() => null);
             }
         });
+    });
+
+    const view = repHistGet("rep_view_historico");
+    view?.addEventListener("click", (event) => {
+        const btnManage = event.target.closest("[data-rep-hist-manage]");
+        if (!btnManage) return;
+
+        const idRegistro = Number(btnManage.getAttribute("data-rep-hist-manage") || 0);
+        if (!Number.isFinite(idRegistro) || idRegistro <= 0) return;
+
+        const rowData = repHistRowsMap.get(idRegistro);
+        if (!rowData) return;
+
+        abrirModalGestion({
+            tipo: "familia",
+            id_registro: idRegistro,
+            id_postventa: Number(rowData.id_postventa || 0),
+            proyecto: rowData.nombre_proyecto || "-",
+            casa: rowData.numero_identificador || "-",
+            cliente: rowData.cliente || "-",
+            familia: rowData.familia || "-",
+            subfamilia: rowData.subfamilia || "-",
+            recinto: rowData.recinto || "-",
+            estado: normalizarEstadoTarea(rowData.estado_familia || "Pendiente", "Pendiente"),
+            apertura: repHistFmtFecha(rowData.fecha_levantamiento)
+        });
+    });
+
+    view?.addEventListener("change", async (event) => {
+        const selectEl = event.target.closest(".rep-hist-estado-select");
+        if (!selectEl) return;
+
+        const idRegistro = Number(selectEl.dataset.idRegistro || 0);
+        const estadoNuevo = normalizarEstadoTarea(selectEl.value, "Pendiente");
+        const estadoPrevio = normalizarEstadoTarea(selectEl.dataset.estadoActual || "Pendiente", "Pendiente");
+        const filaEl = selectEl.closest("tr");
+        const rowData = repHistRowsMap.get(idRegistro) || {};
+
+        if (!idRegistro || estadoNuevo === estadoPrevio) {
+            selectEl.value = estadoPrevio;
+            return;
+        }
+
+        const tieneFirmaActaVigente = await repHistTieneFirmaActaVigente(idRegistro, rowData);
+        if (
+            estadoPrevio === "Finalizado" &&
+            estadoNuevo !== "Finalizado" &&
+            tieneFirmaActaVigente
+        ) {
+            selectEl.value = "Finalizado";
+            selectEl.dataset.estadoActual = "Finalizado";
+            alert("Este registro ya tiene fecha de firma de acta. Para reabrirlo, primero debes gestionar el cierre de acta.");
+            return;
+        }
+
+        if (estadoNuevo === "Finalizado" && estadoPrevio !== "Finalizado") {
+            // No confirmamos visualmente aún, primero pedimos fecha de firma de acta.
+            selectEl.value = estadoPrevio;
+            repHistOpenFinalizarModal({
+                idRegistro,
+                idPostventa: rowData.id_postventa,
+                cliente: rowData.cliente,
+                fechaFirmaActual: rowData.fecha_firma_acta || "",
+                selectEl,
+                filaEl,
+                estadoPrevio
+            });
+            return;
+        }
+
+        repHistActualizarEstado(idRegistro, estadoNuevo, { selectEl, filaEl, estadoPrevio }).catch(() => null);
     });
 }
 
@@ -2484,32 +2917,82 @@ async function cargarFamiliasRecientesDePostventa(idPostventa) {
     if (!res.ok) throw new Error("No se pudieron cargar los registros recientes");
     const data = await res.json();
 
+    const select = document.getElementById("select_postventa_existente");
+    const option = select
+        ? Array.from(select.options).find(op => op.value === String(idPostventa))
+        : null;
+    const proyectoBase = option?.dataset?.proyecto || "-";
+    const identificadorBase = option?.dataset?.identificador || "-";
+    const clienteBase = option?.dataset?.cliente || (document.getElementById("nombre_cliente")?.value || "-");
+
     historialFamilias = data.map(item => ({
         id_registro: item.id_registro,
+        id_postventa: Number(idPostventa),
+        proyecto: item.nombre_proyecto || proyectoBase,
+        identificador: item.numero_identificador || identificadorBase,
+        cliente: item.cliente || clienteBase,
         familia: item.familia || "-",
         subfamilia: item.subfamilia || "-",
         recinto: item.recinto || "-",
         levantamiento: item.levantamiento ? String(item.levantamiento).split("T")[0] : "-",
         responsable: item.responsable || "-",
         cargo_responsable: item.cargo_responsable || "",
-        estado_tarea: item.estado_tarea || "Pendiente"
+        estado_tarea: normalizarEstadoTarea(item.estado_tarea, "Pendiente")
     }));
     renderizarUltimosRegistros();
 }
 
-function normalizarEstadoTarea(valor) {
-    return (valor === "Finalizado" || valor === "Finalizada") ? "Finalizado" : "Pendiente";
+function normalizarEstadoTarea(valor, fallback = "Pendiente") {
+    const raw = String(valor || "").trim();
+    const normal = raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+
+    if (normal === "FINALIZADO" || normal === "FINALIZADA") return "Finalizado";
+    if (normal === "PROCESO" || normal === "EN PROCESO" || normal === "EN_PROCESO") return "Proceso";
+    if (normal === "PENDIENTE") return "Pendiente";
+    return fallback;
 }
 
 function claseEstadoFila(estado) {
-    return normalizarEstadoTarea(estado) === "Finalizado"
-        ? "fila-estado-finalizada"
-        : "fila-estado-pendiente";
+    const normal = normalizarEstadoTarea(estado);
+    if (normal === "Finalizado") return "fila-estado-finalizada";
+    if (normal === "Proceso") return "fila-estado-proceso";
+    return "fila-estado-pendiente";
 }
 
-async function actualizarEstadoTareaRegistro(idRegistro, estadoTarea) {
+function claseEstadoBadge(estado) {
+    const normal = normalizarEstadoTarea(estado);
+    if (normal === "Finalizado") return "estado-familia-badge--finalizado";
+    if (normal === "Proceso") return "estado-familia-badge--proceso";
+    return "estado-familia-badge--pendiente";
+}
+
+function renderEstadoBadge(estado) {
+    const normal = normalizarEstadoTarea(estado);
+    return `<span class="estado-familia-badge ${claseEstadoBadge(normal)}">${normal}</span>`;
+}
+
+function resaltarCambioFinalizado(filaEl, clase = "fila-finalizado-focus", ms = 2800) {
+    if (!filaEl) return;
+    filaEl.classList.remove(clase);
+    void filaEl.offsetWidth;
+    filaEl.classList.add(clase);
+    try {
+        filaEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch (_) { /* noop */ }
+    setTimeout(() => filaEl.classList.remove(clase), ms);
+}
+
+async function actualizarEstadoTareaRegistro(idRegistro, estadoTarea, { filaEl = null, selectEl = null, estadoPrevio = "Pendiente" } = {}) {
     if (!idRegistro) return;
     try {
+        if (selectEl) {
+            selectEl.disabled = true;
+            selectEl.classList.add("estado-guardando");
+        }
+        if (filaEl) {
+            filaEl.classList.add("fila-estado-transicion");
+        }
+
         const res = await fetch(`/api/registros-familia/${idRegistro}/estado-tarea`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -2525,9 +3008,10 @@ async function actualizarEstadoTareaRegistro(idRegistro, estadoTarea) {
             throw new Error(msg);
         }
 
+        const estadoCanonico = normalizarEstadoTarea(data?.registro?.estado_tarea || estadoTarea);
         historialFamilias = historialFamilias.map(item => (
             Number(item.id_registro) === Number(idRegistro)
-                ? { ...item, estado_tarea: estadoTarea }
+                ? { ...item, estado_tarea: estadoCanonico }
                 : item
         ));
 
@@ -2543,9 +3027,39 @@ async function actualizarEstadoTareaRegistro(idRegistro, estadoTarea) {
             if (option) option.dataset.estado = estadoPostventa;
         }
 
-        renderizarUltimosRegistros();
+        if (filaEl) {
+            filaEl.classList.remove("fila-estado-pendiente", "fila-estado-proceso", "fila-estado-finalizada", "fila-estado-transicion");
+            filaEl.classList.add(claseEstadoFila(estadoCanonico), "fila-estado-aplicada");
+            setTimeout(() => filaEl.classList.remove("fila-estado-aplicada"), 780);
+            if (estadoCanonico === "Finalizado") {
+                resaltarCambioFinalizado(filaEl, "fila-finalizado-focus", 3000);
+            }
+        } else {
+            renderizarUltimosRegistros();
+        }
+
+        if (selectEl) {
+            selectEl.value = estadoCanonico;
+            selectEl.dataset.estadoActual = estadoCanonico;
+            selectEl.classList.remove("estado-guardando");
+            selectEl.classList.add("estado-actualizado");
+            selectEl.disabled = false;
+            setTimeout(() => selectEl.classList.remove("estado-actualizado"), 650);
+        }
+
         await cargarPostventasRecientes(postventaActiva, false);
     } catch (error) {
+        if (filaEl) {
+            filaEl.classList.remove("fila-estado-transicion", "fila-estado-aplicada", "fila-estado-pendiente", "fila-estado-proceso", "fila-estado-finalizada");
+            filaEl.classList.add(claseEstadoFila(estadoPrevio), "fila-estado-error");
+            setTimeout(() => filaEl.classList.remove("fila-estado-error"), 780);
+        }
+        if (selectEl) {
+            selectEl.classList.remove("estado-guardando", "estado-actualizado");
+            selectEl.disabled = false;
+            selectEl.value = estadoPrevio;
+            selectEl.dataset.estadoActual = estadoPrevio;
+        }
         console.error("Error actualizando estado_tarea:", error);
         alert(error.message || "No se pudo actualizar el estado de la tarea.");
     }
@@ -2817,64 +3331,80 @@ function actualizarColorEtiquetaAccion() {
 
 function renderizarUltimosRegistros() {
     const tbody = document.getElementById("tbody-registros");
-    const chips = document.getElementById("lista_recientes_chips");
     if (!tbody) return;
 
     const ultimosCinco = historialFamilias.slice(0, 5);
     tbody.innerHTML = "";
 
     if (ultimosCinco.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6">Sin registros recientes.</td></tr>`;
-        if (chips) {
-            const textoVacio = postventaActiva
-                ? "Sin familias registradas en esta postventa."
-                : "Esperando primer registro...";
-            chips.innerHTML = `<span class="sin-registros">${textoVacio}</span>`;
-        }
+        const mensaje = postventaActiva
+            ? "Sin registros recientes en esta postventa."
+            : "Selecciona una postventa para ver los últimos 5 registros.";
+        tbody.innerHTML = `<tr><td colspan="8">${mensaje}</td></tr>`;
         return;
     }
 
     ultimosCinco.forEach(item => {
         const fila = document.createElement("tr");
         fila.classList.add(claseEstadoFila(item.estado_tarea));
-        const cargoResponsable = item.cargo_responsable
-            ? `<span class="tag-cargo">${item.cargo_responsable}</span>`
-            : "";
         const estadoActual = normalizarEstadoTarea(item.estado_tarea);
         fila.innerHTML = `
+            <td>#${item.id_postventa || "-"}</td>
+            <td>${item.proyecto || "-"}</td>
+            <td>${item.identificador || "-"}</td>
+            <td>${item.cliente || "-"}</td>
             <td>${item.familia}</td>
             <td>${item.subfamilia}</td>
-            <td>${item.recinto}</td>
-            <td>${item.levantamiento}</td>
-            <td>
-                <div class="responsable-con-etiqueta">
-                    <span>${item.responsable}</span>
-                    ${cargoResponsable}
-                </div>
-            </td>
             <td>
                 <select class="select-estado-tarea" data-id-registro="${item.id_registro}">
                     <option value="Pendiente" ${estadoActual === "Pendiente" ? "selected" : ""}>Pendiente</option>
+                    <option value="Proceso" ${estadoActual === "Proceso" ? "selected" : ""}>Proceso</option>
                     <option value="Finalizado" ${estadoActual === "Finalizado" ? "selected" : ""}>Finalizado</option>
                 </select>
+            </td>
+            <td class="td-accion">
+                <button type="button" class="pv-btn manage btn-gestionar-registro" data-id-registro="${item.id_registro}">
+                    Gestionar
+                </button>
             </td>
         `;
         tbody.appendChild(fila);
     });
 
     tbody.querySelectorAll(".select-estado-tarea").forEach(select => {
+        select.dataset.estadoActual = normalizarEstadoTarea(select.value);
         select.addEventListener("change", (event) => {
-            const idRegistro = event.target.dataset.idRegistro;
-            const estado = normalizarEstadoTarea(event.target.value);
-            actualizarEstadoTareaRegistro(idRegistro, estado);
+            const selectEl = event.target;
+            const idRegistro = selectEl.dataset.idRegistro;
+            const estadoNuevo = normalizarEstadoTarea(selectEl.value);
+            const estadoPrevio = normalizarEstadoTarea(selectEl.dataset.estadoActual || "Pendiente");
+            const filaEl = selectEl.closest("tr");
+            actualizarEstadoTareaRegistro(idRegistro, estadoNuevo, { filaEl, selectEl, estadoPrevio });
         });
     });
 
-    if (chips) {
-        chips.innerHTML = ultimosCinco
-            .map(item => `<span class="chip-reciente">${item.familia} - ${item.recinto}</span>`)
-            .join("");
-    }
+    tbody.querySelectorAll(".btn-gestionar-registro").forEach(btn => {
+        btn.addEventListener("click", (event) => {
+            const idRegistro = Number(event.currentTarget.dataset.idRegistro || 0);
+            const item = historialFamilias.find(r => Number(r.id_registro) === idRegistro);
+            if (!item || !idRegistro) return;
+
+            abrirModalGestion({
+                tipo: "familia",
+                id_registro: idRegistro,
+                id_postventa: Number(item.id_postventa || postventaActiva || 0),
+                proyecto: item.proyecto || "-",
+                casa: item.identificador || "-",
+                cliente: item.cliente || "-",
+                familia: item.familia || "-",
+                subfamilia: item.subfamilia || "-",
+                recinto: item.recinto || "-",
+                estado: normalizarEstadoTarea(item.estado_tarea || "Pendiente", "Pendiente"),
+                apertura: item.levantamiento || "-"
+            });
+        });
+    });
+
 }
 
 
@@ -3694,12 +4224,3 @@ function inicializarCalendarioIntegrado() {
 
     cargarFiltrosCalendarioIntegrado().then(cargarTareasCalendarioIntegrado);
 }
-
-
-
-
-
-
-
-
-

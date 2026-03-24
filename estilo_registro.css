@@ -829,7 +829,7 @@ button:disabled {
 
 .tabla-registros {
     width: 100%;
-    min-width: 760px;
+    min-width: 1120px;
     border-collapse: separate;
     border-spacing: 0;
     table-layout: fixed;
@@ -860,6 +860,13 @@ button:disabled {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    transition: background-color 360ms ease, border-color 360ms ease, color 260ms ease, box-shadow 360ms ease;
+}
+
+.tabla-registros tbody td.td-accion {
+    overflow: visible;
+    text-overflow: clip;
+    text-align: right;
 }
 
 .tabla-registros tbody tr:last-child td {
@@ -871,11 +878,57 @@ button:disabled {
 }
 
 .tabla-registros tbody tr.fila-estado-pendiente {
-    background: #fff7ed;
+    background: #fee2e2;
+}
+
+.tabla-registros tbody tr.fila-estado-proceso {
+    background: #fef3c7;
 }
 
 .tabla-registros tbody tr.fila-estado-finalizada {
-    background: #ecfdf3;
+    background: #dcfce7;
+}
+
+.tabla-registros tbody tr.fila-estado-pendiente td {
+    border-top: 1px solid #fca5a5;
+    border-bottom: 1px solid #fca5a5;
+}
+
+.tabla-registros tbody tr.fila-estado-proceso td {
+    border-top: 1px solid #facc15;
+    border-bottom: 1px solid #facc15;
+}
+
+.tabla-registros tbody tr.fila-estado-finalizada td {
+    border-top: 1px solid #86efac;
+    border-bottom: 1px solid #86efac;
+}
+
+.tabla-registros tbody tr.fila-estado-pendiente td:first-child,
+.tabla-registros tbody tr.fila-estado-proceso td:first-child,
+.tabla-registros tbody tr.fila-estado-finalizada td:first-child {
+    border-left: 1px solid;
+}
+
+.tabla-registros tbody tr.fila-estado-pendiente td:last-child,
+.tabla-registros tbody tr.fila-estado-proceso td:last-child,
+.tabla-registros tbody tr.fila-estado-finalizada td:last-child {
+    border-right: 1px solid;
+}
+
+.tabla-registros tbody tr.fila-estado-pendiente td:first-child,
+.tabla-registros tbody tr.fila-estado-pendiente td:last-child {
+    border-color: #fca5a5;
+}
+
+.tabla-registros tbody tr.fila-estado-proceso td:first-child,
+.tabla-registros tbody tr.fila-estado-proceso td:last-child {
+    border-color: #facc15;
+}
+
+.tabla-registros tbody tr.fila-estado-finalizada td:first-child,
+.tabla-registros tbody tr.fila-estado-finalizada td:last-child {
+    border-color: #86efac;
 }
 
 .select-estado-tarea {
@@ -888,18 +941,123 @@ button:disabled {
     font-size: 0.86rem;
     font-weight: 500;
     padding: 0 10px;
+    transition: background-color 240ms ease, border-color 240ms ease, color 240ms ease, box-shadow 240ms ease, transform 180ms ease, opacity 180ms ease;
+}
+
+.select-estado-tarea.estado-guardando {
+    opacity: 0.8;
+    cursor: wait;
+    background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.75) 50%, rgba(255, 255, 255, 0.45) 100%);
+    background-size: 220% 100%;
+    animation: estadoGuardandoShimmer 820ms linear infinite;
+}
+
+.select-estado-tarea.estado-actualizado {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.20);
+    transform: translateY(-1px);
+}
+
+.tabla-registros tbody tr.fila-estado-transicion td {
+    animation: filaEstadoTransicion 560ms ease-out 1;
+}
+
+.tabla-registros tbody tr.fila-estado-aplicada td {
+    animation: filaEstadoAplicada 760ms cubic-bezier(0.22, 0.61, 0.36, 1) 1;
+}
+
+.tabla-registros tbody tr.fila-estado-error td {
+    animation: filaEstadoError 760ms ease 1;
+}
+
+.tabla-registros tbody tr.fila-finalizado-focus td {
+    animation: filaFinalizadoFocus 980ms ease-in-out 3;
+}
+
+@keyframes estadoGuardandoShimmer {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 220% 0%; }
+}
+
+@keyframes filaEstadoTransicion {
+    0% { filter: saturate(0.9); }
+    45% { filter: saturate(1.05); }
+    100% { filter: saturate(1); }
+}
+
+@keyframes filaEstadoAplicada {
+    0% { box-shadow: inset 0 0 0 0 rgba(37, 99, 235, 0); }
+    45% { box-shadow: inset 0 0 0 999px rgba(37, 99, 235, 0.06); }
+    100% { box-shadow: inset 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+
+@keyframes filaEstadoError {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-2px); }
+    40% { transform: translateX(2px); }
+    60% { transform: translateX(-2px); }
+    80% { transform: translateX(1px); }
+}
+
+@keyframes filaFinalizadoFocus {
+    0%, 100% {
+        box-shadow: inset 0 0 0 0 rgba(22, 163, 74, 0);
+    }
+    50% {
+        box-shadow:
+            inset 0 0 0 2px rgba(22, 163, 74, 0.88),
+            0 0 0 1px rgba(22, 163, 74, 0.32);
+    }
 }
 
 .fila-estado-pendiente .select-estado-tarea {
-    border-color: #fbbf24;
-    color: #92400e;
-    background: #fffbeb;
+    border-color: #f87171;
+    color: #7f1d1d;
+    background: #fee2e2;
+}
+
+.fila-estado-proceso .select-estado-tarea {
+    border-color: #eab308;
+    color: #713f12;
+    background: #fef3c7;
 }
 
 .fila-estado-finalizada .select-estado-tarea {
-    border-color: #34d399;
-    color: #166534;
-    background: #f0fdf4;
+    border-color: #22c55e;
+    color: #14532d;
+    background: #dcfce7;
+}
+
+.estado-familia-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 26px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.estado-familia-badge--pendiente {
+    color: #7f1d1d;
+    background: #fee2e2;
+    border-color: #f87171;
+}
+
+.estado-familia-badge--proceso {
+    color: #713f12;
+    background: #fef3c7;
+    border-color: #eab308;
+}
+
+.estado-familia-badge--finalizado {
+    color: #14532d;
+    background: #dcfce7;
+    border-color: #4ade80;
 }
 
 .label-ancladas {
@@ -1958,19 +2116,60 @@ body.dark-mode .tabla-registros tbody tr:nth-child(even) {
 }
 
 body.dark-mode .tabla-registros tbody tr.fila-estado-pendiente {
-    background: rgba(217, 119, 6, 0.16);
+    background: rgba(239, 68, 68, 0.24);
+}
+
+body.dark-mode .tabla-registros tbody tr.fila-estado-proceso {
+    background: rgba(234, 179, 8, 0.24);
 }
 
 body.dark-mode .tabla-registros tbody tr.fila-estado-finalizada {
-    background: rgba(22, 163, 74, 0.16);
+    background: rgba(22, 163, 74, 0.24);
 }
 
 body.dark-mode .tabla-registros tbody tr.fila-estado-pendiente td {
-    background: rgba(217, 119, 6, 0.16) !important;
+    background: rgba(239, 68, 68, 0.24) !important;
+    border-top: 1px solid rgba(248, 113, 113, 0.62) !important;
+    border-bottom: 1px solid rgba(248, 113, 113, 0.62) !important;
+}
+
+body.dark-mode .tabla-registros tbody tr.fila-estado-proceso td {
+    background: rgba(234, 179, 8, 0.24) !important;
+    border-top: 1px solid rgba(250, 204, 21, 0.62) !important;
+    border-bottom: 1px solid rgba(250, 204, 21, 0.62) !important;
 }
 
 body.dark-mode .tabla-registros tbody tr.fila-estado-finalizada td {
-    background: rgba(22, 163, 74, 0.16) !important;
+    background: rgba(22, 163, 74, 0.24) !important;
+    border-top: 1px solid rgba(74, 222, 128, 0.62) !important;
+    border-bottom: 1px solid rgba(74, 222, 128, 0.62) !important;
+}
+
+body.dark-mode .tabla-registros tbody tr.fila-estado-pendiente td:first-child,
+body.dark-mode .tabla-registros tbody tr.fila-estado-proceso td:first-child,
+body.dark-mode .tabla-registros tbody tr.fila-estado-finalizada td:first-child {
+    border-left: 1px solid !important;
+}
+
+body.dark-mode .tabla-registros tbody tr.fila-estado-pendiente td:last-child,
+body.dark-mode .tabla-registros tbody tr.fila-estado-proceso td:last-child,
+body.dark-mode .tabla-registros tbody tr.fila-estado-finalizada td:last-child {
+    border-right: 1px solid !important;
+}
+
+body.dark-mode .tabla-registros tbody tr.fila-estado-pendiente td:first-child,
+body.dark-mode .tabla-registros tbody tr.fila-estado-pendiente td:last-child {
+    border-color: rgba(248, 113, 113, 0.62) !important;
+}
+
+body.dark-mode .tabla-registros tbody tr.fila-estado-proceso td:first-child,
+body.dark-mode .tabla-registros tbody tr.fila-estado-proceso td:last-child {
+    border-color: rgba(250, 204, 21, 0.62) !important;
+}
+
+body.dark-mode .tabla-registros tbody tr.fila-estado-finalizada td:first-child,
+body.dark-mode .tabla-registros tbody tr.fila-estado-finalizada td:last-child {
+    border-color: rgba(74, 222, 128, 0.62) !important;
 }
 
 body.dark-mode .select-estado-tarea {
@@ -1980,15 +2179,62 @@ body.dark-mode .select-estado-tarea {
 }
 
 body.dark-mode .fila-estado-pendiente .select-estado-tarea {
-    border-color: rgba(251, 191, 36, 0.58);
-    color: #fcd34d;
-    background: rgba(120, 53, 15, 0.3);
+    border-color: rgba(248, 113, 113, 0.72);
+    color: #fecaca;
+    background: rgba(127, 29, 29, 0.46);
+}
+
+body.dark-mode .fila-estado-proceso .select-estado-tarea {
+    border-color: rgba(250, 204, 21, 0.72);
+    color: #fde047;
+    background: rgba(113, 63, 18, 0.46);
 }
 
 body.dark-mode .fila-estado-finalizada .select-estado-tarea {
-    border-color: rgba(52, 211, 153, 0.6);
+    border-color: rgba(52, 211, 153, 0.72);
     color: #86efac;
-    background: rgba(20, 83, 45, 0.32);
+    background: rgba(20, 83, 45, 0.44);
+}
+
+body.dark-mode .select-estado-tarea.estado-guardando {
+    background-image: linear-gradient(90deg, rgba(148, 163, 184, 0.18) 0%, rgba(191, 219, 254, 0.34) 50%, rgba(148, 163, 184, 0.18) 100%);
+}
+
+body.dark-mode .select-estado-tarea.estado-actualizado {
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.26);
+}
+
+body.dark-mode .tabla-registros tbody tr.fila-finalizado-focus td {
+    animation-name: filaFinalizadoFocusDark;
+}
+
+@keyframes filaFinalizadoFocusDark {
+    0%, 100% {
+        box-shadow: inset 0 0 0 0 rgba(74, 222, 128, 0);
+    }
+    50% {
+        box-shadow:
+            inset 0 0 0 2px rgba(74, 222, 128, 0.88),
+            0 0 0 1px rgba(74, 222, 128, 0.30);
+    }
+}
+
+body.dark-mode .estado-familia-badge--pendiente {
+    color: #fecaca;
+    background: rgba(127, 29, 29, 0.46);
+    border-color: rgba(248, 113, 113, 0.72);
+}
+
+body.dark-mode .estado-familia-badge--proceso {
+    color: #fde047;
+    background: rgba(113, 63, 18, 0.46);
+    border-color: rgba(250, 204, 21, 0.72);
+}
+
+body.dark-mode .estado-familia-badge--finalizado {
+    color: #86efac;
+    background: rgba(20, 83, 45, 0.44);
+    border-color: rgba(52, 211, 153, 0.72);
 }
 
 body.dark-mode .btn-secundario {
@@ -2314,7 +2560,6 @@ body.bg-dashboard {
 
 .titulo-central h1 {
     color: var(--text-title) !important;
-    font-weight: 700 !important;
     letter-spacing: -0.02em;
 }
 
@@ -2325,14 +2570,12 @@ body.bg-dashboard {
 
 .titulo-seccion {
     color: var(--brand-700) !important;
-    font-weight: 600 !important;
     border-bottom-color: #e5ecf5 !important;
 }
 
 .grupo-input label {
     color: var(--brand-700) !important;
     font-size: 0.82rem !important;
-    font-weight: 600 !important;
     letter-spacing: 0.02em !important;
     text-transform: none !important;
 }
@@ -2364,7 +2607,6 @@ textarea:focus {
     background: #f3f7fc !important;
     border-color: #c6d6ea !important;
     color: #26486f !important;
-    font-weight: 500 !important;
 }
 
 .paso-chip-btn,
@@ -2374,7 +2616,6 @@ textarea:focus {
 
 .kpi-label {
     color: #5d708a !important;
-    font-weight: 600 !important;
 }
 
 .kpi-value {
@@ -2396,13 +2637,11 @@ textarea:focus {
 
 .selector-postventa-estado strong {
     color: var(--brand-600) !important;
-    font-weight: 600 !important;
 }
 
 .tabla-registros thead th {
     background: #f2f6fb !important;
     color: #2b4e78 !important;
-    font-weight: 600 !important;
     border-bottom: 1px solid #d3deec !important;
 }
 
@@ -2708,11 +2947,15 @@ a:focus-visible {
 }
 
 .tabla-registros tbody tr.fila-estado-pendiente:hover {
-    background: #ffedd5;
+    background: #fecaca;
+}
+
+.tabla-registros tbody tr.fila-estado-proceso:hover {
+    background: #fde68a;
 }
 
 .tabla-registros tbody tr.fila-estado-finalizada:hover {
-    background: #dcfce7;
+    background: #bbf7d0;
 }
 
 .select-estado-tarea {
@@ -2747,11 +2990,15 @@ body.dark-mode .tabla-registros tbody tr:hover {
 }
 
 body.dark-mode .tabla-registros tbody tr.fila-estado-pendiente:hover td {
-    background: rgba(217, 119, 6, 0.24) !important;
+    background: rgba(239, 68, 68, 0.34) !important;
+}
+
+body.dark-mode .tabla-registros tbody tr.fila-estado-proceso:hover td {
+    background: rgba(234, 179, 8, 0.34) !important;
 }
 
 body.dark-mode .tabla-registros tbody tr.fila-estado-finalizada:hover td {
-    background: rgba(22, 163, 74, 0.24) !important;
+    background: rgba(22, 163, 74, 0.34) !important;
 }
 
 body.dark-mode button:focus-visible,
@@ -2810,29 +3057,52 @@ body.dark-mode #modulo_resumen_postventa .historial-anclaje {
 button.btn-flash-success,
 .btn-principal.btn-flash-success,
 .btn-guardar-familia.btn-flash-success {
-    animation: btnFlashSuccess 800ms ease-out 1;
+    animation: btnFlashSuccessSmooth 1180ms cubic-bezier(0.22, 0.61, 0.36, 1) 1;
     background: linear-gradient(135deg, #16a34a, #059669) !important;
     color: #ffffff !important;
     border-color: rgba(16, 185, 129, 0.55) !important;
     box-shadow:
-        0 10px 22px rgba(16, 185, 129, 0.26),
-        0 18px 36px rgba(15, 23, 42, 0.12) !important;
-    transform: translateY(-1px);
+        0 12px 24px rgba(16, 185, 129, 0.28),
+        0 22px 42px rgba(15, 23, 42, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.24) !important;
+    transform: translateY(-1px) scale(1.005);
 }
 
-@keyframes btnFlashSuccess {
+button.btn-flash-success i,
+.btn-principal.btn-flash-success i,
+.btn-guardar-familia.btn-flash-success i {
+    animation: btnFlashIconPop 560ms ease-out 1;
+}
+
+@keyframes btnFlashSuccessSmooth {
     0% {
         transform: translateY(0) scale(1);
-        filter: saturate(1);
+        filter: saturate(1) brightness(1);
+        box-shadow:
+            0 0 0 rgba(16, 185, 129, 0),
+            0 0 0 rgba(15, 23, 42, 0);
     }
-    35% {
-        transform: translateY(-1px) scale(1.01);
-        filter: saturate(1.12);
+    28% {
+        transform: translateY(-2px) scale(1.012);
+        filter: saturate(1.14) brightness(1.03);
+        box-shadow:
+            0 14px 28px rgba(16, 185, 129, 0.30),
+            0 24px 46px rgba(15, 23, 42, 0.15);
+    }
+    64% {
+        transform: translateY(-1px) scale(1.004);
+        filter: saturate(1.08) brightness(1.01);
     }
     100% {
         transform: translateY(-1px) scale(1);
-        filter: saturate(1);
+        filter: saturate(1) brightness(1);
     }
+}
+
+@keyframes btnFlashIconPop {
+    0% { transform: scale(0.82); }
+    55% { transform: scale(1.16); }
+    100% { transform: scale(1); }
 }
 
 body.dark-mode button.btn-flash-success,
@@ -3286,9 +3556,289 @@ body.bg-dashboard .rep-hist-table tbody td {
     white-space: nowrap;
 }
 
+body.bg-dashboard .rep-hist-table tbody td.rep-aud-desc {
+    white-space: normal !important;
+    line-height: 1.45;
+    min-width: 280px;
+}
+
+body.bg-dashboard .rep-aud-msg {
+    margin: 10px 2px 0;
+    font-size: var(--fs-sm);
+    color: var(--pv-muted2);
+}
+
+body.bg-dashboard .rep-aud-msg.error {
+    color: #b91c1c;
+}
+
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-pendiente td {
+    background: #fee2e2;
+    border-top: 1px solid #fca5a5;
+    border-bottom: 1px solid #fca5a5;
+}
+
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-proceso td {
+    background: #fef3c7;
+    border-top: 1px solid #facc15;
+    border-bottom: 1px solid #facc15;
+}
+
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-finalizado td {
+    background: #dcfce7;
+    border-top: 1px solid #86efac;
+    border-bottom: 1px solid #86efac;
+}
+
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-pendiente td:first-child,
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-proceso td:first-child,
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-finalizado td:first-child {
+    border-left: 1px solid;
+}
+
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-pendiente td:last-child,
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-proceso td:last-child,
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-finalizado td:last-child {
+    border-right: 1px solid;
+}
+
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-pendiente td:first-child,
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-pendiente td:last-child {
+    border-color: #fca5a5;
+}
+
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-proceso td:first-child,
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-proceso td:last-child {
+    border-color: #facc15;
+}
+
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-finalizado td:first-child,
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-finalizado td:last-child {
+    border-color: #86efac;
+}
+
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-pendiente:hover td {
+    background: #fecaca;
+}
+
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-proceso:hover td {
+    background: #fde68a;
+}
+
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-finalizado:hover td {
+    background: #bbf7d0;
+}
+
+body.bg-dashboard .rep-hist-table tbody td {
+    transition: background-color 320ms ease, border-color 320ms ease, box-shadow 320ms ease, color 240ms ease;
+}
+
+body.bg-dashboard .rep-hist-estado-select {
+    min-width: 134px;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    font-size: 0.86rem;
+    font-weight: 520;
+    padding: 0 12px;
+    transition: background-color 220ms ease, border-color 220ms ease, color 220ms ease, box-shadow 220ms ease, transform 180ms ease, opacity 180ms ease;
+}
+
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-pendiente .rep-hist-estado-select {
+    border-color: #f87171;
+    color: #7f1d1d;
+    background: #fee2e2;
+}
+
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-proceso .rep-hist-estado-select {
+    border-color: #eab308;
+    color: #713f12;
+    background: #fef3c7;
+}
+
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-finalizado .rep-hist-estado-select {
+    border-color: #22c55e;
+    color: #14532d;
+    background: #dcfce7;
+}
+
+body.bg-dashboard .rep-hist-estado-select.estado-guardando {
+    opacity: 0.8;
+    cursor: wait;
+    background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.76) 50%, rgba(255, 255, 255, 0.45) 100%);
+    background-size: 220% 100%;
+    animation: repHistEstadoShimmer 820ms linear infinite;
+}
+
+body.bg-dashboard .rep-hist-estado-select.estado-actualizado {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.20);
+    transform: translateY(-1px);
+}
+
+body.bg-dashboard .rep-hist-btn-manage {
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-transicion td {
+    animation: repHistFilaTransicion 560ms ease-out 1;
+}
+
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-estado-aplicada td {
+    animation: repHistFilaAplicada 760ms cubic-bezier(0.22, 0.61, 0.36, 1) 1;
+}
+
+body.bg-dashboard .rep-hist-table tbody tr.rep-row-finalizado-focus td {
+    animation: repHistFinalizadoFocus 980ms ease-in-out 3;
+}
+
+@keyframes repHistEstadoShimmer {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 220% 0%; }
+}
+
+@keyframes repHistFilaTransicion {
+    0% { filter: saturate(0.92); }
+    45% { filter: saturate(1.06); }
+    100% { filter: saturate(1); }
+}
+
+@keyframes repHistFilaAplicada {
+    0% { box-shadow: inset 0 0 0 0 rgba(37, 99, 235, 0); }
+    45% { box-shadow: inset 0 0 0 999px rgba(37, 99, 235, 0.055); }
+    100% { box-shadow: inset 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+
+@keyframes repHistFinalizadoFocus {
+    0%, 100% {
+        box-shadow: inset 0 0 0 0 rgba(22, 163, 74, 0);
+    }
+    50% {
+        box-shadow:
+            inset 0 0 0 2px rgba(22, 163, 74, 0.88),
+            0 0 0 1px rgba(22, 163, 74, 0.32);
+    }
+}
+
 body.bg-dashboard.dark-mode .rep-hist-table tbody td {
     border-bottom-color: rgba(255, 255, 255, 0.08);
     color: #e5e7eb;
+}
+
+body.bg-dashboard.dark-mode .rep-aud-msg {
+    color: #aebbd0;
+}
+
+body.bg-dashboard.dark-mode .rep-aud-msg.error {
+    color: #fca5a5;
+}
+
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-pendiente td {
+    background: rgba(239, 68, 68, 0.24);
+    border-top: 1px solid rgba(248, 113, 113, 0.62);
+    border-bottom: 1px solid rgba(248, 113, 113, 0.62);
+}
+
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-proceso td {
+    background: rgba(234, 179, 8, 0.24);
+    border-top: 1px solid rgba(250, 204, 21, 0.62);
+    border-bottom: 1px solid rgba(250, 204, 21, 0.62);
+}
+
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-finalizado td {
+    background: rgba(22, 163, 74, 0.24);
+    border-top: 1px solid rgba(74, 222, 128, 0.62);
+    border-bottom: 1px solid rgba(74, 222, 128, 0.62);
+}
+
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-pendiente td:first-child,
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-proceso td:first-child,
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-finalizado td:first-child {
+    border-left: 1px solid;
+}
+
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-pendiente td:last-child,
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-proceso td:last-child,
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-finalizado td:last-child {
+    border-right: 1px solid;
+}
+
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-pendiente td:first-child,
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-pendiente td:last-child {
+    border-color: rgba(248, 113, 113, 0.62);
+}
+
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-proceso td:first-child,
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-proceso td:last-child {
+    border-color: rgba(250, 204, 21, 0.62);
+}
+
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-finalizado td:first-child,
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-finalizado td:last-child {
+    border-color: rgba(74, 222, 128, 0.62);
+}
+
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-pendiente:hover td {
+    background: rgba(239, 68, 68, 0.34);
+}
+
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-proceso:hover td {
+    background: rgba(234, 179, 8, 0.34);
+}
+
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-finalizado:hover td {
+    background: rgba(22, 163, 74, 0.34);
+}
+
+body.bg-dashboard.dark-mode .rep-hist-estado-select {
+    background: #0f172a;
+    border-color: rgba(255, 255, 255, 0.36);
+    color: #dbeafe;
+}
+
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-pendiente .rep-hist-estado-select {
+    border-color: rgba(248, 113, 113, 0.72);
+    color: #fecaca;
+    background: rgba(127, 29, 29, 0.46);
+}
+
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-proceso .rep-hist-estado-select {
+    border-color: rgba(250, 204, 21, 0.72);
+    color: #fde047;
+    background: rgba(113, 63, 18, 0.46);
+}
+
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-estado-finalizado .rep-hist-estado-select {
+    border-color: rgba(52, 211, 153, 0.72);
+    color: #86efac;
+    background: rgba(20, 83, 45, 0.44);
+}
+
+body.bg-dashboard.dark-mode .rep-hist-estado-select.estado-guardando {
+    background-image: linear-gradient(90deg, rgba(148, 163, 184, 0.18) 0%, rgba(191, 219, 254, 0.34) 50%, rgba(148, 163, 184, 0.18) 100%);
+}
+
+body.bg-dashboard.dark-mode .rep-hist-estado-select.estado-actualizado {
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.26);
+}
+
+body.bg-dashboard.dark-mode .rep-hist-table tbody tr.rep-row-finalizado-focus td {
+    animation-name: repHistFinalizadoFocusDark;
+}
+
+@keyframes repHistFinalizadoFocusDark {
+    0%, 100% {
+        box-shadow: inset 0 0 0 0 rgba(74, 222, 128, 0);
+    }
+    50% {
+        box-shadow:
+            inset 0 0 0 2px rgba(74, 222, 128, 0.88),
+            0 0 0 1px rgba(74, 222, 128, 0.30);
+    }
 }
 
 body.bg-dashboard.dark-mode .panel-reporteria .report-link {
@@ -3492,7 +4042,6 @@ body.bg-dashboard .grupo-input label {
     color: var(--pv-muted2) !important;
     text-transform: uppercase !important;
     letter-spacing: 0.08em !important;
-    font-weight: 700 !important;
 }
 
 body.bg-dashboard input,
@@ -3828,7 +4377,6 @@ body.bg-dashboard .kpi-label {
     color: var(--pv-muted2) !important;
     text-transform: uppercase !important;
     letter-spacing: 0.08em !important;
-    font-weight: 700 !important;
     font-size: 0.72rem !important;
 }
 
@@ -4067,112 +4615,6 @@ body.bg-dashboard.dark-mode .kpi-card {
     -webkit-backdrop-filter: none !important;
 }
 
-/* ======================================================
-   Typography hierarchy (registro)
-   ====================================================== */
-
-body.bg-dashboard {
-    --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    --fs-xxs: 0.75rem;   /* 12 */
-    --fs-xs: 0.8125rem;  /* 13 */
-    --fs-sm: 0.875rem;   /* 14 */
-    --fs-md: 1rem;       /* 16 */
-    --fs-lg: 1.125rem;   /* 18 */
-    --fs-xl: 1.25rem;    /* 20 */
-    --fs-2xl: 1.55rem;   /* 24-25 */
-    --fs-3xl: clamp(1.7rem, 1.25rem + 1.4vw, 2.3rem); /* page title */
-    --lh-tight: 1.16;
-    --lh-base: 1.48;
-}
-
-body.bg-dashboard,
-body.bg-dashboard input,
-body.bg-dashboard select,
-body.bg-dashboard textarea,
-body.bg-dashboard button {
-    font-family: var(--font-sans);
-}
-
-body.bg-dashboard {
-    font-size: var(--fs-md);
-    line-height: var(--lh-base);
-}
-
-body.bg-dashboard .titulo-central h1 {
-    font-size: var(--fs-3xl) !important;
-    line-height: var(--lh-tight) !important;
-    font-weight: 850 !important;
-    letter-spacing: -0.03em;
-}
-
-body.bg-dashboard .hero-subtitulo {
-    font-size: var(--fs-sm) !important;
-    line-height: 1.55 !important;
-    font-weight: 500 !important;
-}
-
-body.bg-dashboard .titulo-seccion {
-    font-size: var(--fs-xl) !important;
-    line-height: 1.22 !important;
-    font-weight: 800 !important;
-    letter-spacing: -0.02em;
-}
-
-body.bg-dashboard .bloque-formulario-head h4 {
-    font-size: var(--fs-sm) !important;
-    font-weight: 850 !important;
-    letter-spacing: -0.01em;
-}
-
-body.bg-dashboard .bloque-formulario-head p {
-    font-size: var(--fs-xs) !important;
-    line-height: 1.45 !important;
-}
-
-body.bg-dashboard .grupo-input label,
-body.bg-dashboard .selector-postventa-input label {
-    font-size: var(--fs-xs) !important;
-    font-weight: 750 !important;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-}
-
-body.bg-dashboard input,
-body.bg-dashboard select,
-body.bg-dashboard textarea {
-    font-size: var(--fs-md) !important;
-    line-height: 1.35 !important;
-}
-
-body.bg-dashboard small,
-body.bg-dashboard .selector-postventa-estado span,
-body.bg-dashboard .kpi-label,
-body.bg-dashboard .calendario-embebido-ayuda {
-    font-size: var(--fs-xs) !important;
-}
-
-body.bg-dashboard .tabla-registros thead th,
-body.bg-dashboard #tabla_ejecutantes_plan thead th,
-body.bg-dashboard .calendario-header-grid span {
-    font-size: var(--fs-xs) !important;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-weight: 850 !important;
-}
-
-body.bg-dashboard .tabla-registros tbody td,
-body.bg-dashboard #tabla_ejecutantes_plan tbody td {
-    font-size: var(--fs-sm) !important;
-}
-
-body.bg-dashboard .btn-principal,
-body.bg-dashboard .btn-secundario,
-body.bg-dashboard .btn-guardar-familia {
-    font-size: var(--fs-sm) !important;
-    font-weight: 800 !important;
-    letter-spacing: -0.01em;
-}
-
 /* Gestión de registros: bloque postventas + filtros */
 body.bg-dashboard .gestion-bloque {
     border: 1px solid rgba(216, 225, 238, 0.95);
@@ -4384,6 +4826,11 @@ body.bg-dashboard .pv-modal.pv-modal--xl {
     max-height: min(92vh, 980px);
 }
 
+body.bg-dashboard .pv-modal.pv-modal--sm {
+    width: min(540px, calc(100vw - 32px));
+    max-height: min(84vh, 760px);
+}
+
 body.bg-dashboard.dark-mode .pv-modal {
     border-color: rgba(255, 255, 255, 0.12);
     background: rgba(15, 23, 42, 0.92);
@@ -4453,6 +4900,8 @@ body.bg-dashboard .pv-modal-foot {
     border-top: 1px solid rgba(216, 225, 238, 0.65);
     display: flex;
     justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
 }
 
 body.bg-dashboard.dark-mode .pv-modal-foot {
@@ -4510,6 +4959,75 @@ body.bg-dashboard .pv-modal-box p {
 
 body.bg-dashboard.dark-mode .pv-modal-box p {
     color: #aebbd0;
+}
+
+body.bg-dashboard .rep-hist-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+body.bg-dashboard .rep-hist-modal-item {
+    border-radius: 12px;
+    border: 1px solid rgba(198, 210, 228, 0.7);
+    background: rgba(255, 255, 255, 0.7);
+    padding: 10px 12px;
+    display: grid;
+    gap: 4px;
+}
+
+body.bg-dashboard .rep-hist-modal-item .k {
+    font-size: var(--fs-xs);
+    color: var(--pv-muted2);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+body.bg-dashboard .rep-hist-modal-item strong {
+    color: var(--pv-heading);
+    font-size: var(--fs-sm);
+    font-weight: 620;
+}
+
+body.bg-dashboard .rep-hist-modal-fecha {
+    display: grid;
+    gap: 6px;
+}
+
+body.bg-dashboard .rep-hist-modal-fecha label {
+    font-size: var(--fs-xs);
+    color: var(--pv-muted2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+body.bg-dashboard .rep-hist-modal-fecha input[type="date"] {
+    height: 42px;
+    border-radius: 12px;
+    border: 1px solid rgba(198, 210, 228, 0.85);
+    background: rgba(255, 255, 255, 0.82);
+    padding: 0 12px;
+}
+
+body.bg-dashboard.dark-mode .rep-hist-modal-item {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+body.bg-dashboard.dark-mode .rep-hist-modal-item strong {
+    color: #e5e7eb;
+}
+
+body.bg-dashboard.dark-mode .rep-hist-modal-fecha input[type="date"] {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(2, 6, 23, 0.65);
+    color: #e5e7eb;
+}
+
+@media (max-width: 680px) {
+    body.bg-dashboard .rep-hist-modal-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 body.bg-dashboard .pv-modal-row {
@@ -4968,6 +5486,11 @@ body.bg-dashboard .fam-head .s {
     color: var(--pv-muted2);
 }
 
+body.bg-dashboard .fam-head .s .estado-familia-badge {
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
 body.bg-dashboard.dark-mode .fam-head .s {
     color: #aebbd0;
 }
@@ -5300,4 +5823,515 @@ body.bg-dashboard .contenedor-registro {
     body.bg-dashboard .theme-toggle:hover {
         transform: scale(1.04) !important;
     }
+}
+
+/* ======================================================
+   Refinamiento Tipográfico Final (aplica sobre todo)
+   ====================================================== */
+body.bg-dashboard {
+    font-family: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    --font-sans: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --fs-xxs: 0.75rem;
+    --fs-xs: 0.8125rem;
+    --fs-sm: 0.9rem;
+    --fs-md: 1rem;
+    --fs-lg: 1.12rem;
+    --fs-xl: 1.22rem;
+    --fs-2xl: 1.5rem;
+    --fs-3xl: clamp(1.7rem, 1.2rem + 1.35vw, 2.2rem);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: 0.002em;
+}
+
+body.bg-dashboard .titulo-central h1 {
+    font-weight: 680 !important;
+    letter-spacing: -0.02em !important;
+    line-height: 1.08 !important;
+}
+
+body.bg-dashboard .app-fecha,
+body.bg-dashboard .hero-subtitulo,
+body.bg-dashboard .report-sub,
+body.bg-dashboard .selector-postventa-head p,
+body.bg-dashboard .bloque-formulario-head p,
+body.bg-dashboard .kpi-submeta,
+body.bg-dashboard .gestion-bloque-head p {
+    font-weight: 430 !important;
+    line-height: 1.45 !important;
+    letter-spacing: 0.004em !important;
+}
+
+body.bg-dashboard .titulo-seccion,
+body.bg-dashboard .selector-postventa-head h3,
+body.bg-dashboard .panel-reporteria .report-placeholder h4,
+body.bg-dashboard .rep-hist-title,
+body.bg-dashboard .rep-cierre-title,
+body.bg-dashboard .gestion-bloque-head h4,
+body.bg-dashboard .bloque-formulario-head h4 {
+    font-weight: 620 !important;
+    letter-spacing: -0.012em !important;
+    line-height: 1.22 !important;
+}
+
+body.bg-dashboard .kpi-label,
+body.bg-dashboard .app-kicker,
+body.bg-dashboard .grupo-input label,
+body.bg-dashboard .selector-postventa-input label,
+body.bg-dashboard .rep-hist-filtrosbar .rep-hist-field label,
+body.bg-dashboard .rep-cierre-filtrosbar .rep-cierre-field label,
+body.bg-dashboard .tabla-registros thead th,
+body.bg-dashboard .rep-hist-table thead th,
+body.bg-dashboard .rep-cierre-table thead th {
+    font-weight: 520 !important;
+    letter-spacing: 0.018em !important;
+}
+
+body.bg-dashboard .kpi-value {
+    font-weight: 600 !important;
+    letter-spacing: -0.014em !important;
+}
+
+body.bg-dashboard input,
+body.bg-dashboard select,
+body.bg-dashboard textarea,
+body.bg-dashboard .tabla-registros tbody td,
+body.bg-dashboard .rep-hist-table tbody td,
+body.bg-dashboard .rep-cierre-table tbody td {
+    font-weight: 430 !important;
+    letter-spacing: 0.003em !important;
+}
+
+body.bg-dashboard .panel-reporteria .report-tab,
+body.bg-dashboard .paso-chip,
+body.bg-dashboard .paso-chip-btn,
+body.bg-dashboard .btn-guardar-familia,
+body.bg-dashboard .btn-secundario,
+body.bg-dashboard .btn-principal,
+body.bg-dashboard .pv-btn,
+body.bg-dashboard .top-tab,
+body.bg-dashboard .select-estado-tarea {
+    font-weight: 530 !important;
+    letter-spacing: 0.01em !important;
+}
+
+/* ======================================================
+   Responsive + tipografía de cuerpo (capa final única)
+   ====================================================== */
+
+/* Texto de cuerpo más fino y homogéneo */
+body.bg-dashboard p,
+body.bg-dashboard small,
+body.bg-dashboard li,
+body.bg-dashboard input,
+body.bg-dashboard select,
+body.bg-dashboard textarea,
+body.bg-dashboard .tabla-registros tbody td,
+body.bg-dashboard .rep-hist-table tbody td,
+body.bg-dashboard .rep-cierre-table tbody td,
+body.bg-dashboard .kpi-submeta,
+body.bg-dashboard .selector-postventa-head p,
+body.bg-dashboard .bloque-formulario-head p,
+body.bg-dashboard .gestion-bloque-head p,
+body.bg-dashboard .estado-postventa-modulo {
+    font-family: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.002em !important;
+    line-height: 1.45 !important;
+}
+
+/* Contenedor fluido por dispositivo */
+body.bg-dashboard .contenedor-registro {
+    width: min(1600px, calc(100% - 24px)) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+/* Header sin superposiciones */
+body.bg-dashboard .header-postventa {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "volver acciones"
+        "titulo acciones"
+        "flujo acciones";
+    column-gap: 20px;
+    row-gap: 14px;
+    align-items: start;
+}
+
+body.bg-dashboard .btn-volver-top {
+    grid-area: volver;
+    position: static !important;
+    justify-self: start !important;
+    align-self: start !important;
+    width: fit-content !important;
+    min-width: 0 !important;
+    display: inline-flex !important;
+    padding: 9px 16px !important;
+    min-height: 40px !important;
+    border-radius: 999px !important;
+    font-size: 0.88rem !important;
+    font-weight: 560 !important;
+    line-height: 1 !important;
+}
+
+body.bg-dashboard .titulo-central {
+    grid-area: titulo;
+}
+
+body.bg-dashboard .flujo-pasos {
+    grid-area: flujo;
+    flex-wrap: wrap;
+}
+
+body.bg-dashboard .header-actions-right {
+    grid-area: acciones;
+    justify-self: end;
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    min-width: 280px;
+}
+
+body.bg-dashboard .header-actions-right .user-profile {
+    position: static !important;
+    max-width: 100%;
+}
+
+body.bg-dashboard .header-actions-right .header-tabs-top {
+    position: static !important;
+    max-width: 100%;
+}
+
+/* Selector de postventa evita cortes */
+body.bg-dashboard .selector-postventa-head {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px 18px;
+    align-items: start;
+}
+
+body.bg-dashboard .selector-postventa-estado {
+    min-width: 240px;
+    max-width: 100%;
+}
+
+/* Etiquetas de formulario más limpias (no negrita excesiva) */
+body.bg-dashboard .grupo-input label,
+body.bg-dashboard .selector-postventa-input label {
+    text-transform: none !important;
+    letter-spacing: 0.01em !important;
+    font-weight: 500 !important;
+}
+
+body.bg-dashboard input::placeholder,
+body.bg-dashboard textarea::placeholder {
+    font-weight: 400 !important;
+    opacity: 0.92;
+}
+
+/* KPI adaptable */
+body.bg-dashboard .indicadores-kpi {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+}
+
+@media (max-width: 1280px) {
+    body.bg-dashboard .contenedor-registro {
+        width: calc(100% - 18px) !important;
+    }
+
+    body.bg-dashboard .indicadores-kpi {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 1024px) {
+    body.bg-dashboard .header-postventa {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "volver"
+            "titulo"
+            "acciones"
+            "flujo";
+    }
+
+    body.bg-dashboard .header-actions-right {
+        justify-self: stretch;
+        align-items: flex-start;
+        min-width: 0;
+        width: 100%;
+    }
+
+    body.bg-dashboard .header-actions-right .header-tabs-top {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    body.bg-dashboard .top-tab {
+        min-height: 42px;
+        padding: 0 16px;
+    }
+
+    body.bg-dashboard .selector-postventa-head {
+        grid-template-columns: 1fr;
+    }
+
+    body.bg-dashboard .selector-postventa-estado {
+        min-width: 0;
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    body.bg-dashboard .indicadores-kpi {
+        grid-template-columns: 1fr !important;
+    }
+
+    body.bg-dashboard .header-postventa,
+    body.bg-dashboard .selector-postventa-card,
+    body.bg-dashboard .tarjeta-modulo {
+        border-radius: 14px !important;
+    }
+
+    body.bg-dashboard .top-tab {
+        flex: 1 1 150px;
+    }
+
+    body.bg-dashboard .btn-volver-top {
+        font-size: 0.84rem !important;
+        min-height: 36px !important;
+        padding: 8px 13px !important;
+    }
+
+    body.bg-dashboard .tabla-responsive {
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+    }
+}
+
+/* ======================================================
+   Cierre tipográfico global (única capa definitiva)
+   ====================================================== */
+body.bg-dashboard {
+    font-family: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+body.bg-dashboard p,
+body.bg-dashboard span,
+body.bg-dashboard small,
+body.bg-dashboard li,
+body.bg-dashboard a,
+body.bg-dashboard label,
+body.bg-dashboard input,
+body.bg-dashboard select,
+body.bg-dashboard textarea,
+body.bg-dashboard th,
+body.bg-dashboard td,
+body.bg-dashboard button {
+    font-family: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    font-weight: 390 !important;
+    letter-spacing: 0.001em !important;
+}
+
+body.bg-dashboard h1 {
+    font-weight: 620 !important;
+    letter-spacing: -0.018em !important;
+}
+
+body.bg-dashboard h2,
+body.bg-dashboard h3 {
+    font-weight: 560 !important;
+    letter-spacing: -0.012em !important;
+}
+
+body.bg-dashboard h4,
+body.bg-dashboard h5,
+body.bg-dashboard h6 {
+    font-weight: 530 !important;
+    letter-spacing: -0.008em !important;
+}
+
+body.bg-dashboard strong,
+body.bg-dashboard b {
+    font-weight: 560 !important;
+}
+
+body.bg-dashboard .grupo-input label,
+body.bg-dashboard .selector-postventa-input label,
+body.bg-dashboard .rep-hist-filtrosbar .rep-hist-field label,
+body.bg-dashboard .rep-cierre-filtrosbar .rep-cierre-field label,
+body.bg-dashboard .kpi-label,
+body.bg-dashboard .tabla-registros thead th,
+body.bg-dashboard .rep-hist-table thead th,
+body.bg-dashboard .rep-cierre-table thead th {
+    font-weight: 500 !important;
+    letter-spacing: 0.01em !important;
+}
+
+body.bg-dashboard .kpi-value {
+    font-weight: 560 !important;
+}
+
+body.bg-dashboard .btn-principal,
+body.bg-dashboard .btn-secundario,
+body.bg-dashboard .btn-guardar-familia,
+body.bg-dashboard .pv-btn,
+body.bg-dashboard .report-tab,
+body.bg-dashboard .top-tab,
+body.bg-dashboard .paso-chip,
+body.bg-dashboard .paso-chip-btn {
+    font-weight: 500 !important;
+}
+
+body.bg-dashboard .grupo-input label,
+body.bg-dashboard .selector-postventa-input label {
+    text-transform: none !important;
+    letter-spacing: 0.008em !important;
+    font-weight: 490 !important;
+}
+
+/* Volver al menú: más compacto y consistente */
+body.bg-dashboard .btn-volver-top {
+    width: fit-content !important;
+    min-width: 0 !important;
+    padding: 7px 12px !important;
+    min-height: 34px !important;
+    border-radius: 999px !important;
+    font-size: 0.82rem !important;
+    font-weight: 540 !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+@media (max-width: 768px) {
+    body.bg-dashboard .btn-volver-top {
+        padding: 7px 11px !important;
+        min-height: 32px !important;
+        font-size: 0.8rem !important;
+    }
+}
+
+/* Ajuste específico de títulos para mantener el mismo tono formal */
+body.bg-dashboard .titulo-central h1 {
+    font-weight: 620 !important;
+    letter-spacing: -0.018em !important;
+}
+
+body.bg-dashboard .titulo-seccion,
+body.bg-dashboard .selector-postventa-head h3,
+body.bg-dashboard .bloque-formulario-head h4,
+body.bg-dashboard .gestion-bloque-head h4,
+body.bg-dashboard .rep-hist-title,
+body.bg-dashboard .rep-cierre-title {
+    font-weight: 560 !important;
+    letter-spacing: -0.01em !important;
+}
+
+body.bg-dashboard .app-kicker,
+body.bg-dashboard .kpi-label,
+body.bg-dashboard .tabla-registros thead th,
+body.bg-dashboard .rep-hist-table thead th,
+body.bg-dashboard .rep-cierre-table thead th {
+    font-weight: 500 !important;
+    letter-spacing: 0.01em !important;
+}
+
+/* Botones primarios: menos opacos, más premium */
+body.bg-dashboard .btn-guardar-familia,
+body.bg-dashboard .btn-principal {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 52%, #0ea5e9 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(37, 99, 235, 0.62) !important;
+    box-shadow:
+        0 12px 24px rgba(37, 99, 235, 0.26),
+        inset 0 1px 0 rgba(255, 255, 255, 0.24) !important;
+}
+
+body.bg-dashboard .btn-guardar-familia:hover,
+body.bg-dashboard .btn-principal:hover {
+    filter: saturate(1.08) brightness(1.03);
+    transform: translateY(-1px);
+    box-shadow:
+        0 16px 28px rgba(37, 99, 235, 0.32),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
+}
+
+body.bg-dashboard .btn-guardar-familia:active,
+body.bg-dashboard .btn-principal:active {
+    transform: translateY(0);
+    filter: brightness(0.98);
+}
+
+body.bg-dashboard .btn-add-row-final {
+    background: linear-gradient(135deg, #e7f0ff 0%, #dbeafe 100%) !important;
+    border-color: #93c5fd !important;
+    color: #1d4ed8 !important;
+    box-shadow: 0 6px 14px rgba(59, 130, 246, 0.18) !important;
+}
+
+body.bg-dashboard .btn-add-row-final:hover {
+    background: linear-gradient(135deg, #dbeafe 0%, #c7ddff 100%) !important;
+    border-color: #60a5fa !important;
+}
+
+/* ======================================================
+   Hotfix de fluidez de scroll (evita parpadeos/blancos)
+   ====================================================== */
+
+/* Asegura stacking estable para fondos decorativos */
+body.bg-dashboard {
+    position: relative;
+    isolation: isolate;
+    background-attachment: scroll !important;
+}
+
+body.bg-dashboard .contenedor-registro {
+    position: relative;
+    z-index: 1;
+}
+
+/* Fondo dark fijo pero detrás del contenido real */
+body.bg-dashboard.dark-mode::before {
+    z-index: 0 !important;
+}
+
+/* Quita blur persistente en contenedores grandes (causa repaints bruscos) */
+body.bg-dashboard .header-postventa,
+body.bg-dashboard .selector-postventa-card,
+body.bg-dashboard .tarjeta-modulo,
+body.bg-dashboard .header-tabs-top,
+body.bg-dashboard .btn-volver-top,
+body.bg-dashboard .user-profile {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Desactiva sticky en bloques extensos para evitar "bandas" al scroll */
+body.bg-dashboard .panel-reporteria .report-head,
+body.bg-dashboard .tabla-registros thead th,
+body.bg-dashboard .rep-hist-table thead th,
+body.bg-dashboard .rep-hist-table thead tr:first-child th,
+body.bg-dashboard .rep-cierre-table thead th {
+    position: static !important;
+    top: auto !important;
+    z-index: auto !important;
+}
+
+/* Hint de render estable en wrappers de alto movimiento */
+body.bg-dashboard .panel-reporteria,
+body.bg-dashboard .report-body,
+body.bg-dashboard .tabla-responsive {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }

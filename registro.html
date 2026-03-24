@@ -7,7 +7,7 @@
 
     <title>Apertura de Postventa</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="estilo_registro.css">
     <link rel="stylesheet" href="auth_ui.css">
@@ -110,16 +110,15 @@
                                 <input id="rep_hist_filtro_cliente" type="text" placeholder="Buscar por cliente...">
                             </div>
                             <div class="rep-hist-field">
-                                <label>Familia</label>
-                                <select id="rep_hist_filtro_familia">
-                                    <option value="">Todas</option>
-                                </select>
+                                <label>Identificador</label>
+                                <input id="rep_hist_filtro_identificador" type="text" placeholder="Buscar por identificador...">
                             </div>
                             <div class="rep-hist-field">
                                 <label>Estado familia</label>
                                 <select id="rep_hist_filtro_estado">
                                     <option value="">Todos</option>
                                     <option value="Pendiente">Pendiente</option>
+                                    <option value="Proceso">Proceso</option>
                                     <option value="Finalizado">Finalizado</option>
                                 </select>
                             </div>
@@ -134,8 +133,8 @@
                                         <th>Cliente</th>
                                         <th>Familia</th>
                                         <th>Subfamilia</th>
-                                        <th>Recinto</th>
                                         <th>Estado</th>
+                                        <th>Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody id="rep_hist_tbody">
@@ -200,11 +199,35 @@
                 </div>
             </div>
             <div id="rep_view_auditoria" class="rep-view" hidden data-admin-only>
-                <div class="report-placeholder">
-                    <h4>Auditoría</h4>
-                    <p>Acceso exclusivo para administradores.</p>
-                    <a class="report-link" href="auditoria.html">Abrir Auditoría</a>
-                </div>
+                <section class="rep-hist-grid">
+                    <div class="rep-hist-tabla">
+                        <div class="rep-hist-topline">
+                            <h4 class="rep-hist-title">Auditoría del Sistema</h4>
+                            <div class="rep-hist-top-actions">
+                                <span id="rep_aud_total" class="rep-hist-total">0 eventos</span>
+                                <button type="button" id="rep_aud_btn_refrescar" class="pv-btn">Refrescar</button>
+                            </div>
+                        </div>
+                        <div class="tabla-responsive">
+                            <table class="rep-hist-table">
+                                <thead>
+                                    <tr>
+                                        <th>Usuario</th>
+                                        <th>Rol</th>
+                                        <th>Acción</th>
+                                        <th>Tabla</th>
+                                        <th>Descripción</th>
+                                        <th>Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rep_aud_tbody">
+                                    <tr><td colspan="6">Cargando eventos...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p id="rep_aud_msg" class="rep-aud-msg"></p>
+                    </div>
+                </section>
             </div>
         </div>
     </section>
@@ -439,8 +462,7 @@
                             <th class="col-accion"></th>
                         </tr>
                     </thead>
-                    <tbody id="body_ejecutantes"></tbody>
-                    <tfoot>
+                    <tbody id="body_input_ejecutante">
                         <tr class="fila-input-nueva">
                             <td>
                                 <select id="input_sel_ejecutante" class="input-plan-azul">
@@ -456,7 +478,8 @@
                                 </button>
                             </td>
                         </tr>
-                    </tfoot>
+                    </tbody>
+                    <tbody id="body_ejecutantes"></tbody>
                 </table>
             </div>
         </div>
@@ -470,12 +493,6 @@
             </button>
         </div>
 
-        <div class="historial-anclaje">
-            <p class="label-ancladas">FAMILIAS ANCLADAS A ESTA POSTVENTA:</p>
-            <div id="lista_recientes_chips" class="flex-chips">
-                <span class="sin-registros">Esperando primer registro...</span>
-            </div>
-        </div>
     </div>
 
     <div id="modulo_resumen_postventa" class="tarjeta-modulo tarjeta-resumen-postventa">
@@ -483,7 +500,16 @@
         <div class="tabla-responsive">
             <table class="tabla-registros">
                 <thead>
-                    <tr><th>Familia</th><th>Subfamilia</th><th>Recinto</th><th>Levantamiento</th><th>Responsable</th><th>Estado</th></tr>
+                    <tr>
+                        <th>Postventa</th>
+                        <th>Proyecto</th>
+                        <th>Identificador</th>
+                        <th>Cliente</th>
+                        <th>Familia</th>
+                        <th>Subfamilia</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
                 </thead>
                 <tbody id="tbody-registros"></tbody>
             </table>
@@ -564,6 +590,46 @@
 
         <div class="pv-modal-foot">
             <button type="button" id="gestion_modal_cancel" class="btn-secundario">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación para finalizar estado en Histórico -->
+<div id="rep_hist_estado_modal_backdrop" class="pv-modal-backdrop" hidden>
+    <div class="pv-modal pv-modal--sm" role="dialog" aria-modal="true" aria-labelledby="rep_hist_modal_title">
+        <div class="pv-modal-head">
+            <div>
+                <h3 id="rep_hist_modal_title" class="pv-modal-title">Finalizar registro</h3>
+                <p class="pv-modal-subtitle">Confirma datos y fecha de firma de acta</p>
+            </div>
+            <button type="button" id="rep_hist_modal_close" class="pv-modal-close" aria-label="Cerrar">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+        <div class="pv-modal-body">
+            <div class="pv-modal-box">
+                <h4>Resumen rápido</h4>
+                <div class="rep-hist-modal-grid">
+                    <div class="rep-hist-modal-item">
+                        <span class="k">Postventa</span>
+                        <strong id="rep_hist_modal_postventa">-</strong>
+                    </div>
+                    <div class="rep-hist-modal-item">
+                        <span class="k">Cliente</span>
+                        <strong id="rep_hist_modal_cliente">-</strong>
+                    </div>
+                </div>
+                <div class="rep-hist-modal-fecha">
+                    <label for="rep_hist_modal_fecha">Fecha firma de acta</label>
+                    <input type="date" id="rep_hist_modal_fecha">
+                </div>
+            </div>
+        </div>
+        <div class="pv-modal-foot">
+            <button type="button" id="rep_hist_modal_cancel" class="btn-secundario">Cancelar</button>
+            <button type="button" id="rep_hist_modal_guardar" class="btn-principal">
+                <i class="fas fa-check"></i> Finalizar y guardar
+            </button>
         </div>
     </div>
 </div>

@@ -18,6 +18,15 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "login.html"));
 });
 
+// Compatibilidad: histórico antiguo ahora vive embebido en Reportería de registro.html
+app.get("/historico.html", (req, res) => {
+    res.redirect(302, "/registro.html?modo=reporteria&vista=historico");
+});
+
+app.get("/historico", (req, res) => {
+    res.redirect(302, "/registro.html?modo=reporteria&vista=historico");
+});
+
 // Static: no servir index.html automáticamente en "/"
 // (para que "/" siempre muestre login.html)
 app.use(express.static(__dirname, { index: false }));
@@ -135,6 +144,7 @@ app.get('/api/cierre-actas/pendientes', async (req, res) => {
 });
 
 app.put('/api/cierre-actas/:id_registro/firma-acta', async (req, res) => {
+    const client = await pool.connect();
     try {
         const { id_registro } = req.params;
         const { fecha_firma_acta } = req.body;
@@ -143,22 +153,76 @@ app.put('/api/cierre-actas/:id_registro/firma-acta', async (req, res) => {
             return res.status(400).json({ error: 'Fecha firma de acta es obligatoria' });
         }
 
-        const result = await pool.query(
-            `UPDATE registros_familias
-             SET fecha_firma_acta = $1
-             WHERE id_registro = $2
-             RETURNING id_registro, fecha_firma_acta`,
+        await client.query('BEGIN');
+        const tieneColEstado = await registrosFamiliasTieneEstadoTarea(client);
+
+        const result = await client.query(
+            tieneColEstado
+                ? `UPDATE registros_familias
+                   SET fecha_firma_acta = $1,
+                       estado_tarea = 'Finalizado'
+                   WHERE id_registro = $2
+                   RETURNING id_registro, id_postventa, fecha_firma_acta, estado_tarea`
+                : `UPDATE registros_familias
+                   SET fecha_firma_acta = $1
+                   WHERE id_registro = $2
+                   RETURNING id_registro, id_postventa, fecha_firma_acta`,
             [fecha_firma_acta, id_registro]
         );
 
         if (result.rowCount === 0) {
+            await client.query('ROLLBACK');
             return res.status(404).json({ error: 'Registro no encontrado' });
         }
 
-        res.json({ success: true, registro: result.rows[0] });
+        const registro = result.rows[0];
+        const id_postventa = Number(registro.id_postventa);
+
+        if (!Number.isFinite(id_postventa) || id_postventa <= 0) {
+            await client.query('ROLLBACK');
+            return res.status(500).json({ error: 'Registro sin postventa asociada' });
+        }
+
+        const condFinal = tieneColEstado
+            ? `${sqlExprEstadoTareaConColumna('rf')} = 'Finalizado'`
+            : `${sqlExprEstadoTareaSinColumna('rf')} = 'Finalizado'`;
+
+        const counts = await client.query(
+            `SELECT
+                COUNT(*)::int AS total_familias,
+                SUM(CASE WHEN ${condFinal} THEN 1 ELSE 0 END)::int AS finalizadas
+             FROM registros_familias rf
+             WHERE rf.id_postventa = $1`,
+            [id_postventa]
+        );
+
+        const total_familias = Number(counts.rows[0]?.total_familias || 0);
+        const finalizadas = Number(counts.rows[0]?.finalizadas || 0);
+        const nuevo_estado = (total_familias > 0 && finalizadas === total_familias) ? 'Cerrada' : 'Abierta';
+
+        await client.query(
+            `UPDATE postventas
+             SET estado = $1
+             WHERE id_postventa = $2`,
+            [nuevo_estado, id_postventa]
+        );
+
+        await client.query('COMMIT');
+        res.json({
+            success: true,
+            registro,
+            postventa: {
+                id_postventa,
+                estado: nuevo_estado,
+                total_familias
+            }
+        });
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error('Error actualizando fecha firma acta:', error);
         res.status(500).json({ error: 'Error al actualizar fecha firma de acta' });
+    } finally {
+        client.release();
     }
 });
 
@@ -504,8 +568,8 @@ app.get('/api/postventas/:id_postventa/familias-recientes', async (req, res) => 
         const tieneEstadoTarea = col.rowCount > 0;
 
         const selectEstado = tieneEstadoTarea
-            ? `COALESCE(rf.estado_tarea, 'Pendiente') AS estado_tarea`
-            : `CASE WHEN rf.fecha_firma_acta IS NOT NULL THEN 'Finalizado' ELSE 'Pendiente' END AS estado_tarea`;
+            ? `${sqlExprEstadoTareaConColumna('rf')} AS estado_tarea`
+            : `${sqlExprEstadoTareaSinColumna('rf')} AS estado_tarea`;
 
         const result = await pool.query(
             `SELECT
@@ -549,8 +613,8 @@ app.get('/api/postventas/:id_postventa/registros', async (req, res) => {
         const tieneEstadoTarea = col.rowCount > 0;
 
         const selectEstado = tieneEstadoTarea
-            ? `COALESCE(rf.estado_tarea, 'Pendiente') AS estado_tarea`
-            : `CASE WHEN rf.fecha_firma_acta IS NOT NULL THEN 'Finalizado' ELSE 'Pendiente' END AS estado_tarea`;
+            ? `${sqlExprEstadoTareaConColumna('rf')} AS estado_tarea`
+            : `${sqlExprEstadoTareaSinColumna('rf')} AS estado_tarea`;
 
         const result = await pool.query(
             `SELECT
@@ -976,12 +1040,15 @@ app.get('/api/historico/registros', async (req, res) => {
 
         const tieneColEstado = await registrosFamiliasTieneEstadoTarea(pool);
         const exprEstado = tieneColEstado
-            ? `COALESCE(rf.estado_tarea, 'Pendiente')`
-            : `CASE WHEN rf.fecha_firma_acta IS NOT NULL THEN 'Finalizado' ELSE 'Pendiente' END`;
+            ? sqlExprEstadoTareaConColumna('rf')
+            : sqlExprEstadoTareaSinColumna('rf');
 
         if (estado_familia && String(estado_familia).trim()) {
-            params.push(String(estado_familia).trim());
-            where.push(`${exprEstado} = $${params.length}`);
+            const estadoFiltro = normalizarEstadoRegistro(String(estado_familia).trim(), null);
+            if (estadoFiltro) {
+                params.push(estadoFiltro);
+                where.push(`${exprEstado} = $${params.length}`);
+            }
         }
 
         const clausulaWhere = where.length ? `WHERE ${where.join(' AND ')}` : '';
@@ -1025,11 +1092,37 @@ app.get('/api/historico/registros', async (req, res) => {
 });
 
 // ======================================================
-// REGISTROS FAMILIA: ESTADO (PENDIENTE / FINALIZADO)
+// REGISTROS FAMILIA: ESTADO (PENDIENTE / PROCESO / FINALIZADO)
 // ======================================================
 
-function normalizarEstadoRegistro(valor) {
-    return (valor === "Finalizado" || valor === "Finalizada") ? "Finalizado" : "Pendiente";
+function sqlExprEstadoTareaConColumna(alias = 'rf') {
+    return `
+        CASE
+            WHEN ${alias}.fecha_firma_acta IS NOT NULL THEN 'Finalizado'
+            WHEN UPPER(TRIM(COALESCE(${alias}.estado_tarea, ''))) IN ('FINALIZADO', 'FINALIZADA') THEN 'Finalizado'
+            WHEN UPPER(TRIM(COALESCE(${alias}.estado_tarea, ''))) IN ('PROCESO', 'EN PROCESO', 'EN_PROCESO') THEN 'Proceso'
+            ELSE 'Pendiente'
+        END
+    `;
+}
+
+function sqlExprEstadoTareaSinColumna(alias = 'rf') {
+    return `
+        CASE
+            WHEN ${alias}.fecha_firma_acta IS NOT NULL THEN 'Finalizado'
+            ELSE 'Pendiente'
+        END
+    `;
+}
+
+function normalizarEstadoRegistro(valor, fallback = "Pendiente") {
+    const raw = String(valor || "").trim();
+    const normal = raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+
+    if (normal === "FINALIZADO" || normal === "FINALIZADA") return "Finalizado";
+    if (normal === "PROCESO" || normal === "EN PROCESO" || normal === "EN_PROCESO") return "Proceso";
+    if (normal === "PENDIENTE") return "Pendiente";
+    return fallback;
 }
 
 async function registrosFamiliasTieneEstadoTarea(client) {
@@ -1076,6 +1169,13 @@ app.put('/api/registros-familia/:id_registro/estado-tarea', async (req, res) => 
             }
             row = up.rows[0];
         } else {
+            if (estado_tarea === "Proceso") {
+                await client.query('ROLLBACK');
+                return res.status(400).json({
+                    error: 'El estado "Proceso" requiere la columna estado_tarea en registros_familias.'
+                });
+            }
+
             const sel = await client.query(
                 `SELECT id_registro, id_postventa, fecha_firma_acta
                  FROM registros_familias
@@ -1103,8 +1203,8 @@ app.put('/api/registros-familia/:id_registro/estado-tarea', async (req, res) => 
 
         // Recalcula estado de la postventa en base a registros finalizados.
         const condFinal = (await registrosFamiliasTieneEstadoTarea(client))
-            ? `COALESCE(rf.estado_tarea, 'Pendiente') = 'Finalizado'`
-            : `rf.fecha_firma_acta IS NOT NULL`;
+            ? `${sqlExprEstadoTareaConColumna('rf')} = 'Finalizado'`
+            : `${sqlExprEstadoTareaSinColumna('rf')} = 'Finalizado'`;
 
         const counts = await client.query(
             `SELECT

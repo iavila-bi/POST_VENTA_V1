@@ -371,6 +371,21 @@ h1, h2, h3 {
     pointer-events: none;
 }
 
+.banner-badge-icon {
+    position: absolute;
+    top: 26px;
+    left: 26px;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(37, 99, 235, 0.72);
+    font-size: 14px;
+    z-index: 2;
+    pointer-events: none;
+}
+
 .banner-text {
     position: relative;
     padding-left: 64px;
@@ -701,6 +716,10 @@ body.dark-mode .banner-icon {
     color: rgba(147, 197, 253, 0.22);
 }
 
+body.dark-mode .banner-badge-icon {
+    color: rgba(191, 219, 254, 0.82);
+}
+
 body.dark-mode .card-footer {
     border-top-color: rgba(255, 255, 255, 0.10);
     color: #93c5fd;
@@ -715,4 +734,61 @@ body.dark-mode .theme-toggle {
     background: rgba(37, 99, 235, 0.16);
     color: #eaf2ff;
     border-color: rgba(147, 197, 253, 0.28);
+}
+
+/* ======================================================
+   Cierre tipográfico global (menú/inicio/login/usuarios)
+   ====================================================== */
+body {
+    font-family: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+body p,
+body span,
+body small,
+body li,
+body a,
+body label,
+body input,
+body select,
+body textarea,
+body th,
+body td,
+body button {
+    font-family: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    font-weight: 390 !important;
+    letter-spacing: 0.001em !important;
+}
+
+body h1 {
+    font-weight: 620 !important;
+    letter-spacing: -0.018em !important;
+}
+
+body h2,
+body h3 {
+    font-weight: 560 !important;
+    letter-spacing: -0.012em !important;
+}
+
+body h4,
+body h5,
+body h6 {
+    font-weight: 530 !important;
+    letter-spacing: -0.008em !important;
+}
+
+body strong,
+body b {
+    font-weight: 560 !important;
+}
+
+.menu-lateral a,
+.user-name,
+.card-footer,
+.auth-menu__name,
+.auth-item {
+    font-weight: 500 !important;
 }

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -13,7 +13,7 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- CSS en raíz -->
+    <!-- CSS en raiz -->
     <link rel="stylesheet" href="estilo.css">
     <link rel="stylesheet" href="auth_ui.css">
 </head>
@@ -25,14 +25,14 @@
     <div class="dashboard-layout">
         <aside class="sidebar">
             <div class="logo">
-                <i class="fas fa-hard-hat"></i>
+                <i class="fas fa-clipboard-check"></i>
                 <span>GP</span>Postventa
             </div>
             <nav class="menu-lateral">
                 <a href="#" class="active"><i class="fas fa-home"></i> Inicio</a>
                 <a href="registro.html"><i class="fas fa-plus-circle"></i> Nueva PostVenta</a>
                 <a href="registro.html?modo=reporteria&vista=cierre"><i class="fas fa-check-double"></i> Cerrar actas</a>
-                <a href="historico.html"><i class="fas fa-history"></i> Histórico</a>
+                <a href="registro.html?modo=reporteria&vista=historico"><i class="fas fa-history"></i> Hist&oacute;rico</a>
                 <a href="usuarios.html" data-admin-only><i class="fas fa-users"></i> Usuarios</a>
             </nav>
         </aside>
@@ -50,9 +50,12 @@
             </header>
 
             <div class="welcome-banner fade-in">
+                <div class="banner-badge-icon" aria-hidden="true">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
                 <div class="banner-text">
                     <h2>Bienvenido al Sistema de Postventa</h2>
-                    <p>Selecciona un módulo operativo para comenzar a registrar o consultar información.</p>
+                    <p>Selecciona un m&oacute;dulo operativo para comenzar a registrar o consultar informaci&oacute;n.</p>
                 </div>
                 <i class="fas fa-chart-line banner-icon"></i>
             </div>
@@ -64,34 +67,34 @@
     <h3>Registro Nuevo</h3>
     <p>Apertura de postventa y captura de familias.</p>
     <div class="card-footer">
-        <span>Ingresar al módulo</span>
+        <span>Ingresar al m&oacute;dulo</span>
         <i class="fas fa-arrow-right"></i>
     </div>
 </div>
 
                 <div class="card" onclick="window.location.href='registro.html?modo=reporteria&vista=cierre'">
                     <div class="card-icon naranja"><i class="fas fa-file-signature"></i></div>
-                    <h3>Gestión de Cierre Actas</h3>
-                    <p>Revisión, validación en terreno y firma de actas operativas.</p>
+                    <h3>Gesti&oacute;n de Cierre Actas</h3>
+                    <p>Revisi&oacute;n, validaci&oacute;n en terreno y firma de actas operativas.</p>
                     <div class="card-footer">
-                        <span>Ingresar al módulo</span>
+                        <span>Ingresar al m&oacute;dulo</span>
                         <i class="fas fa-arrow-right"></i>
                     </div>
                 </div>
 
-                <div class="card" onclick="window.location.href='historico.html'">
+                <div class="card" onclick="window.location.href='registro.html?modo=reporteria&vista=historico'">
                     <div class="card-icon verde"><i class="fas fa-database"></i></div>
-                    <h3>Registro Histórico</h3>
+                    <h3>Registro Hist&oacute;rico</h3>
                     <p>Buscador avanzado y trazabilidad completa de postventas.</p>
                     <div class="card-footer">
-                        <span>Ingresar al módulo</span>
+                        <span>Ingresar al m&oacute;dulo</span>
                         <i class="fas fa-arrow-right"></i>
                     </div>
                 </div>
 
                 <div class="card" data-admin-only onclick="window.location.href='usuarios.html'">
                     <div class="card-icon azul"><i class="fas fa-users"></i></div>
-                    <h3>Gestión de Usuarios</h3>
+                    <h3>Gesti&oacute;n de Usuarios</h3>
                     <p>Crear, listar y desactivar usuarios. Acceso exclusivo para administradores.</p>
                     <div class="card-footer">
                         <span>Administrar usuarios</span>
@@ -106,3 +109,4 @@
 <script src="logica.js"></script>
 </body>
 </html>
+

@@ -70,7 +70,7 @@
                 </div>
                 <div class="auth-menu__items">
                     ${admin ? `<a class="auth-item" href="usuarios.html">Gestión de usuarios <span>›</span></a>` : ""}
-                    ${admin ? `<a class="auth-item" href="auditoria.html">Auditoría <span>›</span></a>` : ""}
+                    ${admin ? `<a class="auth-item" href="registro.html?modo=reporteria&vista=auditoria">Auditoría <span>›</span></a>` : ""}
                     <button type="button" class="auth-item danger" id="auth_logout_btn">Cerrar sesión <span>⟶</span></button>
                 </div>
             </div>
