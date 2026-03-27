@@ -6335,3 +6335,197 @@ body.bg-dashboard .tabla-responsive {
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
 }
+
+/* ======================================================
+   Fluid layout overrides (responsive for any width)
+   ====================================================== */
+:root {
+    --page-gutter: clamp(10px, 2vw, 26px);
+    --card-pad: clamp(14px, 2.4vw, 28px);
+}
+
+body.bg-dashboard .contenedor-registro {
+    width: min(1680px, calc(100% - (var(--page-gutter) * 2))) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+body.bg-dashboard .header-postventa,
+body.bg-dashboard .selector-postventa-card,
+body.bg-dashboard .tarjeta-modulo {
+    padding-left: var(--card-pad) !important;
+    padding-right: var(--card-pad) !important;
+}
+
+body.bg-dashboard .indicadores-kpi {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+    gap: clamp(10px, 2vw, 16px) !important;
+}
+
+body.bg-dashboard .grid-campos-doble,
+body.bg-dashboard .grid-primarios-familia {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+    gap: clamp(12px, 2.2vw, 24px) !important;
+}
+
+body.bg-dashboard .selector-postventa-head {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 320px) !important;
+}
+
+body.bg-dashboard .selector-postventa-estado {
+    min-width: 0 !important;
+    width: 100% !important;
+}
+
+body.bg-dashboard .header-actions-right {
+    min-width: 0 !important;
+}
+
+body.bg-dashboard .header-tabs-top {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+}
+
+@media (max-width: 1024px) {
+    body.bg-dashboard .header-postventa {
+        grid-template-columns: 1fr !important;
+        grid-template-areas:
+            "volver"
+            "titulo"
+            "acciones"
+            "flujo" !important;
+    }
+
+    body.bg-dashboard .header-actions-right {
+        width: 100% !important;
+        align-items: flex-start !important;
+    }
+
+    body.bg-dashboard .selector-postventa-head {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 640px) {
+    body.bg-dashboard .top-tab {
+        flex: 1 1 140px !important;
+        justify-content: center !important;
+    }
+
+    body.bg-dashboard .btn-volver-top {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+}
+
+/* ======================================================
+   Fix alineación usuario + tabs (pantalla media)
+   ====================================================== */
+body.bg-dashboard .header-actions-right {
+    position: static !important;
+    top: auto !important;
+    right: auto !important;
+    width: fit-content !important;
+    max-width: 100%;
+    justify-self: end !important;
+    align-self: start !important;
+    align-items: flex-end !important;
+}
+
+body.bg-dashboard .header-actions-right .user-profile {
+    width: auto !important;
+    justify-content: flex-end !important;
+}
+
+body.bg-dashboard .header-tabs-top {
+    width: fit-content !important;
+    max-width: 100%;
+    flex-wrap: wrap !important;
+}
+
+@media (max-width: 900px) {
+    body.bg-dashboard .header-actions-right {
+        width: fit-content !important;
+        max-width: 100% !important;
+        justify-self: end !important;
+        align-items: flex-end !important;
+        margin-left: auto !important;
+    }
+
+    body.bg-dashboard .header-actions-right .user-profile {
+        justify-content: flex-end !important;
+    }
+
+    body.bg-dashboard .header-tabs-top {
+        width: fit-content !important;
+        align-self: flex-end !important;
+        margin-left: auto !important;
+    }
+}
+
+@media (min-width: 901px) and (max-width: 1024px) {
+    body.bg-dashboard .header-postventa {
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        grid-template-areas:
+            "volver acciones"
+            "titulo acciones"
+            "flujo acciones" !important;
+    }
+}
+
+/* Evita recorte del menú de usuario dentro del header */
+body.bg-dashboard .header-postventa {
+    overflow: visible !important;
+    isolation: isolate;
+}
+
+body.bg-dashboard .header-postventa::before {
+    inset: 0 !important;
+    border-radius: inherit;
+    z-index: 0;
+}
+
+body.bg-dashboard .header-postventa > * {
+    z-index: 1;
+}
+
+/* Da espacio al dropdown del usuario para que no tape los KPI */
+body.bg-dashboard .header-postventa:has(.auth-menu.open) {
+    padding-bottom: calc(var(--card-pad) + clamp(180px, 28vh, 260px)) !important;
+}
+
+/* ======================================================
+   KPI grid: 4 en desktop, 2x2 en pantalla media y móvil
+   ====================================================== */
+body.bg-dashboard .indicadores-kpi {
+    grid-template-columns: repeat(4, minmax(180px, 1fr)) !important;
+}
+
+@media (max-width: 1200px) {
+    body.bg-dashboard .indicadores-kpi {
+        grid-template-columns: repeat(2, minmax(180px, 1fr)) !important;
+    }
+}
+
+@media (max-width: 640px) {
+    body.bg-dashboard .indicadores-kpi {
+        grid-template-columns: repeat(2, minmax(150px, 1fr)) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    body.bg-dashboard .header-actions-right {
+        width: 100% !important;
+        align-items: flex-start !important;
+        margin-left: 0 !important;
+    }
+
+    body.bg-dashboard .header-actions-right .user-profile {
+        justify-content: flex-start !important;
+    }
+
+    body.bg-dashboard .header-tabs-top {
+        align-self: flex-start !important;
+        margin-left: 0 !important;
+    }
+}

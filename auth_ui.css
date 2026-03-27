@@ -23,6 +23,19 @@
     z-index: 13010;
 }
 
+.auth-menu--floating {
+    z-index: 50000;
+}
+
+.auth-menu--floating.is-dragging .auth-menu__btn {
+    cursor: grabbing;
+}
+
+.auth-menu--floating .auth-menu__btn {
+    cursor: grab;
+    touch-action: none;
+}
+
 .auth-menu__btn {
     appearance: none;
     border: 1px solid rgba(203, 213, 225, 0.70);
@@ -87,6 +100,10 @@
     display: none;
     backdrop-filter: blur(10px);
     z-index: 20001;
+}
+
+.auth-menu--floating .auth-menu__dropdown {
+    z-index: 50001;
 }
 
 .auth-menu.open .auth-menu__dropdown {

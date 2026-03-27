@@ -56,7 +56,7 @@
         const admin = esAdmin(user);
 
         const root = document.createElement("div");
-        root.className = "auth-menu auth-menu--fixed";
+        root.className = "auth-menu auth-menu--fixed auth-menu--floating";
         root.innerHTML = `
             <button type="button" class="auth-menu__btn" id="auth_menu_btn" aria-haspopup="true" aria-expanded="false">
                 <span class="auth-menu__avatar">${svgUser()}</span>
@@ -102,6 +102,7 @@
         const btn = root.querySelector("#auth_menu_btn");
         const dd = root.querySelector("#auth_menu_dd");
         const logoutBtn = root.querySelector("#auth_logout_btn");
+        let suppressClick = false;
 
         const close = () => {
             root.classList.remove("open");
@@ -114,6 +115,10 @@
         const toggle = () => (root.classList.contains("open") ? close() : open());
 
         btn?.addEventListener("click", (e) => {
+            if (suppressClick) {
+                suppressClick = false;
+                return;
+            }
             e.stopPropagation();
             toggle();
         });
@@ -131,6 +136,88 @@
         document.addEventListener("keydown", (e) => {
             if (e.key === "Escape") close();
         });
+
+        // Drag & drop del botón flotante
+        if (root.classList.contains("auth-menu--floating") && btn) {
+            const key = "auth_menu_pos_v1";
+            const saved = localStorage.getItem(key);
+            if (saved) {
+                try {
+                    const pos = JSON.parse(saved);
+                    if (typeof pos?.x === "number" && typeof pos?.y === "number") {
+                        root.style.left = `${pos.x}px`;
+                        root.style.top = `${pos.y}px`;
+                        root.style.right = "auto";
+                        root.style.bottom = "auto";
+                    }
+                } catch (_) {}
+            }
+
+            let dragging = false;
+            let startX = 0;
+            let startY = 0;
+            let originX = 0;
+            let originY = 0;
+
+            const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+
+            const onMove = (e) => {
+                if (!dragging) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                const rect = root.getBoundingClientRect();
+                const nextX = originX + dx;
+                const nextY = originY + dy;
+                const maxX = window.innerWidth - rect.width - 8;
+                const maxY = window.innerHeight - rect.height - 8;
+                const x = clamp(nextX, 8, Math.max(8, maxX));
+                const y = clamp(nextY, 8, Math.max(8, maxY));
+                root.style.left = `${x}px`;
+                root.style.top = `${y}px`;
+                root.style.right = "auto";
+                root.style.bottom = "auto";
+            };
+
+            const onUp = () => {
+                if (!dragging) return;
+                dragging = false;
+                root.classList.remove("is-dragging");
+                const rect = root.getBoundingClientRect();
+                localStorage.setItem(key, JSON.stringify({ x: rect.left, y: rect.top }));
+                document.removeEventListener("pointermove", onMove);
+                document.removeEventListener("pointerup", onUp);
+            };
+
+            btn.addEventListener("pointerdown", (e) => {
+                if (e.button !== undefined && e.button !== 0) return;
+                e.stopPropagation();
+                close();
+                const rect = root.getBoundingClientRect();
+                startX = e.clientX;
+                startY = e.clientY;
+                originX = rect.left;
+                originY = rect.top;
+                dragging = false;
+                const moveThreshold = 4;
+
+                const onMoveStart = (ev) => {
+                    const dx = Math.abs(ev.clientX - startX);
+                    const dy = Math.abs(ev.clientY - startY);
+                    if (!dragging && (dx > moveThreshold || dy > moveThreshold)) {
+                        dragging = true;
+                        root.classList.add("is-dragging");
+                        suppressClick = true;
+                    }
+                    if (dragging) onMove(ev);
+                };
+
+                document.addEventListener("pointermove", onMoveStart);
+                document.addEventListener("pointerup", () => {
+                    document.removeEventListener("pointermove", onMoveStart);
+                    onUp();
+                }, { once: true });
+            });
+        }
     }
 
     function init() {
@@ -150,7 +237,7 @@
             el.style.display = admin ? "" : "none";
         });
 
-        // Si existe header user-profile, lo reemplazamos por el menú (misma posición, mismo layout)
+        // Si existe header user-profile, lo ocultamos (usamos menú flotante global)
         const host = document.querySelector(".user-profile");
         if (host) {
             host.innerHTML = "";
@@ -158,17 +245,10 @@
             host.style.border = "0";
             host.style.background = "transparent";
             host.style.boxShadow = "none";
-            const menu = buildMenu({ user });
-            menu.classList.remove("auth-menu--fixed");
-            // Dentro del header no debe heredar desplazamientos de la versión fija.
-            menu.style.right = "";
-            menu.style.top = "";
-            host.appendChild(menu);
-            wireMenu(menu);
-            return;
+            host.style.display = "none";
         }
 
-        // Fallback: fijo arriba a la derecha
+        // Menú flotante global
         const menu = buildMenu({ user });
         document.body.appendChild(menu);
         wireMenu(menu);
