@@ -173,6 +173,253 @@
     background: rgba(239, 68, 68, 0.12);
 }
 
+/* ======================================================
+   Floating user menu + welcome overlay
+   ====================================================== */
+.auth-menu--floating {
+    z-index: 50000;
+}
+
+.auth-menu--floating.is-dragging .auth-menu__btn {
+    cursor: grabbing;
+}
+
+.auth-menu--floating .auth-menu__btn {
+    cursor: grab;
+    touch-action: none;
+}
+
+.auth-menu--floating .auth-menu__dropdown {
+    z-index: 50001;
+}
+
+/* Welcome overlay */
+.pv-welcome {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    z-index: 60000;
+    pointer-events: auto;
+    opacity: 0;
+    transition: opacity 240ms ease;
+}
+
+.pv-welcome.is-visible {
+    opacity: 1;
+}
+
+.pv-welcome.is-hiding {
+    opacity: 0;
+}
+
+.pv-welcome__backdrop {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.22), transparent 40%),
+        radial-gradient(circle at 80% 15%, rgba(14, 165, 233, 0.18), transparent 45%),
+        rgba(15, 23, 42, 0.32);
+    backdrop-filter: blur(8px);
+}
+
+.pv-welcome__card {
+    position: relative;
+    z-index: 1;
+    min-width: min(520px, 90vw);
+    padding: 28px 34px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(203, 213, 225, 0.6);
+    box-shadow: 0 30px 80px rgba(15, 23, 42, 0.25);
+    text-align: center;
+    transform: translateY(10px) scale(0.98);
+    transition: transform 280ms ease;
+    overflow: hidden;
+}
+
+.pv-welcome.is-visible .pv-welcome__card {
+    transform: translateY(0) scale(1);
+}
+
+.pv-welcome__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(147, 197, 253, 0.6);
+    background: rgba(239, 246, 255, 0.8);
+    color: #1d4ed8;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.pv-welcome__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #60a5fa, #38bdf8);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.8);
+}
+
+.pv-welcome__kicker {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: #64748b;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.pv-welcome__title {
+    font-size: 1.05rem;
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.pv-welcome__name {
+    font-size: clamp(2rem, 3.8vw, 3rem);
+    font-weight: 700;
+    margin: 2px 0 8px;
+    background: linear-gradient(120deg, #0f172a, #1d4ed8, #0f172a);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: pvNameGlow 6s ease-in-out infinite;
+}
+
+.pv-welcome__subtitle {
+    font-size: 0.98rem;
+    color: #475569;
+    margin-bottom: 14px;
+}
+
+.pv-welcome__hint {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.pv-welcome__ring {
+    position: absolute;
+    inset: -60% -40% auto auto;
+    width: 220px;
+    height: 220px;
+    border-radius: 999px;
+    border: 1px dashed rgba(59, 130, 246, 0.35);
+    animation: pvRingSpin 16s linear infinite;
+    pointer-events: none;
+}
+
+.pv-welcome__orb {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    border-radius: 999px;
+    filter: blur(1px);
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.pv-welcome__orb--1 {
+    left: -40px;
+    bottom: -40px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.35), transparent 65%);
+    animation: pvFloat 10s ease-in-out infinite;
+}
+
+.pv-welcome__orb--2 {
+    right: -50px;
+    top: 40px;
+    background: radial-gradient(circle, rgba(14, 165, 233, 0.3), transparent 65%);
+    animation: pvFloat 12s ease-in-out infinite reverse;
+}
+
+.pv-welcome__spark {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    width: 120px;
+    height: 2px;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.7), transparent);
+    opacity: 0.6;
+    animation: pvSpark 2.8s ease-in-out infinite;
+}
+
+@keyframes pvFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+@keyframes pvRingSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pvSpark {
+    0%, 100% { opacity: 0.25; transform: translateX(-50%) scaleX(0.85); }
+    50% { opacity: 0.7; transform: translateX(-50%) scaleX(1); }
+}
+
+@keyframes pvNameGlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@media (max-width: 640px) {
+.pv-welcome__card {
+    padding: 22px 20px;
+}
+}
+
+/* ======================================================
+   Dark mode v2 (auth UI)
+   ====================================================== */
+body.dark-mode .auth-menu__btn {
+    background: #101722 !important;
+    border: 2px solid #6bd2ff !important;
+    color: #e6edf6 !important;
+    box-shadow: 0 0 0 4px rgba(107, 210, 255, 0.16), 0 18px 40px rgba(0, 0, 0, 0.45) !important;
+}
+
+body.dark-mode .auth-menu__dropdown {
+    background: #141b25 !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 26px 60px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.dark-mode .auth-item {
+    background: #101722 !important;
+    border-color: rgba(107, 210, 255, 0.45) !important;
+    color: #e6edf6 !important;
+}
+
+body.dark-mode .auth-item:hover {
+    background: rgba(107, 210, 255, 0.12) !important;
+    border-color: #6bd2ff !important;
+}
+
+body.dark-mode .pv-welcome__card {
+    background: #141b25 !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55) !important;
+}
+
+body.dark-mode .pv-welcome__backdrop {
+    background:
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.06), transparent 45%),
+        radial-gradient(circle at 80% 15%, rgba(255, 255, 255, 0.04), transparent 50%),
+        rgba(8, 10, 14, 0.7);
+}
+
 /* Dark mode */
 body.dark-mode .auth-menu__btn {
     background: rgba(15, 23, 42, 0.55);

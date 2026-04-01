@@ -80,6 +80,7 @@
                 <button type="button" class="report-tab is-active" id="rep_btn_gestion_registros" data-rep-view="gestion">
                     Gestión de registros
                 </button>
+                <button type="button" class="report-tab" data-rep-view="graficos">Gráficos</button>
                 <button type="button" class="report-tab" data-rep-view="historico">Histórico</button>
                 <button type="button" class="report-tab" data-rep-view="cierre">Gestión de cierre</button>
                 <button type="button" class="report-tab" data-rep-view="usuarios" data-admin-only>Gestión de usuarios</button>
@@ -88,6 +89,90 @@
         </div>
         <div class="report-body">
             <div id="rep_view_gestion" class="rep-view"></div>
+            <div id="rep_view_graficos" class="rep-view" hidden>
+                <section class="rep-graficos">
+                    <div class="rep-graficos-head">
+                        <div>
+                            <h4>Panel de gráficos</h4>
+                            <p>Distribución de familias, estados de postventa y evolución mensual.</p>
+                        </div>
+                        <div class="rep-graficos-actions">
+                            <div class="rep-graficos-controls">
+                                <label for="rep_graficos_rango">Rango</label>
+                                <select id="rep_graficos_rango">
+                                    <option value="6">6 meses</option>
+                                    <option value="12">12 meses</option>
+                                </select>
+                            </div>
+                            <button type="button" id="rep_graficos_toggle_valores" class="pv-btn rep-toggle" aria-pressed="false">
+                                Mostrar valores
+                            </button>
+                            <span id="rep_graficos_total" class="rep-graficos-total">Actualizando...</span>
+                            <button type="button" id="rep_graficos_btn_refrescar" class="pv-btn">Refrescar</button>
+                        </div>
+                    </div>
+                    <div class="rep-graficos-grid">
+                        <article class="rep-chart-card">
+                            <header class="rep-chart-head">
+                                <div>
+                                    <h5>Distribución de familias</h5>
+                                    <p>Pendiente, en progreso y finalizadas.</p>
+                                </div>
+                                <span id="rep_graf_total_familias" class="rep-chart-badge">0 familias</span>
+                            </header>
+                            <div class="rep-chart-canvas">
+                                <canvas id="chart_familias_estado"></canvas>
+                            </div>
+                        </article>
+                        <article class="rep-chart-card">
+                            <header class="rep-chart-head">
+                                <div>
+                                    <h5>Casas abiertas vs cerradas</h5>
+                                    <p>Estado formal de postventas activas.</p>
+                                </div>
+                                <span id="rep_graf_total_casas" class="rep-chart-badge">0 casas</span>
+                            </header>
+                            <div class="rep-chart-canvas">
+                                <canvas id="chart_casas_estado"></canvas>
+                            </div>
+                        </article>
+                        <article class="rep-chart-card">
+                            <header class="rep-chart-head">
+                                <div>
+                                    <h5>Familias por proyecto y estado</h5>
+                                    <p>Comparación de pendientes, en progreso y finalizadas.</p>
+                                </div>
+                            </header>
+                            <div class="rep-chart-canvas">
+                                <canvas id="chart_familias_proyecto"></canvas>
+                            </div>
+                        </article>
+                        <article class="rep-chart-card">
+                            <header class="rep-chart-head">
+                                <div>
+                                    <h5>Recuento de tareas por ejecutante</h5>
+                                    <p>Top 10 por cantidad de tareas asignadas.</p>
+                                </div>
+                            </header>
+                            <div class="rep-chart-canvas">
+                                <canvas id="chart_tareas_ejecutante"></canvas>
+                            </div>
+                        </article>
+                        <article class="rep-chart-card rep-chart-card--wide">
+                            <header class="rep-chart-head">
+                                <div>
+                                    <h5>Evolución operativa</h5>
+                                    <p>Comparación mensual de postventas, familias y tareas.</p>
+                                </div>
+                            </header>
+                            <div class="rep-chart-canvas rep-chart-canvas--wide">
+                                <canvas id="chart_evolucion"></canvas>
+                            </div>
+                        </article>
+                    </div>
+                    <p id="rep_graficos_msg" class="rep-graficos-msg"></p>
+                </section>
+            </div>
             <div id="rep_view_historico" class="rep-view" hidden>
                 <section class="rep-hist-grid">
                     <div class="rep-hist-tabla">
@@ -192,11 +277,83 @@
                 </section>
             </div>
             <div id="rep_view_usuarios" class="rep-view" hidden data-admin-only>
-                <div class="report-placeholder">
-                    <h4>Gestión de usuarios</h4>
-                    <p>Acceso exclusivo para administradores.</p>
-                    <a class="report-link" href="usuarios.html">Abrir Gestión de usuarios</a>
-                </div>
+                <section class="rep-usuarios">
+                    <div class="rep-usuarios-head">
+                        <div>
+                            <h4>Gestión de usuarios</h4>
+                            <p>Solo rol <strong>admin</strong>. Crea, administra y desactiva usuarios sin salir de Reportería.</p>
+                        </div>
+                        <button class="pv-btn" id="btn_refrescar" type="button">Refrescar</button>
+                    </div>
+
+                    <div class="rep-usuarios-grid">
+                        <form id="form_usuario" class="rep-usuarios-card rep-usuarios-form">
+                            <h5>Crear usuario</h5>
+                            <div class="rep-usuarios-fields rep-usuarios-grid-3">
+                                <div>
+                                    <label>Username</label>
+                                    <input id="u_username" required />
+                                </div>
+                                <div>
+                                    <label>Nombre</label>
+                                    <input id="u_nombre" required />
+                                </div>
+                                <div>
+                                    <label>Apellido</label>
+                                    <input id="u_apellido" required />
+                                </div>
+                            </div>
+                            <div class="rep-usuarios-fields rep-usuarios-grid-2">
+                                <div>
+                                    <label>Email</label>
+                                    <input id="u_email" type="email" required />
+                                </div>
+                                <div>
+                                    <label>Password</label>
+                                    <input id="u_password" type="password" required />
+                                </div>
+                            </div>
+                            <div class="rep-usuarios-fields rep-usuarios-grid-2">
+                                <div>
+                                    <label>Rol</label>
+                                    <select id="u_rol" required>
+                                        <option value="viewer">viewer</option>
+                                        <option value="editor">editor</option>
+                                        <option value="admin">admin</option>
+                                    </select>
+                                </div>
+                                <div class="rep-usuarios-actions">
+                                    <button class="pv-btn manage" type="submit">Crear usuario</button>
+                                </div>
+                            </div>
+                            <div id="msg_form" class="rep-msg"></div>
+                        </form>
+
+                        <div class="rep-usuarios-card rep-usuarios-list">
+                            <div class="rep-usuarios-list-head">
+                                <h5>Usuarios</h5>
+                            </div>
+                            <div class="rep-usuarios-table-wrap">
+                                <table class="rep-usuarios-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Username</th>
+                                            <th>Nombre</th>
+                                            <th>Apellido</th>
+                                            <th>Email</th>
+                                            <th>Rol</th>
+                                            <th>Estado</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody_usuarios"></tbody>
+                                </table>
+                            </div>
+                            <div id="msg_tabla" class="rep-msg"></div>
+                        </div>
+                    </div>
+                </section>
             </div>
             <div id="rep_view_auditoria" class="rep-view" hidden data-admin-only>
                 <section class="rep-hist-grid">
@@ -571,6 +728,7 @@
 </div>
 
 <script src="auth_ui.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="logica_registro.js"></script>
 
 <!-- Modal de gestión (Proyecto -> Postventa -> Familia -> Tareas) -->

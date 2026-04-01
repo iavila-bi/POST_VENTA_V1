@@ -34,6 +34,50 @@
         location.href = "/";
     }
 
+    const MAX_SESSION_MS = 60 * 60 * 1000; // 1 hora
+    const IDLE_POLL_MS = 30 * 1000;
+
+    function parseJwtExp(token) {
+        try {
+            const payload = token.split(".")[1];
+            if (!payload) return null;
+            const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+            const decoded = JSON.parse(atob(normalized));
+            return Number(decoded?.exp) ? decoded.exp * 1000 : null;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function iniciarGuardiasSesion(token) {
+        if (!token || IS_LOGIN) return;
+
+        const expMs = parseJwtExp(token);
+        if (expMs) {
+            const msLeft = expMs - Date.now();
+            if (msLeft <= 0) {
+                logout();
+                return;
+            }
+            setTimeout(() => {
+                logout();
+            }, msLeft);
+        }
+
+        let lastActivity = Date.now();
+        const markActive = () => { lastActivity = Date.now(); };
+
+        ["mousemove", "keydown", "scroll", "click", "touchstart"].forEach(evt => {
+            window.addEventListener(evt, markActive, { passive: true });
+        });
+
+        setInterval(() => {
+            if (Date.now() - lastActivity >= MAX_SESSION_MS) {
+                logout();
+            }
+        }, IDLE_POLL_MS);
+    }
+
     function svgUser() {
         return `
             <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -56,7 +100,7 @@
         const admin = esAdmin(user);
 
         const root = document.createElement("div");
-        root.className = "auth-menu auth-menu--fixed auth-menu--floating";
+        root.className = "auth-menu auth-menu--fixed";
         root.innerHTML = `
             <button type="button" class="auth-menu__btn" id="auth_menu_btn" aria-haspopup="true" aria-expanded="false">
                 <span class="auth-menu__avatar">${svgUser()}</span>
@@ -69,7 +113,7 @@
                     <div class="r">Rol: <strong>${escapeHtml(rol)}</strong></div>
                 </div>
                 <div class="auth-menu__items">
-                    ${admin ? `<a class="auth-item" href="usuarios.html">Gestión de usuarios <span>›</span></a>` : ""}
+                    ${admin ? `<a class="auth-item" href="registro.html?modo=reporteria&vista=usuarios">Gestión de usuarios <span>›</span></a>` : ""}
                     ${admin ? `<a class="auth-item" href="registro.html?modo=reporteria&vista=auditoria">Auditoría <span>›</span></a>` : ""}
                     <button type="button" class="auth-item danger" id="auth_logout_btn">Cerrar sesión <span>⟶</span></button>
                 </div>
@@ -141,6 +185,20 @@
         if (root.classList.contains("auth-menu--floating") && btn) {
             const key = "auth_menu_pos_v1";
             const saved = localStorage.getItem(key);
+            const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+
+            const clampToViewport = () => {
+                const rect = root.getBoundingClientRect();
+                const maxX = window.innerWidth - rect.width - 8;
+                const maxY = window.innerHeight - rect.height - 8;
+                const x = clamp(rect.left, 8, Math.max(8, maxX));
+                const y = clamp(rect.top, 8, Math.max(8, maxY));
+                root.style.left = `${x}px`;
+                root.style.top = `${y}px`;
+                root.style.right = "auto";
+                root.style.bottom = "auto";
+            };
+
             if (saved) {
                 try {
                     const pos = JSON.parse(saved);
@@ -153,13 +211,14 @@
                 } catch (_) {}
             }
 
+            requestAnimationFrame(clampToViewport);
+            window.addEventListener("resize", () => requestAnimationFrame(clampToViewport));
+
             let dragging = false;
             let startX = 0;
             let startY = 0;
             let originX = 0;
             let originY = 0;
-
-            const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
 
             const onMove = (e) => {
                 if (!dragging) return;
@@ -220,6 +279,62 @@
         }
     }
 
+    function getSaludo() {
+        const hour = new Date().getHours();
+        if (hour < 6) return "Buenas noches";
+        if (hour < 12) return "Buenos días";
+        if (hour < 19) return "Buenas tardes";
+        return "Buenas noches";
+    }
+
+    function showWelcome(user) {
+        try {
+            const key = "pv_welcome_shown";
+            if (sessionStorage.getItem(key)) return;
+            sessionStorage.setItem(key, "1");
+        } catch (_) {}
+
+        const username = user?.username || "Usuario";
+        const saludo = getSaludo();
+
+        const overlay = document.createElement("div");
+        overlay.className = "pv-welcome";
+        overlay.setAttribute("role", "dialog");
+        overlay.setAttribute("aria-live", "polite");
+        overlay.innerHTML = `
+            <div class="pv-welcome__backdrop"></div>
+            <div class="pv-welcome__card" role="document">
+                <div class="pv-welcome__ring"></div>
+                <div class="pv-welcome__orb pv-welcome__orb--1"></div>
+                <div class="pv-welcome__orb pv-welcome__orb--2"></div>
+                <div class="pv-welcome__badge">
+                    <span class="pv-welcome__dot"></span>
+                    GP Postventa
+                </div>
+                <div class="pv-welcome__kicker">${saludo}</div>
+                <div class="pv-welcome__title">Bienvenido${username ? "," : ""}</div>
+                <div class="pv-welcome__name">${escapeHtml(username)}</div>
+                <div class="pv-welcome__subtitle">Gestión postventa fluida y trazable para Grupo Patagual.</div>
+                <div class="pv-welcome__hint">Haz clic para continuar</div>
+                <div class="pv-welcome__spark"></div>
+            </div>
+        `;
+
+        const close = () => {
+            overlay.classList.add("is-hiding");
+            setTimeout(() => overlay.remove(), 320);
+        };
+
+        overlay.addEventListener("click", close);
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") close();
+        }, { once: true });
+
+        document.body.appendChild(overlay);
+        requestAnimationFrame(() => overlay.classList.add("is-visible"));
+        setTimeout(close, 3200);
+    }
+
     function init() {
         const { token, user } = getSesion();
 
@@ -231,13 +346,17 @@
 
         if (IS_LOGIN) return;
 
+        iniciarGuardiasSesion(token);
+
+        showWelcome(user);
+
         // Oculta UI admin-only si corresponde (compat con index.html)
         const admin = esAdmin(user);
         document.querySelectorAll("[data-admin-only]").forEach(el => {
             el.style.display = admin ? "" : "none";
         });
 
-        // Si existe header user-profile, lo ocultamos (usamos menú flotante global)
+        // Si existe header user-profile, lo usamos como ancla
         const host = document.querySelector(".user-profile");
         if (host) {
             host.innerHTML = "";
@@ -245,11 +364,19 @@
             host.style.border = "0";
             host.style.background = "transparent";
             host.style.boxShadow = "none";
-            host.style.display = "none";
+            const menu = buildMenu({ user });
+            menu.classList.remove("auth-menu--fixed");
+            menu.classList.remove("auth-menu--floating");
+            menu.style.right = "";
+            menu.style.top = "";
+            host.appendChild(menu);
+            wireMenu(menu);
+            return;
         }
 
-        // Menú flotante global
+        // Fallback: flotante global
         const menu = buildMenu({ user });
+        menu.classList.add("auth-menu--floating");
         document.body.appendChild(menu);
         wireMenu(menu);
     }

@@ -386,17 +386,17 @@ body.dark-mode {
     --text-main: #e5e7eb;
     --text-soft: #b7c2d3;
     --text-mute: #95a4bc;
-    --bg-page: #0b1220;
-    --bg-card: #0f1a2e;
+    --bg-page: #1b2430;
+    --bg-card: #141b25;
     --bg-soft: rgba(255, 255, 255, 0.04);
     --line: rgba(255, 255, 255, 0.14);
     --line-2: rgba(255, 255, 255, 0.22);
     --shadow: 0 16px 32px rgba(2, 6, 23, 0.50);
     --shadow-2: 0 22px 60px rgba(2, 6, 23, 0.62);
     background:
-        radial-gradient(circle at 10% 0%, rgba(37, 99, 235, 0.16), transparent 38%),
-        radial-gradient(circle at 80% 18%, rgba(148, 163, 184, 0.10), transparent 38%),
-        linear-gradient(180deg, #0b1220 0%, #111827 100%);
+        radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.04), transparent 48%),
+        radial-gradient(circle at 85% 12%, rgba(255, 255, 255, 0.03), transparent 55%),
+        #1b2430;
 }
 
 body.dark-mode .btn-volver,
@@ -553,4 +553,69 @@ body h6 {
 .tarea-ejecutante,
 .dia-num {
     font-weight: 520 !important;
+}
+
+/* ======================================================
+   Dark mode v2 (negro + bordes azul brillante)
+   ====================================================== */
+body.dark-mode {
+    --text-main: #e6edf6;
+    --text-soft: #a5b3c4;
+    --text-mute: #8b9bb0;
+    --bg-page: #1b2430;
+    --bg-card: #141b25;
+    --bg-soft: #101722;
+    --line: rgba(255, 255, 255, 0.4);
+    --line-2: rgba(255, 255, 255, 0.55);
+    --accent-700: #6bd2ff;
+    --accent-600: #6bd2ff;
+    --accent-100: rgba(107, 210, 255, 0.16);
+    --accent-50: rgba(107, 210, 255, 0.08);
+    --shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+    --shadow-2: 0 26px 60px rgba(0, 0, 0, 0.5);
+    background:
+        radial-gradient(circle at 12% -10%, rgba(255, 255, 255, 0.04), transparent 50%),
+        radial-gradient(circle at 95% 0%, rgba(255, 255, 255, 0.03), transparent 54%),
+        #0f141c !important;
+    color: var(--text-main) !important;
+}
+
+body.dark-mode .hero-calendario,
+body.dark-mode .panel-controles,
+body.dark-mode .panel-resumen,
+body.dark-mode .panel-calendario {
+    background: var(--bg-card) !important;
+    border-color: var(--line) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+body.dark-mode .btn-volver {
+    background: #101722 !important;
+    border-color: rgba(107, 210, 255, 0.55) !important;
+    color: var(--text-main) !important;
+}
+
+body.dark-mode .theme-toggle {
+    background: #101722 !important;
+    border: 2px solid #6bd2ff !important;
+    color: #6bd2ff !important;
+    box-shadow: 0 0 0 4px rgba(107, 210, 255, 0.16), 0 18px 40px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Toggle siempre al costado izquierdo */
+.theme-toggle,
+body.dark-mode .theme-toggle {
+    left: -8px !important;
+    right: auto !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-left-width: 0 !important;
+}
+
+body.dark-mode .app-kicker {
+    border-color: rgba(107, 210, 255, 0.55) !important;
+    background: rgba(107, 210, 255, 0.12) !important;
+    color: #d7efff !important;
 }

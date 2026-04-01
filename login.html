@@ -273,6 +273,112 @@
         .hint code {
             font-weight: 800;
         }
+
+        .login-loading {
+            position: fixed;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 220ms ease;
+            z-index: 9999;
+        }
+
+        body.login-loading-active .login-loading {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        body.login-loading-active .login-shell {
+            filter: blur(1px);
+            transform: scale(0.98);
+            transition: transform 220ms ease, filter 220ms ease;
+        }
+
+        .login-loading__card {
+            min-width: min(420px, 86vw);
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(198, 210, 228, 0.9);
+            border-radius: 20px;
+            padding: 22px 24px;
+            box-shadow: 0 20px 46px rgba(15, 23, 42, 0.24);
+            display: grid;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .login-loading__spinner {
+            width: 46px;
+            height: 46px;
+            margin: 0 auto;
+            border-radius: 50%;
+            border: 3px solid rgba(37, 99, 235, 0.18);
+            border-top-color: rgba(37, 99, 235, 0.8);
+            animation: spin 0.9s linear infinite;
+        }
+
+        .login-loading__title {
+            font-size: var(--fs-lg);
+            font-weight: 900;
+            color: var(--ink);
+            letter-spacing: -0.02em;
+        }
+
+        .login-loading__subtitle {
+            font-size: var(--fs-sm);
+            color: var(--muted2);
+        }
+
+        .login-loading__bar {
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(37, 99, 235, 0.14);
+            overflow: hidden;
+        }
+
+        .login-loading__bar span {
+            display: block;
+            height: 100%;
+            width: 45%;
+            border-radius: inherit;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            animation: bar 1.2s ease-in-out infinite;
+        }
+
+        body.dark-mode .login-loading {
+            background: rgba(15, 18, 25, 0.6);
+        }
+
+        body.dark-mode .login-loading__card {
+            background: #141b25;
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            box-shadow: 0 22px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        body.dark-mode .login-loading__title {
+            color: #e6edf6;
+        }
+
+        body.dark-mode .login-loading__subtitle {
+            color: #a5b3c4;
+        }
+
+        body.dark-mode .login-loading__bar {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes bar {
+            0% { transform: translateX(-35%); }
+            50% { transform: translateX(120%); }
+            100% { transform: translateX(220%); }
+        }
     </style>
 </head>
 <body>
@@ -329,10 +435,20 @@
         </section>
     </main>
 
+    <div id="login_loading" class="login-loading" aria-hidden="true">
+        <div class="login-loading__card" role="status" aria-live="polite">
+            <div class="login-loading__spinner"></div>
+            <div class="login-loading__title">Entrando a Postventa</div>
+            <div class="login-loading__subtitle">Validando credenciales y preparando tu panel…</div>
+            <div class="login-loading__bar"><span></span></div>
+        </div>
+    </div>
+
     <script>
         // Si ya existe token, entra directo al menú
         const existing = localStorage.getItem("token");
         if (existing) {
+            document.body.classList.add("login-loading-active");
             window.location.href = "index.html";
         }
 
@@ -355,9 +471,20 @@
             el.classList.toggle("err", Boolean(isError));
         }
 
-        document.getElementById("form_login").addEventListener("submit", async (e) => {
+        const form = document.getElementById("form_login");
+        const btnLogin = form.querySelector(".btn-login");
+        const inputs = Array.from(form.querySelectorAll("input"));
+
+        function setLoading(on) {
+            document.body.classList.toggle("login-loading-active", on);
+            if (btnLogin) btnLogin.disabled = on;
+            inputs.forEach(inp => inp.disabled = on);
+        }
+
+        form.addEventListener("submit", async (e) => {
             e.preventDefault();
             setMsg("");
+            setLoading(true);
             const user = document.getElementById("login_user").value.trim();
             const password = document.getElementById("login_password").value;
             try {
@@ -366,10 +493,10 @@
                 localStorage.setItem("user", JSON.stringify(data.user));
                 window.location.href = "index.html";
             } catch (err) {
+                setLoading(false);
                 setMsg(err.message || "No se pudo iniciar sesión", true);
             }
         });
     </script>
 </body>
 </html>
-

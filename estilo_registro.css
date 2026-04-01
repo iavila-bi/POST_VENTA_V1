@@ -114,7 +114,7 @@ body {
     font-weight: 700;
     margin-bottom: 35px;
     padding-bottom: 15px;
-    border-bottom: 2px solid var(--azul-100);
+    border-bottom: none;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -1713,7 +1713,7 @@ body.dark-mode .estado-postventa-modulo--sin {
 
 .cabecera-modulo .titulo-seccion {
     margin-bottom: 0;
-    padding-bottom: 12px;
+    padding-bottom: 0;
     flex: 1 1 auto;
 }
 
@@ -1733,6 +1733,152 @@ body.dark-mode .estado-postventa-modulo--sin {
         text-align: left;
         white-space: normal;
     }
+}
+
+/* ======================================================
+   Responsive ajustes (KPIs + tabs en pantalla media)
+   ====================================================== */
+body.bg-dashboard .indicadores-kpi {
+    grid-template-columns: repeat(4, minmax(180px, 1fr)) !important;
+}
+
+@media (max-width: 1200px) {
+    body.bg-dashboard .indicadores-kpi {
+        grid-template-columns: repeat(2, minmax(180px, 1fr)) !important;
+    }
+}
+
+@media (max-width: 640px) {
+    body.bg-dashboard .indicadores-kpi {
+        grid-template-columns: repeat(2, minmax(150px, 1fr)) !important;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 1100px) {
+    body.bg-dashboard .header-tabs-top {
+        flex-wrap: nowrap !important;
+    }
+
+    body.bg-dashboard .top-tab {
+        flex: 0 0 auto !important;
+        padding: 10px 14px !important;
+    }
+}
+
+/* ======================================================
+   Dark mode v2 (negro + bordes azul brillante)
+   ====================================================== */
+body.dark-mode {
+    background:
+        radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.04), transparent 48%),
+        radial-gradient(circle at 85% 12%, rgba(255, 255, 255, 0.03), transparent 55%),
+        #1b2430 !important;
+    color: #e6edf6 !important;
+}
+
+body.dark-mode .header-postventa,
+body.dark-mode .selector-postventa-card,
+body.dark-mode .tarjeta-modulo,
+body.dark-mode .kpi-card {
+    background: #0b0d12 !important;
+    border: 1px solid #2ea3ff !important;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(46, 163, 255, 0.2) !important;
+}
+
+body.dark-mode .header-postventa::before {
+    background:
+        radial-gradient(circle at 20% 10%, rgba(46, 163, 255, 0.16), transparent 55%),
+        radial-gradient(circle at 85% 15%, rgba(46, 163, 255, 0.08), transparent 60%) !important;
+}
+
+body.dark-mode .titulo-central h1,
+body.dark-mode .titulo-seccion,
+body.dark-mode .selector-postventa-head h3,
+body.dark-mode .kpi-value {
+    color: #e6edf6 !important;
+}
+
+body.dark-mode .hero-subtitulo,
+body.dark-mode .app-fecha,
+body.dark-mode .selector-postventa-head p,
+body.dark-mode .kpi-label,
+body.dark-mode .selector-postventa-input label,
+body.dark-mode .gestion-ayuda {
+    color: #a5b3c4 !important;
+}
+
+body.dark-mode .header-tabs-top {
+    background: #0a0c12 !important;
+    border: 1px solid #2ea3ff !important;
+}
+
+body.dark-mode .top-tab {
+    color: #c8d3e1 !important;
+}
+
+body.dark-mode .top-tab.is-active {
+    background: rgba(46, 163, 255, 0.18) !important;
+    color: #ffffff !important;
+    box-shadow: inset 0 0 0 1px rgba(46, 163, 255, 0.65) !important;
+}
+
+body.dark-mode .paso-chip,
+body.dark-mode .paso-chip-btn {
+    background: #0a0c12 !important;
+    border: 1px solid rgba(46, 163, 255, 0.6) !important;
+    color: #c8d3e1 !important;
+}
+
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+    background: #050608 !important;
+    border-color: #2ea3ff !important;
+    color: #e6edf6 !important;
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+    color: #7f8fa3 !important;
+}
+
+body.dark-mode .tabla-registros,
+body.dark-mode .rep-hist-table,
+body.dark-mode .rep-cierre-table {
+    background: #0a0c12 !important;
+    border-color: rgba(46, 163, 255, 0.6) !important;
+}
+
+body.dark-mode .tabla-registros thead th,
+body.dark-mode .rep-hist-table thead th,
+body.dark-mode .rep-cierre-table thead th {
+    background: #050608 !important;
+    color: #c8d3e1 !important;
+    border-bottom-color: rgba(46, 163, 255, 0.5) !important;
+}
+
+body.dark-mode .tabla-registros tbody td,
+body.dark-mode .rep-hist-table tbody td,
+body.dark-mode .rep-cierre-table tbody td {
+    color: #e6edf6 !important;
+    border-bottom-color: rgba(46, 163, 255, 0.28) !important;
+}
+
+body.dark-mode .btn-volver-top,
+body.dark-mode .btn-secundario,
+body.dark-mode .btn-principal,
+body.dark-mode .btn-guardar-familia {
+    background: #050608 !important;
+    border: 1px solid #2ea3ff !important;
+    color: #e6edf6 !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(46, 163, 255, 0.2) !important;
+}
+
+body.dark-mode .theme-toggle {
+    background: #050608 !important;
+    border: 2px solid #2ea3ff !important;
+    color: #2ea3ff !important;
+    box-shadow: 0 0 0 4px rgba(46, 163, 255, 0.18), 0 18px 40px rgba(0, 0, 0, 0.55) !important;
 }
 
 .ejecutante-con-etiqueta {
@@ -2062,9 +2208,9 @@ body.dark-mode {
 
 body.bg-dashboard.dark-mode {
     background:
-        radial-gradient(circle at 10% 0%, rgba(59, 130, 246, 0.16), transparent 40%),
-        radial-gradient(circle at 90% 12%, rgba(37, 99, 235, 0.12), transparent 36%),
-        linear-gradient(180deg, #0f172a 0%, #111827 48%, #0b1220 100%);
+        radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.04), transparent 48%),
+        radial-gradient(circle at 85% 12%, rgba(255, 255, 255, 0.03), transparent 55%),
+        #1b2430;
 }
 
 body.dark-mode .header-postventa,
@@ -4111,9 +4257,9 @@ body.bg-dashboard .estado-postventa-modulo--sin {
 
 body.bg-dashboard.dark-mode {
     background:
-        radial-gradient(circle at 18% 0%, rgba(37, 99, 235, 0.20), transparent 42%),
-        radial-gradient(circle at 92% 14%, rgba(14, 165, 233, 0.12), transparent 40%),
-        linear-gradient(180deg, #07101c 0%, #0b1220 100%) !important;
+        radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.04), transparent 48%),
+        radial-gradient(circle at 85% 12%, rgba(255, 255, 255, 0.03), transparent 55%),
+        #1b2430 !important;
     color: #e5e7eb !important;
     --pv-heading: #d6e6ff;
 }
@@ -4582,7 +4728,7 @@ body {
 
 body.bg-dashboard.dark-mode,
 body.dark-mode {
-    background-color: #07101c !important; /* respaldo sólido para repaints */
+    background-color: #1b2430 !important; /* respaldo sólido para repaints */
 }
 
 /* Evita layer fijo con blur dentro del contenedor (causa artefactos al scroll) */
@@ -6437,6 +6583,34 @@ body.bg-dashboard .header-actions-right .user-profile {
     justify-content: flex-end !important;
 }
 
+/* Ajuste vertical: bloque de usuario + tabs más arriba */
+@media (min-width: 769px) {
+    body.bg-dashboard .header-actions-right {
+        align-self: start !important;
+        margin-top: -8px !important;
+    }
+
+    body.bg-dashboard .header-tabs-top {
+        margin-top: 6px !important;
+    }
+}
+
+/* ======================================================
+   Quita líneas bajo títulos de secciones (claro/oscuro)
+   ====================================================== */
+.titulo-seccion,
+body.bg-dashboard .titulo-seccion,
+body.dark-mode .titulo-seccion,
+body.dark-mode.bg-dashboard .titulo-seccion {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+}
+
+body.bg-dashboard .cabecera-modulo,
+body.dark-mode.bg-dashboard .cabecera-modulo {
+    border-bottom: none !important;
+}
+
 body.bg-dashboard .header-tabs-top {
     width: fit-content !important;
     max-width: 100%;
@@ -6528,4 +6702,597 @@ body.bg-dashboard .indicadores-kpi {
         align-self: flex-start !important;
         margin-left: 0 !important;
     }
+}
+
+/* ======================================================
+   Dark mode consistency override (igual al menú)
+   ====================================================== */
+body.dark-mode.bg-dashboard {
+    background:
+        radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.04), transparent 50%),
+        radial-gradient(circle at 85% 12%, rgba(255, 255, 255, 0.03), transparent 56%),
+        #1b2430 !important;
+    color: #e6edf6 !important;
+}
+
+body.dark-mode.bg-dashboard .header-postventa,
+body.dark-mode.bg-dashboard .selector-postventa-card,
+body.dark-mode.bg-dashboard .tarjeta-modulo,
+body.dark-mode.bg-dashboard .kpi-card {
+    background: #141b25 !important;
+    border: 1px solid rgba(255, 255, 255, 0.45) !important;
+    box-shadow:
+        0 14px 34px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+}
+
+body.dark-mode.bg-dashboard .header-postventa::before {
+    background:
+        radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.05), transparent 62%),
+        radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.04), transparent 66%) !important;
+}
+
+body.dark-mode.bg-dashboard .titulo-central h1,
+body.dark-mode.bg-dashboard .titulo-seccion,
+body.dark-mode.bg-dashboard .selector-postventa-head h3,
+body.dark-mode.bg-dashboard .kpi-value {
+    color: #e6edf6 !important;
+}
+
+body.dark-mode.bg-dashboard .hero-subtitulo,
+body.dark-mode.bg-dashboard .app-fecha,
+body.dark-mode.bg-dashboard .selector-postventa-head p,
+body.dark-mode.bg-dashboard .kpi-label,
+body.dark-mode.bg-dashboard .selector-postventa-input label,
+body.dark-mode.bg-dashboard .gestion-ayuda {
+    color: #a5b3c4 !important;
+}
+
+body.dark-mode.bg-dashboard .header-tabs-top {
+    background: #101722 !important;
+    border: 1px solid rgba(107, 210, 255, 0.55) !important;
+}
+
+body.dark-mode.bg-dashboard .top-tab {
+    color: #c8d3e1 !important;
+}
+
+body.dark-mode.bg-dashboard .top-tab.is-active {
+    background: rgba(107, 210, 255, 0.16) !important;
+    color: #ffffff !important;
+    box-shadow: inset 0 0 0 1px rgba(107, 210, 255, 0.7) !important;
+}
+
+body.dark-mode.bg-dashboard .paso-chip,
+body.dark-mode.bg-dashboard .paso-chip-btn {
+    background: #101722 !important;
+    border: 1px solid rgba(107, 210, 255, 0.55) !important;
+    color: #c8d3e1 !important;
+}
+
+body.dark-mode.bg-dashboard input,
+body.dark-mode.bg-dashboard select,
+body.dark-mode.bg-dashboard textarea {
+    background: #0f141c !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
+    color: #e6edf6 !important;
+}
+
+body.dark-mode.bg-dashboard input::placeholder,
+body.dark-mode.bg-dashboard textarea::placeholder {
+    color: #7f8fa3 !important;
+}
+
+body.dark-mode.bg-dashboard .tabla-registros,
+body.dark-mode.bg-dashboard .rep-hist-table,
+body.dark-mode.bg-dashboard .rep-cierre-table {
+    background: #101722 !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
+}
+
+body.dark-mode.bg-dashboard .tabla-registros thead th,
+body.dark-mode.bg-dashboard .rep-hist-table thead th,
+body.dark-mode.bg-dashboard .rep-cierre-table thead th {
+    background: #0f141c !important;
+    color: #c8d3e1 !important;
+    border-bottom-color: rgba(255, 255, 255, 0.35) !important;
+}
+
+body.dark-mode.bg-dashboard .tabla-registros tbody td,
+body.dark-mode.bg-dashboard .rep-hist-table tbody td,
+body.dark-mode.bg-dashboard .rep-cierre-table tbody td {
+    color: #e6edf6 !important;
+    border-bottom-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+body.dark-mode.bg-dashboard .btn-volver-top,
+body.dark-mode.bg-dashboard .btn-secundario,
+body.dark-mode.bg-dashboard .btn-principal,
+body.dark-mode.bg-dashboard .btn-guardar-familia {
+    background: #0f141c !important;
+    border: 1px solid rgba(107, 210, 255, 0.55) !important;
+    color: #e6edf6 !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(107, 210, 255, 0.18) !important;
+}
+
+body.dark-mode.bg-dashboard .theme-toggle {
+    background: #101722 !important;
+    border: 2px solid #6bd2ff !important;
+    color: #6bd2ff !important;
+    box-shadow: 0 0 0 4px rgba(107, 210, 255, 0.16), 0 18px 40px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Íconos de chips (Apertura de Postventa) en modo oscuro: neón por estado */
+body.dark-mode.bg-dashboard .paso-chip i,
+body.dark-mode.bg-dashboard .paso-chip-btn i {
+    color: #cbd5e1 !important;
+    text-shadow: none;
+}
+
+body.dark-mode.bg-dashboard #chip_inmueble i {
+    color: #86efac !important;
+    text-shadow: 0 0 10px rgba(134, 239, 172, 0.35);
+}
+
+body.dark-mode.bg-dashboard #chip_postventa i {
+    color: #fde047 !important;
+    text-shadow: 0 0 10px rgba(253, 224, 71, 0.35);
+}
+
+body.dark-mode.bg-dashboard #chip_familias i {
+    color: #fecaca !important;
+    text-shadow: 0 0 10px rgba(254, 202, 202, 0.35);
+}
+
+/* ======================================================
+   Usuario anclado a la derecha en header (todos los anchos)
+   ====================================================== */
+body.bg-dashboard .header-actions-right {
+    align-items: flex-end !important;
+    width: fit-content !important;
+    margin-left: auto !important;
+}
+
+body.bg-dashboard .header-actions-right .user-profile {
+    width: auto !important;
+    justify-content: flex-end !important;
+}
+
+/* Reportería: Gestión de usuarios embebida */
+body.bg-dashboard .rep-usuarios {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+body.bg-dashboard .rep-usuarios-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+body.bg-dashboard .rep-usuarios-head h4 {
+    margin: 0;
+    font-size: var(--fs-md);
+    font-weight: 950;
+    color: var(--pv-heading);
+    letter-spacing: -0.02em;
+}
+
+body.bg-dashboard .rep-usuarios-head p {
+    margin: 6px 0 0;
+    color: var(--pv-muted2);
+    font-size: var(--fs-sm);
+}
+
+body.bg-dashboard .rep-usuarios-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.9fr) minmax(320px, 1.1fr);
+    gap: 16px;
+}
+
+@media (max-width: 980px) {
+    body.bg-dashboard .rep-usuarios-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+body.bg-dashboard .rep-usuarios-card {
+    background: var(--pv-card);
+    border: 1px solid var(--pv-line);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--pv-shadow-sm);
+}
+
+body.bg-dashboard .rep-usuarios-form h5,
+body.bg-dashboard .rep-usuarios-list h5 {
+    margin: 0 0 10px;
+    font-size: var(--fs-md);
+    font-weight: 850;
+    color: var(--pv-heading);
+}
+
+body.bg-dashboard .rep-usuarios-fields {
+    display: grid;
+    gap: 10px 12px;
+    margin-top: 10px;
+}
+
+body.bg-dashboard .rep-usuarios-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.bg-dashboard .rep-usuarios-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+    body.bg-dashboard .rep-usuarios-grid-2,
+    body.bg-dashboard .rep-usuarios-grid-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+body.bg-dashboard .rep-usuarios-actions {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+}
+
+body.bg-dashboard .rep-usuarios-table-wrap {
+    overflow: auto;
+    margin-top: 8px;
+}
+
+body.bg-dashboard .rep-usuarios-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+body.bg-dashboard .rep-usuarios-table th,
+body.bg-dashboard .rep-usuarios-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--pv-line);
+    font-size: var(--fs-sm);
+    text-align: left;
+}
+
+body.bg-dashboard .rep-usuarios-table th {
+    color: var(--pv-muted2);
+    font-size: var(--fs-xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+body.bg-dashboard .rep-usuarios-username {
+    font-weight: 700;
+    color: var(--pv-heading);
+}
+
+body.bg-dashboard .rep-usuarios-pill {
+    display: inline-flex;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(37, 99, 235, 0.25);
+    background: rgba(37, 99, 235, 0.10);
+    color: #1d4ed8;
+    font-weight: 700;
+    font-size: var(--fs-xs);
+}
+
+body.bg-dashboard .rep-usuarios-pill.off {
+    border-color: rgba(148, 163, 184, 0.4);
+    background: rgba(148, 163, 184, 0.12);
+    color: #475569;
+}
+
+body.bg-dashboard .rep-usuarios-table td:last-child {
+    text-align: right;
+}
+
+body.bg-dashboard .rep-msg {
+    margin-top: 10px;
+    font-size: var(--fs-sm);
+    color: var(--pv-muted2);
+}
+
+body.bg-dashboard .rep-msg.error {
+    color: #b91c1c;
+}
+
+body.bg-dashboard.dark-mode .rep-usuarios-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.45);
+    box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+}
+
+body.bg-dashboard.dark-mode .rep-usuarios-table th,
+body.bg-dashboard.dark-mode .rep-usuarios-table td {
+    border-bottom-color: rgba(255, 255, 255, 0.14);
+}
+
+body.bg-dashboard.dark-mode .rep-usuarios-pill {
+    border-color: rgba(107, 210, 255, 0.35);
+    background: rgba(107, 210, 255, 0.12);
+    color: #9bdcff;
+}
+
+body.bg-dashboard.dark-mode .rep-usuarios-pill.off {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    color: #cbd5e1;
+}
+
+/* Toggle siempre al costado izquierdo */
+.theme-toggle,
+body.dark-mode .theme-toggle,
+body.bg-dashboard .theme-toggle,
+body.bg-dashboard.dark-mode .theme-toggle,
+body.dark-mode.bg-dashboard .theme-toggle {
+    left: -8px !important;
+    right: auto !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-left-width: 0 !important;
+}
+
+/* Último override: íconos de chips sin filtro y con color neón */
+body.dark-mode.bg-dashboard .paso-chip,
+body.dark-mode.bg-dashboard .paso-chip-btn {
+    opacity: 1 !important;
+    filter: none !important;
+}
+
+body.dark-mode.bg-dashboard .paso-chip i,
+body.dark-mode.bg-dashboard .paso-chip-btn i {
+    opacity: 1 !important;
+    filter: none !important;
+    text-shadow: none !important;
+}
+
+body.dark-mode.bg-dashboard #chip_inmueble i {
+    color: #86efac !important;
+    text-shadow: 0 0 12px rgba(134, 239, 172, 0.4) !important;
+}
+
+body.dark-mode.bg-dashboard #chip_postventa i {
+    color: #fde047 !important;
+    text-shadow: 0 0 12px rgba(253, 224, 71, 0.4) !important;
+}
+
+body.dark-mode.bg-dashboard #chip_familias i {
+    color: #fecaca !important;
+    text-shadow: 0 0 12px rgba(254, 202, 202, 0.4) !important;
+}
+
+body.dark-mode.bg-dashboard .paso-chip.pendiente {
+    opacity: 1 !important;
+}
+
+/* ======================================================
+   Reportería: sección de gráficos
+   ====================================================== */
+
+body.bg-dashboard .rep-graficos {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+body.bg-dashboard .rep-graficos-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+body.bg-dashboard .rep-graficos-head h4 {
+    margin: 0;
+    font-size: var(--fs-md);
+}
+
+body.bg-dashboard .rep-graficos-head p {
+    margin: 6px 0 0;
+    color: var(--pv-muted2);
+}
+
+body.bg-dashboard .rep-graficos-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+body.bg-dashboard .rep-graficos-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--pv-line);
+    background: rgba(255, 255, 255, 0.75);
+    font-size: 0.78rem;
+    color: var(--pv-muted);
+}
+
+body.bg-dashboard .rep-graficos-controls label {
+    font-weight: 600;
+    color: inherit;
+}
+
+body.bg-dashboard .rep-graficos-controls select {
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-weight: 600;
+    outline: none;
+}
+
+body.bg-dashboard .rep-toggle {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+}
+
+body.bg-dashboard .rep-toggle.is-active,
+body.bg-dashboard .rep-toggle[aria-pressed="true"] {
+    border-color: rgba(37, 99, 235, 0.35);
+    background: rgba(37, 99, 235, 0.12);
+    color: var(--pv-heading);
+}
+
+body.bg-dashboard .rep-graficos-total {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--pv-line);
+    background: rgba(255, 255, 255, 0.75);
+    font-size: 0.78rem;
+    color: var(--pv-muted);
+}
+
+body.bg-dashboard .rep-graficos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+body.bg-dashboard .rep-chart-card {
+    background: var(--pv-card);
+    border: 1px solid var(--pv-line);
+    border-radius: 20px;
+    padding: 16px;
+    box-shadow: var(--pv-shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 260px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+body.bg-dashboard .rep-chart-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+    border-color: rgba(37, 99, 235, 0.18);
+}
+
+body.bg-dashboard .rep-chart-card--wide {
+    grid-column: 1 / -1;
+}
+
+body.bg-dashboard .rep-chart-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+body.bg-dashboard .rep-chart-head h5 {
+    margin: 0;
+    font-size: 0.98rem;
+}
+
+body.bg-dashboard .rep-chart-head p {
+    margin: 6px 0 0;
+    font-size: 0.82rem;
+    color: var(--pv-muted2);
+}
+
+body.bg-dashboard .rep-chart-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--pv-line2);
+    font-size: 0.78rem;
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--pv-muted);
+    white-space: nowrap;
+}
+
+body.bg-dashboard .rep-chart-canvas {
+    position: relative;
+    width: 100%;
+    height: 220px;
+}
+
+body.bg-dashboard .rep-chart-canvas--wide {
+    height: 280px;
+}
+
+body.bg-dashboard .rep-chart-canvas canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+body.bg-dashboard .rep-graficos-msg {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--pv-muted2);
+}
+
+body.bg-dashboard .rep-graficos-msg.error {
+    color: #b91c1c;
+}
+
+@media (min-width: 1200px) {
+    body.bg-dashboard .rep-graficos-grid {
+        grid-template-columns: repeat(3, minmax(260px, 1fr));
+    }
+}
+
+@media (max-width: 680px) {
+    body.bg-dashboard .rep-chart-card {
+        min-height: 240px;
+    }
+    body.bg-dashboard .rep-chart-canvas {
+        height: 200px;
+    }
+}
+
+body.bg-dashboard.dark-mode .rep-graficos-total,
+body.bg-dashboard.dark-mode .rep-chart-badge {
+    border-color: rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.05);
+    color: #e5e7eb;
+}
+
+body.bg-dashboard.dark-mode .rep-graficos-controls {
+    border-color: rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.06);
+    color: #e5e7eb;
+}
+
+body.bg-dashboard.dark-mode .rep-toggle.is-active,
+body.bg-dashboard.dark-mode .rep-toggle[aria-pressed="true"] {
+    border-color: rgba(147, 197, 253, 0.35);
+    background: rgba(59, 130, 246, 0.18);
+    color: #e5e7eb;
+}
+
+body.bg-dashboard.dark-mode .rep-chart-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow: 0 18px 44px rgba(2, 6, 23, 0.42);
+}
+
+body.bg-dashboard.dark-mode .rep-chart-card:hover {
+    box-shadow: 0 22px 50px rgba(2, 6, 23, 0.5);
+    border-color: rgba(148, 163, 184, 0.28);
+}
+
+body.bg-dashboard.dark-mode .rep-chart-head p,
+body.bg-dashboard.dark-mode .rep-graficos-msg {
+    color: #aebbd0;
+}
+
+body.bg-dashboard.dark-mode .rep-graficos-msg.error {
+    color: #fca5a5;
 }

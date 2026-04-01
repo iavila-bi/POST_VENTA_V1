@@ -60,7 +60,7 @@ async function login(req, res) {
         const token = jwt.sign(
             { id_usuario: Number(row.id_usuario) },
             secret,
-            { expiresIn: process.env.JWT_EXPIRES_IN || "12h" }
+            { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
         );
 
         return res.json({

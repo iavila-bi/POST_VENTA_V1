@@ -28,6 +28,9 @@ function aplicarTema(tema) {
         : '<i class="fas fa-moon" aria-hidden="true"></i>';
     boton.setAttribute("title", esOscuro ? "Cambiar a modo claro" : "Cambiar a modo oscuro");
     boton.setAttribute("aria-label", esOscuro ? "Cambiar a modo claro" : "Cambiar a modo oscuro");
+    if (typeof repGraficosActualizarTema === "function") {
+        repGraficosActualizarTema();
+    }
 }
 
 function inicializarTema() {
@@ -1950,6 +1953,7 @@ function setVistaReporteria(vista) {
     const v = String(vista || "gestion");
     const views = {
         gestion: document.getElementById("rep_view_gestion"),
+        graficos: document.getElementById("rep_view_graficos"),
         historico: document.getElementById("rep_view_historico"),
         cierre: document.getElementById("rep_view_cierre"),
         usuarios: document.getElementById("rep_view_usuarios"),
@@ -1978,17 +1982,560 @@ function setVistaReporteria(vista) {
         mountGestionPanelTo(host);
         inicializarGestionArbol();
         cargarGestionArbol();
+    } else if (v === "graficos") {
+        initGraficosEmbebidos();
+        repGraficosCargar().catch(() => null);
     } else if (v === "historico") {
         initHistoricoEmbebido();
     } else if (v === "cierre") {
         initCierreEmbebido();
         repCierreBuscar().catch(() => null);
+    } else if (v === "usuarios") {
+        initUsuariosEmbebidos();
+        repUsuariosCargar().catch(() => null);
     } else if (v === "auditoria") {
         initAuditoriaEmbebida();
         repAudBuscar().catch(() => null);
     } else {
         // Si nos vamos a otra vista, dejamos el panel montado en reportería pero oculto para no romper listeners
         if (panelGestion) panelGestion.hidden = true;
+    }
+}
+
+// ======================================================
+// Reportería: Gráficos embebidos
+// ======================================================
+
+let repGraficosInit = false;
+let repGraficosCharts = {};
+let repGraficosCache = null;
+let repGraficosLoading = false;
+const repGraficosState = {
+    meses: 6,
+    showValues: false
+};
+
+function repGraficosGet(id) {
+    return document.getElementById(id);
+}
+
+function repGraficosSetMsg(texto = "", error = false) {
+    const el = repGraficosGet("rep_graficos_msg");
+    if (!el) return;
+    el.textContent = texto || "";
+    el.classList.toggle("error", Boolean(error));
+}
+
+function repGraficosIsDark() {
+    return document.body.classList.contains("dark-mode");
+}
+
+function repGraficosTema() {
+    const dark = repGraficosIsDark();
+    return {
+        text: dark ? "#e5e7eb" : "#1f2937",
+        muted: dark ? "rgba(148, 163, 184, 0.9)" : "#64748b",
+        grid: dark ? "rgba(148, 163, 184, 0.18)" : "rgba(148, 163, 184, 0.25)",
+        border: dark ? "rgba(255, 255, 255, 0.12)" : "rgba(15, 23, 42, 0.1)",
+        bg: dark ? "#141b25" : "#ffffff"
+    };
+}
+
+const repGraficosValuePlugin = {
+    id: "repGraficosValuePlugin",
+    afterDatasetsDraw(chart) {
+        const { ctx, chartArea } = chart;
+        if (!chartArea) return;
+        const theme = repGraficosTema();
+        const type = chart.config.type;
+        ctx.save();
+        ctx.font = "600 12px Inter, sans-serif";
+        ctx.fillStyle = theme.text;
+
+        if (type === "doughnut") {
+            const total = (chart.data.datasets[0]?.data || []).reduce((acc, v) => acc + Number(v || 0), 0);
+            const centerX = (chartArea.left + chartArea.right) / 2;
+            const centerY = (chartArea.top + chartArea.bottom) / 2;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = theme.text;
+            ctx.font = "700 18px Inter, sans-serif";
+            ctx.fillText(String(total), centerX, centerY - 6);
+            ctx.fillStyle = theme.muted;
+            ctx.font = "600 11px Inter, sans-serif";
+            ctx.fillText("Total", centerX, centerY + 12);
+            ctx.restore();
+            return;
+        }
+
+        if (!repGraficosState.showValues) {
+            ctx.restore();
+            return;
+        }
+
+        chart.data.datasets.forEach((dataset, i) => {
+            const meta = chart.getDatasetMeta(i);
+            if (meta.hidden) return;
+            meta.data.forEach((element, index) => {
+                const value = dataset.data?.[index];
+                if (value === null || value === undefined) return;
+                const pos = element.tooltipPosition();
+                ctx.textAlign = "center";
+                ctx.textBaseline = "bottom";
+                ctx.fillStyle = theme.text;
+                ctx.fillText(String(value), pos.x, pos.y - 6);
+            });
+        });
+        ctx.restore();
+    }
+};
+
+function repGraficosMeses(cantidad = 6) {
+    const ahora = new Date();
+    const base = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+    const formatter = new Intl.DateTimeFormat("es-CL", { month: "short" });
+    const meses = [];
+    for (let i = cantidad - 1; i >= 0; i -= 1) {
+        const d = new Date(base.getFullYear(), base.getMonth() - i, 1);
+        const mesTxt = formatter.format(d).replace(".", "");
+        const label = `${mesTxt} ${String(d.getFullYear()).slice(-2)}`;
+        meses.push({
+            year: d.getFullYear(),
+            month: d.getMonth() + 1,
+            key: `${d.getFullYear()}-${d.getMonth() + 1}`,
+            label
+        });
+    }
+    return meses;
+}
+
+function repGraficosAgruparPorEstado(familias = []) {
+    const counts = { Pendiente: 0, Proceso: 0, Finalizado: 0 };
+    familias.forEach(row => {
+        const estado = normalizarEstadoTarea(row?.estado_familia, "Pendiente");
+        counts[estado] = (counts[estado] || 0) + 1;
+    });
+    return counts;
+}
+
+function repGraficosAgruparCasas(postventas = []) {
+    const counts = { Abierta: 0, Cerrada: 0 };
+    postventas.forEach(row => {
+        const raw = String(row?.estado || row?.estado_ticket || "Abierta").toLowerCase();
+        const key = raw.includes("cerr") ? "Cerrada" : "Abierta";
+        counts[key] = (counts[key] || 0) + 1;
+    });
+    return counts;
+}
+
+function repGraficosAgruparFamiliasPorProyecto(familias = []) {
+    const map = new Map();
+    familias.forEach(row => {
+        const proyecto = row?.nombre_proyecto || "Sin proyecto";
+        const estado = normalizarEstadoTarea(row?.estado_familia, "Pendiente");
+        if (!map.has(proyecto)) {
+            map.set(proyecto, { proyecto, Pendiente: 0, Proceso: 0, Finalizado: 0 });
+        }
+        const cur = map.get(proyecto);
+        cur[estado] = (cur[estado] || 0) + 1;
+    });
+    const list = Array.from(map.values()).map(item => ({
+        ...item,
+        total: item.Pendiente + item.Proceso + item.Finalizado
+    }));
+    list.sort((a, b) => b.total - a.total);
+    return list.slice(0, 8);
+}
+
+function repGraficosCountPorMes(lista, campoFecha, meses) {
+    const counts = Object.fromEntries(meses.map(m => [m.key, 0]));
+    lista.forEach(row => {
+        const valor = row?.[campoFecha];
+        if (!valor) return;
+        const d = new Date(valor);
+        if (Number.isNaN(d.getTime())) return;
+        const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+        if (key in counts) counts[key] += 1;
+    });
+    return meses.map(m => counts[m.key] || 0);
+}
+
+async function repGraficosTareasData(meses) {
+    const respuestas = await Promise.all(meses.map(async (m) => {
+        try {
+            const res = await fetch(`/api/calendario/tareas?year=${m.year}&month=${m.month}`);
+            if (!res.ok) return [];
+            const data = await res.json();
+            return Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.warn("No se pudieron cargar tareas del mes", m, error);
+            return [];
+        }
+    }));
+
+    const tareasPorMes = respuestas.map(list => list.length);
+    const ejecutantes = new Map();
+
+    respuestas.flat().forEach(row => {
+        const nombre = row?.nombre_ejecutante ? String(row.nombre_ejecutante) : "Sin asignar";
+        const id = row?.id_ejecutante ? String(row.id_ejecutante) : "0";
+        const key = `${id}__${nombre}`;
+        ejecutantes.set(key, (ejecutantes.get(key) || 0) + 1);
+    });
+
+    const ejecutantesTop = Array.from(ejecutantes.entries())
+        .map(([key, total]) => {
+            const parts = key.split("__");
+            return { id: parts[0], nombre: parts.slice(1).join("__"), total };
+        })
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 10);
+
+    return { tareasPorMes, ejecutantesTop };
+}
+
+function repGraficosDestroy() {
+    Object.values(repGraficosCharts).forEach(chart => {
+        if (chart && typeof chart.destroy === "function") chart.destroy();
+    });
+    repGraficosCharts = {};
+}
+
+function repGraficosRender({ familias = [], postventas = [], meses = [], tareasPorMes = [], ejecutantesTop = [] } = {}) {
+    if (typeof Chart === "undefined") {
+        repGraficosSetMsg("No se pudo cargar la librería de gráficos.", true);
+        return;
+    }
+
+    repGraficosDestroy();
+    const theme = repGraficosTema();
+
+    const estados = repGraficosAgruparPorEstado(familias);
+    const casas = repGraficosAgruparCasas(postventas);
+    const proyectos = repGraficosAgruparFamiliasPorProyecto(familias);
+
+    const totalFamilias = familias.length;
+    const totalCasas = postventas.length;
+
+    const badgeFam = repGraficosGet("rep_graf_total_familias");
+    if (badgeFam) badgeFam.textContent = `${totalFamilias} familias`;
+    const badgeCasas = repGraficosGet("rep_graf_total_casas");
+    if (badgeCasas) badgeCasas.textContent = `${totalCasas} casas`;
+
+    const totalLabel = repGraficosGet("rep_graficos_total");
+    if (totalLabel) {
+        const hora = new Date().toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
+        totalLabel.textContent = `Actualizado ${hora}`;
+    }
+
+    const estadoColors = {
+        Pendiente: "#f87171",
+        Proceso: "#facc15",
+        Finalizado: "#34d399"
+    };
+    const casaColors = ["#38bdf8", "#94a3b8"];
+
+    const chartOptionsBase = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            mode: "index",
+            intersect: false
+        },
+        animation: {
+            duration: 900,
+            easing: "easeOutQuart"
+        },
+        plugins: {
+            legend: {
+                position: "bottom",
+                labels: {
+                    color: theme.muted,
+                    usePointStyle: true,
+                    boxWidth: 10,
+                    boxHeight: 10
+                }
+            },
+            tooltip: {
+                backgroundColor: repGraficosIsDark() ? "rgba(15, 23, 42, 0.92)" : "rgba(255, 255, 255, 0.98)",
+                titleColor: theme.text,
+                bodyColor: theme.muted,
+                borderColor: theme.border,
+                borderWidth: 1,
+                callbacks: {
+                    label: (ctx) => {
+                        const label = ctx.dataset?.label ? `${ctx.dataset.label}: ` : "";
+                        const value = Number(ctx.parsed?.y ?? ctx.parsed ?? 0);
+                        if (ctx.chart.config.type === "doughnut") {
+                            const data = ctx.dataset?.data || [];
+                            const total = data.reduce((acc, v) => acc + Number(v || 0), 0) || 1;
+                            const pct = Math.round((value / total) * 100);
+                            return `${ctx.label}: ${value} (${pct}%)`;
+                        }
+                        return `${label}${value}`;
+                    }
+                }
+            }
+        },
+        layout: {
+            padding: 8
+        }
+    };
+
+    const familiasCanvas = repGraficosGet("chart_familias_estado");
+    if (familiasCanvas) {
+        repGraficosCharts.familias = new Chart(familiasCanvas, {
+            type: "doughnut",
+            data: {
+                labels: Object.keys(estados),
+                datasets: [{
+                    data: Object.values(estados),
+                    backgroundColor: Object.keys(estados).map(k => estadoColors[k]),
+                    borderColor: theme.bg,
+                    borderWidth: 2,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                ...chartOptionsBase,
+                cutout: "68%"
+            },
+            plugins: [repGraficosValuePlugin]
+        });
+    }
+
+    const casasCanvas = repGraficosGet("chart_casas_estado");
+    if (casasCanvas) {
+        repGraficosCharts.casas = new Chart(casasCanvas, {
+            type: "doughnut",
+            data: {
+                labels: ["Abiertas", "Cerradas"],
+                datasets: [{
+                    data: [casas.Abierta || 0, casas.Cerrada || 0],
+                    backgroundColor: casaColors,
+                    borderColor: theme.bg,
+                    borderWidth: 2,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                ...chartOptionsBase,
+                cutout: "68%"
+            },
+            plugins: [repGraficosValuePlugin]
+        });
+    }
+
+    const familiasProyectoCanvas = repGraficosGet("chart_familias_proyecto");
+    if (familiasProyectoCanvas) {
+        repGraficosCharts.familiasProyecto = new Chart(familiasProyectoCanvas, {
+            type: "bar",
+            data: {
+                labels: proyectos.map(p => p.proyecto),
+                datasets: [
+                    {
+                        label: "Pendientes",
+                        data: proyectos.map(p => p.Pendiente),
+                        backgroundColor: estadoColors.Pendiente,
+                        borderRadius: 6,
+                        maxBarThickness: 32
+                    },
+                    {
+                        label: "En progreso",
+                        data: proyectos.map(p => p.Proceso),
+                        backgroundColor: estadoColors.Proceso,
+                        borderRadius: 6,
+                        maxBarThickness: 32
+                    },
+                    {
+                        label: "Finalizadas",
+                        data: proyectos.map(p => p.Finalizado),
+                        backgroundColor: estadoColors.Finalizado,
+                        borderRadius: 6,
+                        maxBarThickness: 32
+                    }
+                ]
+            },
+            options: {
+                ...chartOptionsBase,
+                scales: {
+                    x: {
+                        ticks: { color: theme.muted },
+                        grid: { color: theme.grid }
+                    },
+                    y: {
+                        ticks: { color: theme.muted },
+                        grid: { color: theme.grid }
+                    }
+                }
+            },
+            plugins: [repGraficosValuePlugin]
+        });
+    }
+
+    const ejecutantesCanvas = repGraficosGet("chart_tareas_ejecutante");
+    if (ejecutantesCanvas) {
+        const labels = ejecutantesTop.map(e => e.nombre);
+        const valores = ejecutantesTop.map(e => e.total);
+        repGraficosCharts.ejecutantes = new Chart(ejecutantesCanvas, {
+            type: "bar",
+            data: {
+                labels,
+                datasets: [{
+                    label: "Tareas",
+                    data: valores,
+                    backgroundColor: "#38bdf8",
+                    borderRadius: 6,
+                    maxBarThickness: 26
+                }]
+            },
+            options: {
+                ...chartOptionsBase,
+                indexAxis: "y",
+                scales: {
+                    x: {
+                        ticks: { color: theme.muted },
+                        grid: { color: theme.grid }
+                    },
+                    y: {
+                        ticks: { color: theme.muted },
+                        grid: { color: theme.grid }
+                    }
+                }
+            },
+            plugins: [repGraficosValuePlugin]
+        });
+    }
+
+    const evolucionCanvas = repGraficosGet("chart_evolucion");
+    if (evolucionCanvas) {
+        const familiasMes = repGraficosCountPorMes(familias, "fecha_levantamiento", meses);
+        const postventasMes = repGraficosCountPorMes(postventas, "fecha_apertura", meses);
+        const tareasMes = Array.isArray(tareasPorMes) ? tareasPorMes : meses.map(() => 0);
+        const ctx = evolucionCanvas.getContext("2d");
+        const gradTareas = ctx.createLinearGradient(0, 0, 0, 280);
+        gradTareas.addColorStop(0, "rgba(52, 211, 153, 0.32)");
+        gradTareas.addColorStop(1, "rgba(52, 211, 153, 0.05)");
+        const gradPostventas = ctx.createLinearGradient(0, 0, 0, 280);
+        gradPostventas.addColorStop(0, "rgba(96, 165, 250, 0.3)");
+        gradPostventas.addColorStop(1, "rgba(96, 165, 250, 0.05)");
+        const gradFamilias = ctx.createLinearGradient(0, 0, 0, 280);
+        gradFamilias.addColorStop(0, "rgba(167, 139, 250, 0.28)");
+        gradFamilias.addColorStop(1, "rgba(167, 139, 250, 0.05)");
+
+        repGraficosCharts.evolucion = new Chart(evolucionCanvas, {
+            type: "line",
+            data: {
+                labels: meses.map(m => m.label),
+                datasets: [
+                    {
+                        label: "Tareas",
+                        data: tareasMes,
+                        borderColor: "#34d399",
+                        backgroundColor: gradTareas,
+                        tension: 0.35,
+                        fill: true
+                    },
+                    {
+                        label: "Postventas",
+                        data: postventasMes,
+                        borderColor: "#60a5fa",
+                        backgroundColor: gradPostventas,
+                        tension: 0.35,
+                        fill: true
+                    },
+                    {
+                        label: "Familias",
+                        data: familiasMes,
+                        borderColor: "#a78bfa",
+                        backgroundColor: gradFamilias,
+                        tension: 0.35,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                ...chartOptionsBase,
+                scales: {
+                    x: {
+                        ticks: { color: theme.muted },
+                        grid: { color: theme.grid }
+                    },
+                    y: {
+                        ticks: { color: theme.muted },
+                        grid: { color: theme.grid }
+                    }
+                }
+            },
+            plugins: [repGraficosValuePlugin]
+        });
+    }
+}
+
+async function repGraficosCargar() {
+    if (repGraficosLoading) return;
+    repGraficosLoading = true;
+    repGraficosSetMsg("Cargando gráficos...");
+
+    try {
+        const [resFamilias, resPostventas] = await Promise.all([
+            fetch("/api/historico/registros"),
+            fetch("/api/postventas/listado?limit=500")
+        ]);
+
+        const familias = resFamilias.ok ? await resFamilias.json() : [];
+        const postventas = resPostventas.ok ? await resPostventas.json() : [];
+
+        const meses = repGraficosMeses(repGraficosState.meses);
+        const tareasData = await repGraficosTareasData(meses);
+
+        repGraficosCache = {
+            familias,
+            postventas,
+            meses,
+            tareasPorMes: tareasData.tareasPorMes,
+            ejecutantesTop: tareasData.ejecutantesTop
+        };
+        repGraficosRender(repGraficosCache);
+        repGraficosSetMsg("");
+    } catch (error) {
+        console.error("Error cargando gráficos:", error);
+        repGraficosSetMsg("No se pudieron cargar los gráficos. Revisa la conexión.", true);
+    } finally {
+        repGraficosLoading = false;
+    }
+}
+
+function repGraficosActualizarTema() {
+    if (!repGraficosCache) return;
+    const view = repGraficosGet("rep_view_graficos");
+    if (view?.hidden) return;
+    repGraficosRender(repGraficosCache);
+}
+
+function initGraficosEmbebidos() {
+    if (repGraficosInit) return;
+    repGraficosInit = true;
+    repGraficosGet("rep_graficos_btn_refrescar")?.addEventListener("click", () => {
+        repGraficosCargar().catch(() => null);
+    });
+    const rango = repGraficosGet("rep_graficos_rango");
+    if (rango) {
+        rango.value = String(repGraficosState.meses);
+        rango.addEventListener("change", () => {
+            const val = Number(rango.value || 6);
+            repGraficosState.meses = Number.isFinite(val) ? val : 6;
+            repGraficosCargar().catch(() => null);
+        });
+    }
+    const toggle = repGraficosGet("rep_graficos_toggle_valores");
+    if (toggle) {
+        toggle.addEventListener("click", () => {
+            repGraficosState.showValues = !repGraficosState.showValues;
+            toggle.setAttribute("aria-pressed", repGraficosState.showValues ? "true" : "false");
+            toggle.classList.toggle("is-active", repGraficosState.showValues);
+            repGraficosActualizarTema();
+        });
     }
 }
 
@@ -2081,6 +2628,149 @@ function initAuditoriaEmbebida() {
             repAudBuscar().catch((error) => {
                 console.error("Error refrescando auditoría:", error);
             });
+        });
+    }
+}
+
+// ======================================================
+// Reportería: Usuarios embebidos (sin salir de registro.html)
+// ======================================================
+
+let usuariosEmbebidosInit = false;
+
+function repUsuariosGet(id) {
+    return document.getElementById(id);
+}
+
+function repUsuariosTokenHeaders(extra = {}) {
+    const token = localStorage.getItem("token") || "";
+    return token
+        ? { ...extra, Authorization: `Bearer ${token}` }
+        : { ...extra };
+}
+
+function repUsuariosSetMsg(id, text, isError = false) {
+    const el = repUsuariosGet(id);
+    if (!el) return;
+    el.textContent = text || "";
+    el.classList.toggle("error", Boolean(isError));
+}
+
+function repUsuariosFila(u) {
+    const safe = (v) => (v === null || v === undefined ? "" : escapeHtml(String(v)));
+    const estadoValor = String(u?.estado || "").toLowerCase();
+    const estadoPill = estadoValor === "activo"
+        ? `<span class="rep-usuarios-pill">activo</span>`
+        : `<span class="rep-usuarios-pill off">${safe(u?.estado || "-")}</span>`;
+
+    return `
+        <tr>
+            <td>${safe(u?.id)}</td>
+            <td><span class="rep-usuarios-username">${safe(u?.username)}</span></td>
+            <td>${safe(u?.nombre)}</td>
+            <td>${safe(u?.apellido)}</td>
+            <td>${safe(u?.email)}</td>
+            <td><span class="rep-usuarios-pill">${safe(u?.rol)}</span></td>
+            <td>${estadoPill}</td>
+            <td>
+                <button class="pv-btn danger" data-del="${safe(u?.id)}" type="button">Eliminar</button>
+            </td>
+        </tr>
+    `;
+}
+
+async function repUsuariosCargar() {
+    const tbody = repUsuariosGet("tbody_usuarios");
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="8">Cargando usuarios...</td></tr>';
+    repUsuariosSetMsg("msg_tabla", "Cargando...");
+
+    const res = await fetch("/api/usuarios", {
+        headers: repUsuariosTokenHeaders()
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+        const msg = data?.error || `Error (HTTP ${res.status})`;
+        tbody.innerHTML = `<tr><td colspan="8">${escapeHtml(msg)}</td></tr>`;
+        repUsuariosSetMsg("msg_tabla", msg, true);
+        return;
+    }
+
+    const list = Array.isArray(data) ? data : [];
+    tbody.innerHTML = list.map(repUsuariosFila).join("") || "";
+    repUsuariosSetMsg("msg_tabla", `${list.length} usuarios.`);
+}
+
+async function repUsuariosCrear(e) {
+    e.preventDefault();
+    repUsuariosSetMsg("msg_form", "");
+
+    const payload = {
+        username: repUsuariosGet("u_username")?.value.trim(),
+        nombre: repUsuariosGet("u_nombre")?.value.trim(),
+        apellido: repUsuariosGet("u_apellido")?.value.trim(),
+        email: repUsuariosGet("u_email")?.value.trim(),
+        password: repUsuariosGet("u_password")?.value || "",
+        rol: repUsuariosGet("u_rol")?.value
+    };
+
+    const res = await fetch("/api/usuarios", {
+        method: "POST",
+        headers: repUsuariosTokenHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload)
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+        repUsuariosSetMsg("msg_form", data?.error || `Error (HTTP ${res.status})`, true);
+        return;
+    }
+
+    repUsuariosSetMsg("msg_form", `Usuario creado: ${data.username} (#${data.id_usuario}).`);
+    const form = repUsuariosGet("form_usuario");
+    if (form) form.reset();
+    await repUsuariosCargar();
+}
+
+async function repUsuariosEliminar(id) {
+    if (!confirm("¿Eliminar usuario? (se marcará como inactivo)")) return;
+    const res = await fetch(`/api/usuarios/${id}`, {
+        method: "DELETE",
+        headers: repUsuariosTokenHeaders()
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+        alert(data?.error || `Error (HTTP ${res.status})`);
+        return;
+    }
+    await repUsuariosCargar();
+}
+
+function initUsuariosEmbebidos() {
+    if (usuariosEmbebidosInit) return;
+    usuariosEmbebidosInit = true;
+
+    const form = repUsuariosGet("form_usuario");
+    const btnRefrescar = repUsuariosGet("btn_refrescar");
+    const tbody = repUsuariosGet("tbody_usuarios");
+
+    if (btnRefrescar) {
+        btnRefrescar.addEventListener("click", () => {
+            repUsuariosCargar().catch((error) => {
+                console.error("Error refrescando usuarios:", error);
+            });
+        });
+    }
+
+    if (form) {
+        form.addEventListener("submit", repUsuariosCrear);
+    }
+
+    if (tbody) {
+        tbody.addEventListener("click", (e) => {
+            const btn = e.target.closest("[data-del]");
+            if (!btn) return;
+            repUsuariosEliminar(btn.getAttribute("data-del"));
         });
     }
 }
