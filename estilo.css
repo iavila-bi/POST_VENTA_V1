@@ -805,6 +805,28 @@ body b {
     font-weight: 560 !important;
 }
 
+/* Asegura que Font Awesome no sea sobreescrito por tipografías globales */
+.fa,
+.fas,
+.far,
+.fal,
+.fab,
+.fa-solid,
+.fa-regular,
+.fa-brands {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands" !important;
+    font-style: normal !important;
+    font-weight: 900 !important;
+    display: inline-block;
+    line-height: 1;
+}
+
+.fa-brands,
+.fab {
+    font-family: "Font Awesome 6 Brands" !important;
+    font-weight: 400 !important;
+}
+
 .menu-lateral a,
 .user-name,
 .card-footer,

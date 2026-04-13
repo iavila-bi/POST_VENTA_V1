@@ -15,6 +15,52 @@ const calendarioIntegradoState = {
     fechaBase: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     tareasMes: []
 };
+let rolRegistroCache = null;
+
+function getSesionRegistro() {
+    let user = null;
+    try {
+        user = JSON.parse(localStorage.getItem("user") || "null");
+    } catch (_) {
+        user = null;
+    }
+    return { user };
+}
+
+function getRolRegistro() {
+    if (rolRegistroCache) return rolRegistroCache;
+    const { user } = getSesionRegistro();
+    rolRegistroCache = String(user?.rol || "").toLowerCase();
+    return rolRegistroCache;
+}
+
+function esViewerRegistro() {
+    return getRolRegistro() === "viewer";
+}
+
+function aplicarPermisosRegistro() {
+    const { user } = getSesionRegistro();
+    const rol = getRolRegistro();
+    const viewer = rol === "viewer";
+    const admin = rol === "admin";
+    document.body.classList.toggle("rol-viewer", viewer);
+
+    const btnPlan = document.getElementById("btn_tab_planificacion");
+    if (btnPlan && viewer) {
+        btnPlan.setAttribute("hidden", "true");
+        btnPlan.setAttribute("aria-hidden", "true");
+    }
+
+    if (viewer) {
+        document.querySelectorAll('.panel-reporteria .report-tab[data-rep-view="gestion"]').forEach(btn => {
+            btn.style.display = "none";
+        });
+    }
+
+    document.querySelectorAll("[data-admin-only]").forEach(el => {
+        el.style.display = admin ? "" : "none";
+    });
+}
 
 function aplicarTema(tema) {
     const body = document.body;
@@ -1869,7 +1915,11 @@ function alternarPanelGestionRegistros() {
 
 let modoReporteria = false;
 function setModoReporteria(activo, vistaInicial = null) {
-    modoReporteria = Boolean(activo);
+    if (esViewerRegistro()) {
+        modoReporteria = true;
+    } else {
+        modoReporteria = Boolean(activo);
+    }
 
     const panelReport = document.getElementById("panel_reporteria");
     if (panelReport) panelReport.hidden = !modoReporteria;
@@ -1950,7 +2000,11 @@ function restoreGestionPanel() {
 }
 
 function setVistaReporteria(vista) {
-    const v = String(vista || "gestion");
+    let v = String(vista || "gestion");
+    if (esViewerRegistro()) {
+        const permitidas = ["graficos", "historico", "cierre"];
+        if (!permitidas.includes(v)) v = "historico";
+    }
     const views = {
         gestion: document.getElementById("rep_view_gestion"),
         graficos: document.getElementById("rep_view_graficos"),
@@ -2853,8 +2907,9 @@ function repHistEstadoClass(estado) {
 
 function repHistEstadoSelect(idRegistro, estado) {
     const normal = normalizarEstadoTarea(estado, "Pendiente");
+    const readonly = esViewerRegistro();
     return `
-        <select class="rep-hist-estado-select" data-id-registro="${Number(idRegistro)}" data-estado-actual="${normal}">
+        <select class="rep-hist-estado-select ${readonly ? "is-readonly" : ""}" data-id-registro="${Number(idRegistro)}" data-estado-actual="${normal}" ${readonly ? "disabled" : ""}>
             <option value="Pendiente" ${normal === "Pendiente" ? "selected" : ""}>Pendiente</option>
             <option value="Proceso" ${normal === "Proceso" ? "selected" : ""}>Proceso</option>
             <option value="Finalizado" ${normal === "Finalizado" ? "selected" : ""}>Finalizado</option>
@@ -2876,6 +2931,7 @@ function repHistRenderTabla(rows) {
         return;
     }
 
+    const readonly = esViewerRegistro();
     tbody.innerHTML = list.map(r => {
         const estadoNormal = normalizarEstadoTarea(r.estado_familia, "Pendiente");
         const claseFila = repHistEstadoClass(estadoNormal);
@@ -2890,9 +2946,11 @@ function repHistRenderTabla(rows) {
                 <td>${escapeHtml(r.subfamilia || "-")}</td>
                 <td>${repHistEstadoSelect(r.id_registro, estadoNormal)}</td>
                 <td>
-                    <button type="button" class="pv-btn manage rep-hist-btn-manage" data-rep-hist-manage="${idRegistro}">
-                        Gestionar
-                    </button>
+                    ${readonly ? '<span class="rep-hist-readonly">Solo lectura</span>' : `
+                        <button type="button" class="pv-btn manage rep-hist-btn-manage" data-rep-hist-manage="${idRegistro}">
+                            Gestionar
+                        </button>
+                    `}
                 </td>
             </tr>
         `;
@@ -3183,6 +3241,7 @@ async function initHistoricoEmbebido() {
 
     const view = repHistGet("rep_view_historico");
     view?.addEventListener("click", (event) => {
+        if (esViewerRegistro()) return;
         const btnManage = event.target.closest("[data-rep-hist-manage]");
         if (!btnManage) return;
 
@@ -3208,6 +3267,7 @@ async function initHistoricoEmbebido() {
     });
 
     view?.addEventListener("change", async (event) => {
+        if (esViewerRegistro()) return;
         const selectEl = event.target.closest(".rep-hist-estado-select");
         if (!selectEl) return;
 
@@ -3297,6 +3357,7 @@ function repCierreRenderTabla(rows) {
         return;
     }
 
+    const readonly = esViewerRegistro();
     tbody.innerHTML = list.map(r => {
         const idRegistro = Number(r.id_registro || 0);
         return `
@@ -3311,11 +3372,15 @@ function repCierreRenderTabla(rows) {
                 <td>${escapeHtml(r.responsable || "-")}</td>
                 <td>${repCierreFmtFecha(r.fecha_levantamiento)}</td>
                 <td>
-                    <div class="rep-cierre-accion">
-                        <input type="date" class="rep-cierre-input-firma" id="rep_cierre_firma_${idRegistro}">
-                        <button type="button" class="pv-btn" data-cierre-action="hoy" data-id="${idRegistro}">Hoy</button>
-                        <button type="button" class="pv-btn manage" data-cierre-action="guardar" data-id="${idRegistro}">Guardar cierre</button>
-                    </div>
+                    ${readonly
+                        ? '<span class="rep-cierre-readonly">Solo lectura</span>'
+                        : `
+                            <div class="rep-cierre-accion">
+                                <input type="date" class="rep-cierre-input-firma" id="rep_cierre_firma_${idRegistro}">
+                                <button type="button" class="pv-btn" data-cierre-action="hoy" data-id="${idRegistro}">Hoy</button>
+                                <button type="button" class="pv-btn manage" data-cierre-action="guardar" data-id="${idRegistro}">Guardar cierre</button>
+                            </div>
+                        `}
                 </td>
             </tr>
         `;
@@ -3435,6 +3500,7 @@ async function initCierreEmbebido() {
     });
 
     view.addEventListener("click", async (e) => {
+        if (esViewerRegistro()) return;
         const btnHoy = e.target.closest('[data-cierre-action="hoy"]');
         if (btnHoy) {
             repCierreSetHoy(btnHoy.dataset.id);
@@ -3490,10 +3556,15 @@ function aplicarVistaInicialRegistro() {
     const modo = String(params.get("modo") || "").toLowerCase();
     const vista = String(params.get("vista") || "").toLowerCase();
 
-    if (modo === "reporteria") {
-        const vistaInicial = ["gestion", "historico", "cierre", "usuarios", "auditoria"].includes(vista)
+    const viewer = esViewerRegistro();
+    const vistasPermitidas = viewer
+        ? ["graficos", "historico", "cierre"]
+        : ["gestion", "graficos", "historico", "cierre", "usuarios", "auditoria"];
+
+    if (modo === "reporteria" || viewer) {
+        const vistaInicial = vistasPermitidas.includes(vista)
             ? vista
-            : null;
+            : (viewer ? "historico" : null);
         setModoReporteria(true, vistaInicial);
         return;
     }
@@ -4103,6 +4174,7 @@ function renderizarUltimosRegistros() {
 // =====================================================
 document.addEventListener("DOMContentLoaded", () => {
     inicializarTema();
+    aplicarPermisosRegistro();
     cargarProyectos();
     cargarFamilias();
     cargarResponsables();

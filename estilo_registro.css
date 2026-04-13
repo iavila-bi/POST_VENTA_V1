@@ -7076,6 +7076,52 @@ body.dark-mode.bg-dashboard .paso-chip.pendiente {
 }
 
 /* ======================================================
+   Permisos: viewer (solo lectura)
+   ====================================================== */
+
+body.rol-viewer #btn_tab_planificacion {
+    display: none !important;
+}
+
+body.rol-viewer #modulo_selector_postventa,
+body.rol-viewer #modulo_identificacion_inmueble,
+body.rol-viewer #modulo_datos_postventa,
+body.rol-viewer #modulo_registro_familia,
+body.rol-viewer #modulo_resumen_postventa,
+body.rol-viewer #modulo_calendario_embebido,
+body.rol-viewer #panel_gestion_registros {
+    display: none !important;
+}
+
+body.rol-viewer .panel-reporteria .report-tab[data-rep-view="gestion"] {
+    display: none !important;
+}
+
+body.rol-viewer .rep-hist-estado-select.is-readonly {
+    opacity: 0.75;
+    cursor: not-allowed;
+}
+
+body.rol-viewer .rep-hist-readonly,
+body.rol-viewer .rep-cierre-readonly {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--pv-line2);
+    font-size: 0.78rem;
+    color: var(--pv-muted2);
+    background: rgba(255, 255, 255, 0.8);
+}
+
+body.bg-dashboard.dark-mode.rol-viewer .rep-hist-readonly,
+body.bg-dashboard.dark-mode.rol-viewer .rep-cierre-readonly {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.05);
+    color: #aebbd0;
+}
+
+/* ======================================================
    Reportería: sección de gráficos
    ====================================================== */
 

@@ -1,5 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
     protegerSesion();
+    const { user } = getSesion();
+    if (String(user?.rol || "").toLowerCase() === "viewer") {
+        window.location.href = "registro.html?modo=reporteria&vista=historico";
+        return;
+    }
     inicializarTema();
     renderFechaActual();
     activarEfectosDashboard();
